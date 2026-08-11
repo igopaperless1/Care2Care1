@@ -1,0 +1,12 @@
+{
+  "name": "Care2Care",
+  "description": "Everything Matters. Comprehensive caregiving, health tracking, family care, medicine reminders, multi-patient caregiver dashboard, document tools, and life management platform.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
