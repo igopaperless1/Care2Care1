@@ -1,188 +1,178 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { useTranslation as useI18nTranslation } from "react-i18next";
+import i18n from "../i18n";
 
-export type LanguageCode = "en" | "np";
+export type LanguageCode = "en" | "np" | "bn";
+
+export interface LanguageOption {
+  code: LanguageCode;
+  name: string;
+  nativeName: string;
+  flag: string;
+}
+
+export const SUPPORTED_LANGUAGES: LanguageOption[] = [
+  { code: "en", name: "English", nativeName: "English", flag: "🇺🇸" },
+  { code: "np", name: "Nepali", nativeName: "नेपाली", flag: "🇳🇵" },
+  { code: "bn", name: "Bangla", nativeName: "বাংলা", flag: "🇧🇩" },
+];
+
+export const LOCALE_MAP: Record<LanguageCode, string> = {
+  en: "en-US",
+  np: "ne-NP",
+  bn: "bn-BD",
+};
+
+export const CURRENCY_MAP: Record<LanguageCode, { code: string; symbol: string }> = {
+  en: { code: "USD", symbol: "$" },
+  np: { code: "NPR", symbol: "रु" },
+  bn: { code: "BDT", symbol: "৳" },
+};
 
 interface LanguageContextType {
   language: LanguageCode;
   setLanguage: (lang: LanguageCode) => void;
-  t: (key: string, fallback?: string) => string;
+  t: (key: string, optionsOrFallback?: any) => string;
+  formatNumber: (value: number | string, options?: Intl.NumberFormatOptions) => string;
+  formatCurrency: (amount: number, currencyCode?: string) => string;
+  formatDate: (date: Date | string | number, options?: Intl.DateTimeFormatOptions) => string;
+  formatTime: (date: Date | string | number) => string;
+  supportedLanguages: LanguageOption[];
 }
-
-const translations: Record<LanguageCode, Record<string, string>> = {
-  en: {
-    // Navigation & General
-    "app.title": "Care2Care",
-    "app.subtitle": "Family Health & Paperless Digital Management Platform",
-    "nav.home": "Home",
-    "nav.track": "Track Vitals",
-    "nav.care": "Care & Modules",
-    "nav.plan": "Plan & Schedule",
-    "nav.services": "Services & Tools",
-    "nav.sos": "Emergency SOS",
-    "nav.search": "Search patients, records...",
-    "btn.save": "Save Changes",
-    "btn.cancel": "Cancel",
-    "btn.add": "Add New",
-    "btn.edit": "Edit",
-    "btn.delete": "Delete",
-    "btn.download": "Download",
-    "btn.share": "Share",
-    "btn.upload": "Upload Photo",
-    "btn.scan": "Scan QR / Camera",
-    "btn.search": "Search",
-    "btn.close": "Close",
-    "btn.confirm": "Confirm",
-    "placeholder.search": "Search anything...",
-    "placeholder.name": "Enter full name",
-    "placeholder.phone": "Enter phone number",
-    "placeholder.email": "Enter email address",
-    "placeholder.notes": "Add notes or comments...",
-    
-    // Modules
-    "module.paperless": "IGOPaperless Cards & Tickets",
-    "module.medicine": "Medicine Tracker",
-    "module.water": "Water Intake Tracker",
-    "module.steps": "Step Counter",
-    "module.finance": "Finance & Budget",
-    "module.calendar": "40+ World Calendars",
-    "module.sos": "Emergency SOS Center",
-
-    // Digital Tickets & Organiser
-    "ticket.title": "Digital Tickets & Organiser Scanning Check-In",
-    "ticket.subtitle": "Issue event passes, delegate scanner rights to staff, and validate attendee tickets",
-    "ticket.user_view": "User Ticket Pass",
-    "ticket.manager_view": "Organiser & Validator Portal",
-    "ticket.scan_btn": "Organiser Check-In Scanner",
-    "ticket.validate": "Validate / Check-In Attendee",
-    "ticket.already_used": "TICKET ALREADY USED / CHECKED IN",
-    "ticket.issue_new": "Issue New Event Pass / Healthcare Voucher",
-    "ticket.attendee": "Attendee Name",
-    "ticket.event": "Event Name",
-    "ticket.seat": "Seat / Pass Number",
-    "ticket.date": "Event Date",
-    "ticket.location": "Venue Location",
-
-    // Visiting Card
-    "card.title": "Digital Visiting Card Studio",
-    "card.orientation": "Card Orientation",
-    "card.horizontal": "Horizontal",
-    "card.vertical": "Vertical",
-    "card.sides": "Card Sides",
-    "card.font": "Font Style",
-    "card.front": "Front Side",
-    "card.back": "Back Side",
-
-    // Currency
-    "currency.label": "Currency",
-    "currency.npr": "Nepali Rupee (NPR)",
-    "currency.usd": "US Dollar (USD)",
-  },
-  np: {
-    // Navigation & General
-    "app.title": "केयर टू केयर (Care2Care)",
-    "app.subtitle": "परिवार स्वास्थ्य र डिजिटल व्यवस्थापन प्लेटफर्म",
-    "nav.home": "गृहपृष्ठ",
-    "nav.track": "ट्रयाकिङ",
-    "nav.care": "सेवा तथा मोड्युल",
-    "nav.plan": "योजना तथा तालिका",
-    "nav.services": "सेवा तथा औजारहरू",
-    "nav.sos": "आपतकालीन SOS",
-    "nav.search": "बिरामी, रेकर्ड खोज्नुहोस्...",
-    "btn.save": "सेभ गर्नुहोस्",
-    "btn.cancel": "रद्द गर्नुहोस्",
-    "btn.add": "नयाँ थप्नुहोस्",
-    "btn.edit": "सम्पादन गर्नुहोस्",
-    "btn.delete": "हटाउनुहोस्",
-    "btn.download": "डाउनलोड गर्नुहोस्",
-    "btn.share": "सेयर गर्नुहोस्",
-    "btn.upload": "फोटो अपलोड गर्नुहोस्",
-    "btn.scan": "स्क्यान गर्नुहोस्",
-    "btn.search": "खोज्नुहोस्",
-    "btn.close": "बन्द गर्नुहोस्",
-    "btn.confirm": "पुष्टि गर्नुहोस्",
-    "placeholder.search": "खोज्नुहोस्...",
-    "placeholder.name": "पूरा नाम राख्नुहोस्",
-    "placeholder.phone": "फोन नम्बर राख्नुहोस्",
-    "placeholder.email": "इमेल ठेगाना राख्नुहोस्",
-    "placeholder.notes": "टिप्पणी थप्नुहोस्...",
-
-    // Modules
-    "module.paperless": "डिजिटल भिजिटिङ कार्ड र टिकटहरू",
-    "module.medicine": "औषधि ट्रयाकर",
-    "module.water": "पानी पिउने ट्रयाकर",
-    "module.steps": "पाइला (Step) गणना",
-    "module.finance": "आर्थिक बजेट व्यवस्थापन",
-    "module.calendar": "४०+ पात्रो तथा क्यालेन्डर",
-    "module.sos": "आपतकालीन SOS केन्द्र",
-
-    // Digital Tickets & Organiser
-    "ticket.title": "डिजिटल टिकट तथा आयोजक स्क्यानिङ चेक-इन",
-    "ticket.subtitle": "कार्यक्रम पास जारी गर्नुहोस् र टिकट स्क्यान/प्रमाणित गर्नुहोस्",
-    "ticket.user_view": "प्रयोगकर्ता टिकट पास",
-    "ticket.manager_view": "आयोजक र व्यवस्थापक पोर्टल",
-    "ticket.scan_btn": "आयोजक चेक-इन स्क्यानर",
-    "ticket.validate": "टिकट प्रमाणित / चेक-इन गर्नुहोस्",
-    "ticket.already_used": "टिकट प्रयोग भइसकेको छ",
-    "ticket.issue_new": "नयाँ कार्यक्रम पास जारी गर्नुहोस्",
-    "ticket.attendee": "सहभागीको नाम",
-    "ticket.event": "कार्यक्रमको नाम",
-    "ticket.seat": "सिट / पास नम्बर",
-    "ticket.date": "मिति",
-    "ticket.location": "स्थान",
-
-    // Visiting Card
-    "card.title": "डिजिटल भिजिटिङ कार्ड स्टुडियो",
-    "card.orientation": "कार्डको दिशा (Orientation)",
-    "card.horizontal": "तेर्सो (Horizontal)",
-    "card.vertical": "ठाडो (Vertical)",
-    "card.sides": "कार्डका पक्ष (Sides)",
-    "card.font": "फन्ट शैली",
-    "card.front": "अगाडिको भाग",
-    "card.back": "पछाडिको भाग",
-
-    // Currency
-    "currency.label": "मुद्रा",
-    "currency.npr": "नेपाली रुपैयाँ (NPR)",
-    "currency.usd": "अमेरिकी डलर (USD)",
-  }
-};
 
 const LanguageContext = createContext<LanguageContextType>({
   language: "en",
   setLanguage: () => {},
-  t: (key: string, fallback?: string) => fallback || key,
+  t: (key: string, optionsOrFallback?: any) => typeof optionsOrFallback === "string" ? optionsOrFallback : key,
+  formatNumber: (v) => String(v),
+  formatCurrency: (a) => `$${a}`,
+  formatDate: (d) => String(d),
+  formatTime: (t) => String(t),
+  supportedLanguages: SUPPORTED_LANGUAGES,
 });
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode; initialLanguage?: LanguageCode }> = ({
   children,
   initialLanguage = "en",
 }) => {
+  const { t: i18nT } = useI18nTranslation();
+  
   const [language, setLanguageState] = useState<LanguageCode>(() => {
     try {
       const saved = localStorage.getItem("care2care_lang") as LanguageCode;
-      if (saved && (saved === "en" || saved === "np")) return saved;
+      if (saved && SUPPORTED_LANGUAGES.some((l) => l.code === saved)) {
+        return saved;
+      }
     } catch (e) {
       console.error(e);
+    }
+    const detected = i18n.language as LanguageCode;
+    if (detected && SUPPORTED_LANGUAGES.some((l) => l.code === detected)) {
+      return detected;
     }
     return initialLanguage;
   });
 
+  useEffect(() => {
+    if (i18n.language !== language) {
+      i18n.changeLanguage(language);
+    }
+  }, [language]);
+
   const setLanguage = (lang: LanguageCode) => {
     setLanguageState(lang);
+    i18n.changeLanguage(lang);
     try {
       localStorage.setItem("care2care_lang", lang);
     } catch (e) {
       console.error(e);
     }
+
+    // Backend sync for notification language preference (cost-effective, zero cost)
+    try {
+      const authUserRaw = localStorage.getItem("care2care_auth_user");
+      const authUser = authUserRaw ? JSON.parse(authUserRaw) : null;
+      fetch("/api/user/language", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: authUser?.id || "anonymous_user",
+          language_preference: lang,
+        }),
+      }).catch((err) => console.log("Language pref sync notice:", err.message));
+    } catch (e) {
+      // Non-blocking
+    }
   };
 
-  const t = (key: string, fallback?: string): string => {
-    const langDict = translations[language] || translations["en"];
-    return langDict[key] || fallback || key;
+  const locale = LOCALE_MAP[language] || "en-US";
+
+  const formatNumber = (value: number | string, options?: Intl.NumberFormatOptions): string => {
+    const num = typeof value === "string" ? parseFloat(value) : value;
+    if (isNaN(num)) return String(value);
+    try {
+      return new Intl.NumberFormat(locale, options).format(num);
+    } catch {
+      return String(num);
+    }
+  };
+
+  const formatCurrency = (amount: number, currencyCode?: string): string => {
+    const defaultCurr = CURRENCY_MAP[language] || CURRENCY_MAP.en;
+    const curr = currencyCode || defaultCurr.code;
+    try {
+      return new Intl.NumberFormat(locale, { style: "currency", currency: curr }).format(amount);
+    } catch {
+      return `${defaultCurr.symbol}${amount.toFixed(2)}`;
+    }
+  };
+
+  const formatDate = (dateInput: Date | string | number, options?: Intl.DateTimeFormatOptions): string => {
+    try {
+      const date = new Date(dateInput);
+      if (isNaN(date.getTime())) return String(dateInput);
+      const defaultOptions: Intl.DateTimeFormatOptions = options || {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      };
+      return new Intl.DateTimeFormat(locale, defaultOptions).format(date);
+    } catch {
+      return String(dateInput);
+    }
+  };
+
+  const formatTime = (dateInput: Date | string | number): string => {
+    try {
+      const date = new Date(dateInput);
+      if (isNaN(date.getTime())) return String(dateInput);
+      return new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "numeric" }).format(date);
+    } catch {
+      return String(dateInput);
+    }
+  };
+
+  const t = (key: string, optionsOrFallback?: any): string => {
+    if (typeof optionsOrFallback === "string") {
+      const translation = String(i18nT(key, { defaultValue: optionsOrFallback }));
+      return translation !== key ? translation : optionsOrFallback;
+    }
+    return String(i18nT(key, optionsOrFallback || {}));
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider
+      value={{
+        language,
+        setLanguage,
+        t,
+        formatNumber,
+        formatCurrency,
+        formatDate,
+        formatTime,
+        supportedLanguages: SUPPORTED_LANGUAGES,
+      }}
+    >
       {children}
     </LanguageContext.Provider>
   );

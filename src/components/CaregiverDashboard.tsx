@@ -1076,16 +1076,7 @@ Downloaded from Care2Care Suite • Local Encrypted Health Summary
         </div>
       </div>
 
-      {/* FLOATING ACTION BUTTON (+) */}
-      <div className="fixed bottom-20 right-4 z-40">
-        <button
-          onClick={() => setShowAddServiceModal(true)}
-          className="w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-2xl flex items-center justify-center shadow-xl border-2 border-white cursor-pointer hover:scale-105 active:scale-95 transition-all"
-          title="Add Services & Data"
-        >
-          <Plus className="w-7 h-7" />
-        </button>
-      </div>
+
 
       {/* ================= MODALS & DRAWERS ================= */}
 

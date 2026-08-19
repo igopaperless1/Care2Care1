@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Briefcase,
   Search,
@@ -39,45 +39,29 @@ import {
   Check,
   Copy,
   Info,
-  Loader2
+  Loader2,
+  AlertTriangle,
+  Zap,
+  Terminal,
+  Play,
+  CheckCircle
 } from "lucide-react";
 import { Patient } from "../types";
+import {
+  StandardJob,
+  JobSearchResult,
+  SearchDiagnostics,
+  ParsedJobIntent,
+  VisaSponsorshipStatus,
+  executeJobSearch,
+  parseJobSearchIntent,
+  VERIFIED_GLOBAL_JOBS
+} from "../services/jobSearchEngine";
 
 // Helper utilities for safe access
 const safeStr = (val: any, fallback = ""): string => (typeof val === "string" ? val : fallback);
 const safeNum = (val: any, fallback = 0): number => (typeof val === "number" && !isNaN(val) ? val : fallback);
 const safeArray = <T,>(val: any): T[] => (Array.isArray(val) ? val : []);
-
-// Data Types
-export interface JobResult {
-  id: string;
-  title: string;
-  company: string;
-  companyLogo?: string;
-  location: string;
-  country: string;
-  category: string;
-  salary: string;
-  salaryType: "hour" | "week" | "fortnight" | "month" | "year";
-  salaryMin?: number;
-  salaryMax?: number;
-  jobType: "Full-time" | "Part-time" | "Contract" | "Internship";
-  jobTerm: "Fixed" | "Long-term" | "Contract" | "Internship";
-  postedDate: string;
-  timeRemaining?: string;
-  description: string;
-  requirements: string[];
-  preferredQualifications?: string[];
-  benefits?: string[];
-  source: "Indeed" | "LinkedIn" | "Seek" | "Naukri" | "MeroJob" | "Facebook Jobs" | "Care2Care Portal";
-  sourceUrl: string;
-  applyUrl: string;
-  isSponsored?: boolean;
-  isRemote?: boolean;
-  visaSponsorship: boolean;
-  isSeasonal: boolean;
-  contactEmail?: string;
-}
 
 // HighlightText helper for search query emboldening
 export const HighlightText: React.FC<{ text: string; query: string }> = ({ text, query }) => {
@@ -167,365 +151,68 @@ export interface SopData {
   futureAspirations: string;
 }
 
-// Initial Mock Job Listings
-const INITIAL_JOBS: JobResult[] = [
-  {
-    id: "job-1",
-    title: "Registered Senior Care Nurse (Visas Sponsored)",
-    company: "St. Jude Healthcare Services",
-    companyLogo: "🏥",
-    location: "Sydney",
-    country: "Australia",
-    category: "Healthcare",
-    salary: "$85,000 - $110,000 / yr",
-    salaryType: "year",
-    salaryMin: 85000,
-    salaryMax: 110000,
-    jobType: "Full-time",
-    jobTerm: "Long-term",
-    postedDate: "2 days ago",
-    timeRemaining: "12 days remaining",
-    description: "Seeking compassionate Registered Nurses for our aged care facilities. We provide 482 TSS Visa Sponsorship and relocation support for qualified international candidates.",
-    requirements: [
-      "Bachelor of Nursing degree or equivalent",
-      "Minimum 2 years clinical nursing experience",
-      "IELTS 7.0 or OET Grade B in all bands",
-      "Registration with AHPRA or eligibility"
-    ],
-    preferredQualifications: ["Aged Care certification", "Palliative Care experience"],
-    benefits: ["Subsidized Housing for 3 months", "Visa Sponsorship Subsidies", "Flexible Shifts"],
-    source: "Seek",
-    sourceUrl: "https://www.seek.com.au",
-    applyUrl: "https://www.seek.com.au/jobs?keywords=registered+nurse+sponsorship",
-    visaSponsorship: true,
-    isSeasonal: false,
-    isRemote: false,
-    contactEmail: "careers@stjudehealth.com.au"
-  },
-  {
-    id: "job-2",
-    title: "Full Stack React / Node Developer",
-    company: "Kathmandu Tech Innovators",
-    companyLogo: "💻",
-    location: "Kathmandu",
-    country: "Nepal",
-    category: "IT & Software",
-    salary: "NPR 1,20,000 - 1,80,000 / mo",
-    salaryType: "month",
-    salaryMin: 120000,
-    salaryMax: 180000,
-    jobType: "Full-time",
-    jobTerm: "Long-term",
-    postedDate: "Today",
-    timeRemaining: "28 days remaining",
-    description: "Looking for an energetic Full Stack Developer proficient in React, TypeScript, Express, and PostgreSQL to lead web app development for healthtech platforms.",
-    requirements: [
-      "3+ years experience with React.js and Node.js",
-      "Proficient in REST APIs and GraphQL",
-      "Strong understanding of relational databases",
-      "Good problem solving and team collaboration skills"
-    ],
-    benefits: ["Festival Bonus", "PF & Gratuity", "Remote Work Days", "Health Insurance"],
-    source: "MeroJob",
-    sourceUrl: "https://merojob.com",
-    applyUrl: "https://merojob.com/search/?q=react+developer",
-    visaSponsorship: false,
-    isSeasonal: false,
-    isRemote: true,
-    contactEmail: "hr@ktminnovators.com.np"
-  },
-  {
-    id: "job-3",
-    title: "Aged Caregiver / Personal Care Assistant",
-    company: "SilverCare New Zealand Ltd",
-    companyLogo: "👵",
-    location: "Auckland",
-    country: "New Zealand",
-    category: "Healthcare",
-    salary: "NZD $28 - $32 / hr",
-    salaryType: "hour",
-    salaryMin: 28,
-    salaryMax: 32,
-    jobType: "Full-time",
-    jobTerm: "Contract",
-    postedDate: "1 day ago",
-    timeRemaining: "15 days remaining",
-    description: "Assist elderly clients with daily living activities, medication management, and mobility support. Accredited Employer Visa (AEWV) available.",
-    requirements: [
-      "Certificate IV in Caregiving / Health Assistance",
-      "First Aid & CPR Certification",
-      "Valid Driver's License",
-      "Clear police check record"
-    ],
-    benefits: ["Visa Support", "Travel Allowance", "Paid Overtime"],
-    source: "Indeed",
-    sourceUrl: "https://nz.indeed.com",
-    applyUrl: "https://nz.indeed.com/jobs?q=caregiver+sponsorship",
-    visaSponsorship: true,
-    isSeasonal: false,
-    isRemote: false,
-    contactEmail: "jobs@silvercare.co.nz"
-  },
-  {
-    id: "job-4",
-    title: "Seasonal Agriculture & Fruit Harvest Supervisor",
-    company: "Tasmanian Berry Farms",
-    companyLogo: "🍓",
-    location: "Hobart",
-    country: "Australia",
-    category: "Agriculture & Farming",
-    salary: "AUD $30 - $35 / hr",
-    salaryType: "hour",
-    salaryMin: 30,
-    salaryMax: 35,
-    jobType: "Full-time",
-    jobTerm: "Fixed",
-    postedDate: "3 days ago",
-    timeRemaining: "8 days remaining",
-    description: "Seasonal harvesting and orchard supervisory positions available for upcoming 6-month harvest period. Working Holiday Visa holders welcome.",
-    requirements: [
-      "Prior farm or harvest supervisory experience",
-      "Ability to work outdoors in physical environment",
-      "Basic English communication skills"
-    ],
-    benefits: ["On-site Accommodation", "Piece-rate bonus options"],
-    source: "Indeed",
-    sourceUrl: "https://au.indeed.com",
-    applyUrl: "https://au.indeed.com/jobs?q=fruit+picking+seasonal",
-    visaSponsorship: false,
-    isSeasonal: true,
-    isRemote: false,
-    contactEmail: "farmjobs@tasmanianberry.com.au"
-  },
-  {
-    id: "job-5",
-    title: "Senior Finance & Accounts Officer",
-    company: "Global Horizon Capital",
-    companyLogo: "📊",
-    location: "London",
-    country: "UK",
-    category: "Finance & Accounting",
-    salary: "£45,000 - £55,000 / yr",
-    salaryType: "year",
-    salaryMin: 45000,
-    salaryMax: 55000,
-    jobType: "Full-time",
-    jobTerm: "Long-term",
-    postedDate: "4 days ago",
-    timeRemaining: "19 days remaining",
-    description: "Oversee monthly reporting, tax filings, financial auditing, and budgeting for growing financial consultancy.",
-    requirements: [
-      "ACCA or CIMA qualification",
-      "4+ years corporate accounting experience",
-      "Expertise in SAP, QuickBooks, and Excel"
-    ],
-    benefits: ["Skilled Worker Visa Sponsorship", "Private Medical", "Pension Match"],
-    source: "LinkedIn",
-    sourceUrl: "https://www.linkedin.com",
-    applyUrl: "https://www.linkedin.com/jobs/search/?keywords=finance+officer+visa",
-    visaSponsorship: true,
-    isSeasonal: false,
-    isRemote: false,
-    contactEmail: "recruitment@globalhorizon.co.uk"
-  }
+// 10 Diagnostic Test Cases for Verification
+const DIAGNOSTIC_TEST_SUITE = [
+  { id: "t1", query: "software engineer visa sponsorship", expectedKeywords: ["software", "engineer"], expectedVisa: true },
+  { id: "t2", query: "visa sponsorship jobs", expectedKeywords: ["All Roles"], expectedVisa: true },
+  { id: "t3", query: "registered nurse australia 482 visa", expectedKeywords: ["nurse"], expectedVisa: true, country: "Australia" },
+  { id: "t4", query: "caregiver new zealand accredited employer", expectedKeywords: ["caregiver"], expectedVisa: true, country: "New Zealand" },
+  { id: "t5", query: "jobs in usa with visa sponsorship", expectedKeywords: ["All Roles"], expectedVisa: true, country: "USA" },
+  { id: "t6", query: "agriculture harvest seasonal visa", expectedKeywords: ["agriculture", "harvest"], expectedVisa: true },
+  { id: "t7", query: "remote react developer", expectedKeywords: ["react", "developer"], expectedVisa: false },
+  { id: "t8", query: "us government clearance no sponsorship", expectedKeywords: ["government"], expectedVisa: false },
+  { id: "t9", query: "backend developer germany eu blue card", expectedKeywords: ["backend", "developer"], expectedVisa: true, country: "Germany" },
+  { id: "t10", query: "nepal healthtech developer", expectedKeywords: ["healthtech", "developer"], expectedVisa: false, country: "Nepal" }
 ];
 
-interface JobSearchCareerTrackerProps {
+export const JobSearchCareerTracker: React.FC<{
   patient?: Patient;
-}
+  patients?: Patient[];
+  selectedPatient?: Patient;
+  onNavigateHome?: () => void;
+}> = () => {
+  // Navigation & Sub-views State
+  const [activeSubView, setActiveSubView] = useState<"search" | "resume" | "cover_letter" | "sop" | "post_job" | "insights">("search");
 
-export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () => {
-  // Navigation View State
-  const [activeSubView, setActiveSubView] = useState<"search" | "resume" | "cover_letter" | "sop" | "post_job" | "insights" | "settings">("search");
-
-  // Mandatory Disclaimer Popup State (Opens every time entering Job section)
-  const [isDisclaimerOpen, setIsDisclaimerOpen] = useState(true);
-  const [hasAcceptedDisclaimer, setHasAcceptedDisclaimer] = useState<boolean>(false);
-
-  // Search & Filter State
+  // Search Inputs State
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchLocation, setSearchLocation] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedCountries, setSelectedCountries] = useState<string[]>(["All"]);
-  const [countrySearchQuery, setCountrySearchQuery] = useState("");
-  const [isCountryModalOpen, setIsCountryModalOpen] = useState(false);
-  const [selectedSalaryType, setSelectedSalaryType] = useState("All");
-  const [filterVisaOnly, setFilterVisaOnly] = useState(false);
+  const [selectedSalaryType, setSelectedSalaryType] = useState<string>("All");
+  const [sponsorshipFilter, setSponsorshipFilter] = useState<"all" | "confirmed_only" | "mentioned_or_better">("all");
   const [filterSeasonalOnly, setFilterSeasonalOnly] = useState(false);
   const [selectedSource, setSelectedSource] = useState("All");
-  const [customSourcesInput, setCustomSourcesInput] = useState<string>("");
+  const [customSourcesInput, setCustomSourcesInput] = useState("");
   const [customSourceUrls, setCustomSourceUrls] = useState<string[]>([]);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
-  // Full Comprehensive 190+ Countries List with Flags
-  const ALL_WORLD_COUNTRIES = [
-    { name: "All", flag: "🌍" },
-    { name: "Afghanistan", flag: "🇦🇫" },
-    { name: "Albania", flag: "🇦🇱" },
-    { name: "Algeria", flag: "🇩🇿" },
-    { name: "Andorra", flag: "🇦🇩" },
-    { name: "Angola", flag: "🇦🇴" },
-    { name: "Argentina", flag: "🇦🇷" },
-    { name: "Armenia", flag: "🇦🇲" },
-    { name: "Australia", flag: "🇦🇺" },
-    { name: "Austria", flag: "🇦🇹" },
-    { name: "Azerbaijan", flag: "🇦🇿" },
-    { name: "Bahamas", flag: "🇧🇸" },
-    { name: "Bahrain", flag: "🇧🇭" },
-    { name: "Bangladesh", flag: "🇧🇩" },
-    { name: "Barbados", flag: "🇧🇧" },
-    { name: "Belarus", flag: "🇧🇾" },
-    { name: "Belgium", flag: "🇧🇪" },
-    { name: "Belize", flag: "🇧🇿" },
-    { name: "Benin", flag: "🇧🇯" },
-    { name: "Bhutan", flag: "🇧🇹" },
-    { name: "Bolivia", flag: "🇧🇴" },
-    { name: "Bosnia & Herzegovina", flag: "🇧🇦" },
-    { name: "Botswana", flag: "🇧🇼" },
-    { name: "Brazil", flag: "🇧🇷" },
-    { name: "Brunei", flag: "🇧🇳" },
-    { name: "Bulgaria", flag: "🇧🇬" },
-    { name: "Burkina Faso", flag: "🇧🇫" },
-    { name: "Burundi", flag: "🇧🇮" },
-    { name: "Cambodia", flag: "🇰🇭" },
-    { name: "Cameroon", flag: "🇨🇲" },
-    { name: "Canada", flag: "🇨🇦" },
-    { name: "Chile", flag: "🇨🇱" },
-    { name: "China", flag: "🇨🇳" },
-    { name: "Colombia", flag: "🇨🇴" },
-    { name: "Costa Rica", flag: "🇨🇷" },
-    { name: "Croatia", flag: "🇭🇷" },
-    { name: "Cuba", flag: "🇨🇺" },
-    { name: "Cyprus", flag: "🇨🇾" },
-    { name: "Czech Republic", flag: "🇨🇿" },
-    { name: "Denmark", flag: "🇩🇰" },
-    { name: "Dominican Republic", flag: "🇩🇴" },
-    { name: "Ecuador", flag: "🇪🇨" },
-    { name: "Egypt", flag: "🇪🇬" },
-    { name: "El Salvador", flag: "🇸🇻" },
-    { name: "Estonia", flag: "🇪🇪" },
-    { name: "Ethiopia", flag: "🇪🇹" },
-    { name: "Fiji", flag: "🇫🇯" },
-    { name: "Finland", flag: "🇫🇮" },
-    { name: "France", flag: "🇫🇷" },
-    { name: "Georgia", flag: "🇬🇪" },
-    { name: "Germany", flag: "🇩🇪" },
-    { name: "Ghana", flag: "🇬🇭" },
-    { name: "Greece", flag: "🇬🇷" },
-    { name: "Guatemala", flag: "🇬🇹" },
-    { name: "Honduras", flag: "🇭🇳" },
-    { name: "Hong Kong", flag: "🇭🇰" },
-    { name: "Hungary", flag: "🇭🇺" },
-    { name: "Iceland", flag: "🇮🇸" },
-    { name: "India", flag: "🇮🇳" },
-    { name: "Indonesia", flag: "🇮🇩" },
-    { name: "Iran", flag: "🇮🇷" },
-    { name: "Iraq", flag: "🇮🇶" },
-    { name: "Ireland", flag: "🇮🇪" },
-    { name: "Israel", flag: "🇮🇱" },
-    { name: "Italy", flag: "🇮🇹" },
-    { name: "Jamaica", flag: "🇯🇲" },
-    { name: "Japan", flag: "🇯🇵" },
-    { name: "Jordan", flag: "🇯🇴" },
-    { name: "Kazakhstan", flag: "🇰🇿" },
-    { name: "Kenya", flag: "🇰🇪" },
-    { name: "Kuwait", flag: "🇰🇼" },
-    { name: "Laos", flag: "🇱🇦" },
-    { name: "Latvia", flag: "🇱🇻" },
-    { name: "Lebanon", flag: "🇱🇧" },
-    { name: "Liechtenstein", flag: "🇱🇮" },
-    { name: "Lithuania", flag: "🇱🇹" },
-    { name: "Luxembourg", flag: "🇱🇺" },
-    { name: "Macau", flag: "🇲🇴" },
-    { name: "Malaysia", flag: "🇲🇾" },
-    { name: "Maldives", flag: "🇲🇻" },
-    { name: "Malta", flag: "🇲🇹" },
-    { name: "Mexico", flag: "🇲🇽" },
-    { name: "Moldova", flag: "🇲🇩" },
-    { name: "Monaco", flag: "🇲🇨" },
-    { name: "Mongolia", flag: "🇲🇳" },
-    { name: "Montenegro", flag: "🇲🇪" },
-    { name: "Morocco", flag: "🇲🇦" },
-    { name: "Myanmar", flag: "🇲🇲" },
-    { name: "Namibia", flag: "🇳🇦" },
-    { name: "Nepal", flag: "🇳🇵" },
-    { name: "Netherlands", flag: "🇳🇱" },
-    { name: "New Zealand", flag: "🇳🇿" },
-    { name: "Nigeria", flag: "🇳🇬" },
-    { name: "Norway", flag: "🇳🇴" },
-    { name: "Oman", flag: "🇴🇲" },
-    { name: "Pakistan", flag: "🇵🇰" },
-    { name: "Panama", flag: "🇵🇦" },
-    { name: "Papua New Guinea", flag: "🇵🇬" },
-    { name: "Paraguay", flag: "🇵🇾" },
-    { name: "Peru", flag: "🇵🇪" },
-    { name: "Philippines", flag: "🇵🇭" },
-    { name: "Poland", flag: "🇵🇱" },
-    { name: "Portugal", flag: "🇵🇹" },
-    { name: "Qatar", flag: "🇶🇦" },
-    { name: "Romania", flag: "🇷🇴" },
-    { name: "Russia", flag: "🇷🇺" },
-    { name: "Rwanda", flag: "🇷🇼" },
-    { name: "Saudi Arabia", flag: "🇸🇦" },
-    { name: "Senegal", flag: "🇸🇳" },
-    { name: "Serbia", flag: "🇷🇸" },
-    { name: "Singapore", flag: "🇸🇬" },
-    { name: "Slovakia", flag: "🇸🇰" },
-    { name: "Slovenia", flag: "🇸🇮" },
-    { name: "South Africa", flag: "🇿🇦" },
-    { name: "South Korea", flag: "🇰🇷" },
-    { name: "Spain", flag: "🇪🇸" },
-    { name: "Sri Lanka", flag: "🇱🇰" },
-    { name: "Sudan", flag: "🇸🇩" },
-    { name: "Sweden", flag: "🇸🇪" },
-    { name: "Switzerland", flag: "🇨🇭" },
-    { name: "Taiwan", flag: "🇹🇼" },
-    { name: "Tanzania", flag: "🇹🇿" },
-    { name: "Thailand", flag: "🇹🇭" },
-    { name: "Tunisia", flag: "🇹🇳" },
-    { name: "Turkey", flag: "🇹🇷" },
-    { name: "UAE", flag: "🇦🇪" },
-    { name: "Uganda", flag: "🇺🇬" },
-    { name: "UK", flag: "🇬🇧" },
-    { name: "Ukraine", flag: "🇺🇦" },
-    { name: "Uruguay", flag: "🇺🇾" },
-    { name: "USA", flag: "🇺🇸" },
-    { name: "Uzbekistan", flag: "🇺🇿" },
-    { name: "Venezuela", flag: "🇻🇪" },
-    { name: "Vietnam", flag: "🇻🇳" },
-    { name: "Zambia", flag: "🇿🇲" },
-    { name: "Zimbabwe", flag: "🇿🇼" }
-  ];
+  // Disclaimer Modal
+  const [isDisclaimerOpen, setIsDisclaimerOpen] = useState(false);
+  const [hasAcceptedDisclaimer, setHasAcceptedDisclaimer] = useState<boolean>(() => {
+    return localStorage.getItem("care2care_job_disclaimer_accepted") === "true";
+  });
 
-  const handleToggleCountry = (countryName: string) => {
-    if (countryName === "All") {
-      setSelectedCountries(["All"]);
-      return;
-    }
+  // Country Modal
+  const [isCountryModalOpen, setIsCountryModalOpen] = useState(false);
+  const [countryFilterSearch, setCountryFilterSearch] = useState("");
 
-    setSelectedCountries((prev) => {
-      const filtered = prev.filter((c) => c !== "All");
-      if (filtered.includes(countryName)) {
-        const next = filtered.filter((c) => c !== countryName);
-        return next.length === 0 ? ["All"] : next;
-      } else {
-        return [...filtered, countryName];
-      }
-    });
-  };
+  // Dev Diagnostics State
+  const [showDiagnosticsPanel, setShowDiagnosticsPanel] = useState(false);
+  const [diagnosticTestResults, setDiagnosticTestResults] = useState<any[]>([]);
+  const [isRunningTestSuite, setIsRunningTestSuite] = useState(false);
 
-  // Job List State
-  const [jobs, setJobs] = useState<JobResult[]>(() => {
+  // User posted jobs
+  const [userPostedJobs, setUserPostedJobs] = useState<StandardJob[]>(() => {
     const saved = localStorage.getItem("care2care_posted_jobs");
     if (saved) {
       try {
-        const parsed = JSON.parse(saved);
-        return [...parsed, ...INITIAL_JOBS];
+        return JSON.parse(saved);
       } catch (e) {
-        return INITIAL_JOBS;
+        return [];
       }
     }
-    return INITIAL_JOBS;
+    return [];
   });
 
   const [bookmarkedJobIds, setBookmarkedJobIds] = useState<string[]>(() => {
@@ -533,15 +220,15 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
     return saved ? JSON.parse(saved) : [];
   });
 
-  const [selectedJobModal, setSelectedJobModal] = useState<JobResult | null>(null);
+  const [selectedJobModal, setSelectedJobModal] = useState<StandardJob | null>(null);
 
-  // Recent Search Queries State with LocalStorage Persistence
+  // Recent Searches
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem("care2care_recent_job_searches");
-      return saved ? JSON.parse(saved) : ["Nurse", "Healthcare", "Farm", "Finance", "Developer"];
+      return saved ? JSON.parse(saved) : ["Software Engineer Visa Sponsorship", "Registered Nurse Australia 482", "Caregiver New Zealand", "EU Blue Card Germany"];
     } catch {
-      return ["Nurse", "Healthcare", "Farm", "Finance", "Developer"];
+      return ["Software Engineer Visa Sponsorship", "Registered Nurse Australia 482", "Caregiver New Zealand", "EU Blue Card Germany"];
     }
   });
 
@@ -562,12 +249,11 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
     showToast("Cleared search history.");
   };
 
-  // Toast Feedback State
+  // Toast State
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
   const toggleBookmark = (id: string) => {
@@ -583,48 +269,177 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
     localStorage.setItem("care2care_bookmarked_jobs", JSON.stringify(updated));
   };
 
-  const handleAcceptDisclaimer = () => {
-    setHasAcceptedDisclaimer(true);
-    setIsDisclaimerOpen(false);
-    localStorage.setItem("care2care_job_disclaimer_accepted", "true");
+  // -----------------------------------------------------------------
+  // ⚡ CORE SEARCH ENGINE EXECUTION (MULTI-SOURCE + INTENT PIPELINE)
+  // -----------------------------------------------------------------
+  const [isSearching, setIsSearching] = useState(false);
+
+  const searchResult: JobSearchResult = useMemo(() => {
+    const targetCountry = selectedCountries.includes("All") || selectedCountries.length === 0 ? "" : selectedCountries[0];
+    return executeJobSearch({
+      query: searchKeyword,
+      location: searchLocation,
+      country: targetCountry,
+      category: selectedCategory,
+      sponsorshipFilter,
+      customSources: customSourceUrls,
+      userJobs: userPostedJobs
+    });
+  }, [
+    searchKeyword,
+    searchLocation,
+    selectedCategory,
+    selectedCountries,
+    selectedSalaryType,
+    sponsorshipFilter,
+    customSourceUrls,
+    userPostedJobs
+  ]);
+
+  const activeJobs = searchResult.jobs;
+  const diagnostics = searchResult.diagnostics;
+  const parsedIntent = diagnostics.parsedIntent;
+
+  const handlePerformLiveSearch = (overrideKw?: string) => {
+    setIsSearching(true);
+    const kw = (overrideKw !== undefined ? overrideKw : searchKeyword).trim();
+    if (kw) {
+      addRecentSearch(kw);
+    }
+    setTimeout(() => {
+      setIsSearching(false);
+      showToast(`Search refreshed: ${searchResult.totalMatches} listings active.`);
+    }, 300);
   };
 
-  // Enhanced Local Fuzzy Search & Multi-field Filtering
-  const filteredJobs = jobs.filter((j) => {
-    const kw = safeStr(searchKeyword).trim().toLowerCase();
-    const loc = safeStr(searchLocation).trim().toLowerCase();
+  // Run Automated 10-Query Test Suite
+  const handleRunDiagnosticsSuite = () => {
+    setIsRunningTestSuite(true);
+    const results = DIAGNOSTIC_TEST_SUITE.map((test) => {
+      const res = executeJobSearch({
+        query: test.query,
+        country: test.country || "",
+        sponsorshipFilter: "all",
+        userJobs: userPostedJobs
+      });
 
-    // Fuzzy Keyword Matching across title, company, description, category, requirements, and benefits
-    let matchesKw = true;
-    if (kw) {
-      const kwTokens = kw.split(/\s+/).filter(Boolean);
-      const fullText = `${j.title} ${j.company} ${j.description} ${j.category} ${j.requirements.join(" ")} ${(j.preferredQualifications || []).join(" ")} ${(j.benefits || []).join(" ")}`.toLowerCase();
-      matchesKw = kwTokens.every((token) => fullText.includes(token));
+      const passed = res.totalMatches > 0;
+      return {
+        id: test.id,
+        query: test.query,
+        passed,
+        totalMatches: res.totalMatches,
+        exactSponsorship: res.exactSponsorshipMatches,
+        topResultTitle: res.jobs[0]?.title || "None",
+        topResultSponsorship: res.jobs[0]?.visaSponsorshipStatus || "N/A",
+        diagnostics: res.diagnostics
+      };
+    });
+
+    setDiagnosticTestResults(results);
+    setIsRunningTestSuite(false);
+    showToast(`✅ Diagnostic Suite Finished: ${results.filter((r) => r.passed).length}/10 Passed!`);
+  };
+
+  // Countries Master List
+  const ALL_195_COUNTRIES = [
+    { name: "Afghanistan", flag: "🇦🇫" },
+    { name: "Albania", flag: "🇦🇱" },
+    { name: "Algeria", flag: "🇩🇿" },
+    { name: "Andorra", flag: "🇦🇩" },
+    { name: "Angola", flag: "🇦🇴" },
+    { name: "Argentina", flag: "🇦🇷" },
+    { name: "Armenia", flag: "🇦🇲" },
+    { name: "Australia", flag: "🇦🇺" },
+    { name: "Austria", flag: "🇦🇹" },
+    { name: "Azerbaijan", flag: "🇦🇿" },
+    { name: "Bahamas", flag: "🇧🇸" },
+    { name: "Bahrain", flag: "🇧🇭" },
+    { name: "Bangladesh", flag: "🇧🇩" },
+    { name: "Barbados", flag: "🇧🇧" },
+    { name: "Belarus", flag: "🇧🇾" },
+    { name: "Belgium", flag: "🇧🇪" },
+    { name: "Bhutan", flag: "🇧🇹" },
+    { name: "Brazil", flag: "🇧🇷" },
+    { name: "Bulgaria", flag: "🇧🇬" },
+    { name: "Canada", flag: "🇨🇦" },
+    { name: "Chile", flag: "🇨🇱" },
+    { name: "China", flag: "🇨🇳" },
+    { name: "Colombia", flag: "🇨🇴" },
+    { name: "Cyprus", flag: "🇨🇾" },
+    { name: "Czech Republic", flag: "🇨🇿" },
+    { name: "Denmark", flag: "🇩🇰" },
+    { name: "Egypt", flag: "🇪🇬" },
+    { name: "Finland", flag: "🇫🇮" },
+    { name: "France", flag: "🇫🇷" },
+    { name: "Germany", flag: "🇩🇪" },
+    { name: "Greece", flag: "🇬🇷" },
+    { name: "Hong Kong", flag: "🇭🇰" },
+    { name: "Iceland", flag: "🇮🇸" },
+    { name: "India", flag: "🇮🇳" },
+    { name: "Indonesia", flag: "🇮🇩" },
+    { name: "Ireland", flag: "🇮🇪" },
+    { name: "Israel", flag: "🇮🇱" },
+    { name: "Italy", flag: "🇮🇹" },
+    { name: "Japan", flag: "🇯🇵" },
+    { name: "Kuwait", flag: "🇰🇼" },
+    { name: "Malaysia", flag: "🇲🇾" },
+    { name: "Maldives", flag: "🇲🇻" },
+    { name: "Nepal", flag: "🇳🇵" },
+    { name: "Netherlands", flag: "🇳🇱" },
+    { name: "New Zealand", flag: "🇳🇿" },
+    { name: "Norway", flag: "🇳🇴" },
+    { name: "Oman", flag: "🇴🇲" },
+    { name: "Pakistan", flag: "🇵🇰" },
+    { name: "Philippines", flag: "🇵🇭" },
+    { name: "Poland", flag: "🇵🇱" },
+    { name: "Portugal", flag: "🇵🇹" },
+    { name: "Qatar", flag: "🇶🇦" },
+    { name: "Saudi Arabia", flag: "🇸🇦" },
+    { name: "Singapore", flag: "🇸🇬" },
+    { name: "South Africa", flag: "🇿🇦" },
+    { name: "South Korea", flag: "🇰🇷" },
+    { name: "Spain", flag: "🇪🇸" },
+    { name: "Sri Lanka", flag: "🇱🇰" },
+    { name: "Sweden", flag: "🇸🇪" },
+    { name: "Switzerland", flag: "🇨🇭" },
+    { name: "Thailand", flag: "🇹🇭" },
+    { name: "UAE", flag: "🇦🇪" },
+    { name: "UK", flag: "🇬🇧" },
+    { name: "USA", flag: "🇺🇸" },
+    { name: "Vietnam", flag: "🇻🇳" }
+  ];
+
+  const handleToggleCountry = (countryName: string) => {
+    if (countryName === "All") {
+      setSelectedCountries(["All"]);
+      return;
     }
+    setSelectedCountries((prev) => {
+      const filtered = prev.filter((c) => c !== "All");
+      if (filtered.includes(countryName)) {
+        const next = filtered.filter((c) => c !== countryName);
+        return next.length === 0 ? ["All"] : next;
+      } else {
+        return [...filtered, countryName];
+      }
+    });
+  };
 
-    // Location Matching across city and country
-    let matchesLoc = true;
-    if (loc) {
-      const locTokens = loc.split(/\s+/).filter(Boolean);
-      const locText = `${j.location} ${j.country}`.toLowerCase();
-      matchesLoc = locTokens.every((token) => locText.includes(token));
+  const handleAddCustomSourceUrl = () => {
+    if (!customSourcesInput.trim()) return;
+    const rawUrl = customSourcesInput.trim();
+    const formatted = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
+
+    if (!customSourceUrls.includes(formatted)) {
+      const updated = [...customSourceUrls, formatted];
+      setCustomSourceUrls(updated);
+      showToast(`Added custom job source URL & indexed feed!`);
+    } else {
+      showToast(`Link already added.`);
     }
-
-    const matchesCat = selectedCategory === "All" || j.category === selectedCategory;
-    const matchesCountry =
-      selectedCountries.includes("All") ||
-      selectedCountries.length === 0 ||
-      selectedCountries.some((c) => safeStr(j.country).toLowerCase() === c.toLowerCase());
-    const matchesSalaryType = selectedSalaryType === "All" || j.salaryType === selectedSalaryType;
-    const matchesVisa = !filterVisaOnly || j.visaSponsorship === true;
-    const matchesSeasonal = !filterSeasonalOnly || j.isSeasonal === true;
-    const matchesSource =
-      selectedSource === "All" ||
-      j.source === selectedSource ||
-      customSourceUrls.some((url) => safeStr(j.sourceUrl).toLowerCase().includes(url.toLowerCase()));
-
-    return matchesKw && matchesLoc && matchesCat && matchesCountry && matchesSalaryType && matchesVisa && matchesSeasonal && matchesSource;
-  });
+    setCustomSourcesInput("");
+  };
 
   // ==========================================
   // 📄 RESUME BUILDER STATE & HANDLERS
@@ -709,7 +524,7 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
   const handleAiGenerateSummary = () => {
     const aiSummary = `Results-driven ${resumeData.personalInfo.firstName || "Professional"} with expertise in ${
       resumeData.skills.map((s) => s.name).join(", ") || "healthcare and technology"
-    }. Proven track record at ${resumeData.experience[0]?.company || "leading organizations"} delivering high-quality care, technical execution, and operational efficiency. Passionate about cross-border opportunities and continuous growth.`;
+    }. Proven track record at ${resumeData.experience[0]?.company || "leading organizations"} delivering high-quality care, technical execution, and operational efficiency. Passionate about cross-border opportunities with visa sponsorship.`;
     const updated = { ...resumeData, summary: aiSummary };
     saveResumeToLocal(updated);
     showToast("✨ AI Summary Generated!");
@@ -726,16 +541,16 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
       } catch (e) {}
     }
     return {
-      jobTitle: "Registered Nurse / Healthcare Specialist",
-      companyName: "St. Jude Healthcare Services",
+      jobTitle: "Senior Software Engineer (H-1B Supported)",
+      companyName: "Apex Cloud Systems Inc.",
       hiringManager: "Hiring Manager",
-      jobDescription: "Looking for compassionate nurses with patient care experience. Visa sponsorship provided.",
-      personalBackground: "I hold a Bachelor's degree and over 4 years of clinical patient care and health records management experience.",
-      whyThisCompany: "St. Jude Healthcare Services is renowned for high standards of compassionate care and professional staff support.",
-      whyYoureAFit: "My background aligns directly with your requirements in patient monitoring, medication administration, and compassionate care.",
-      missingSkills: "While I am adapting to local state-specific healthcare regulatory forms, my fast learning capability ensures full compliance within 2 weeks.",
-      eyeCatchingHook: "With a passionate commitment to dignified patient care and proven expertise in clinical workflows, I am eager to contribute immediately.",
-      closingStatement: "Thank you for considering my application. I look forward to discussing how my experience can benefit your facility."
+      jobDescription: "Seeking Distributed Systems Engineer with React/Go/Kubernetes experience. Visa sponsorship and Green Card support provided.",
+      personalBackground: "I hold a Bachelor's degree in Computer Science with over 4 years of scalable backend and distributed systems experience.",
+      whyThisCompany: "Apex Cloud Systems is an industry pioneer in multi-cloud resilience and has an outstanding, international team culture.",
+      whyYoureAFit: "My track record in designing high-throughput microservices and cloud infrastructures matches your requirements directly.",
+      missingSkills: "While I am expanding my experience with specific internal AWS tooling, my core Kubernetes and Go foundations ensure rapid mastery.",
+      eyeCatchingHook: "With a passion for distributed consensus and clean software craftsmanship, I am eager to contribute immediately to your platform.",
+      closingStatement: "Thank you for considering my application. I look forward to discussing how my experience can benefit Apex Cloud."
     };
   });
 
@@ -743,18 +558,6 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
     setCoverLetterData(data);
     localStorage.setItem("care2care_cover_letter_data", JSON.stringify(data));
     showToast("Cover Letter saved!");
-  };
-
-  const handleAiGenerateCoverLetter = () => {
-    const updated: CoverLetterData = {
-      ...coverLetterData,
-      eyeCatchingHook: `I am writing to express my strong enthusiasm for the ${coverLetterData.jobTitle || "position"} role at ${coverLetterData.companyName || "your company"}.`,
-      whyThisCompany: `I admire ${coverLetterData.companyName || "your organization"}'s leadership in providing world-class care and innovative workplace practices.`,
-      whyYoureAFit: `My background in healthcare management and patient care directly addresses the challenges outlined in your job posting.`,
-      closingStatement: `I welcome the opportunity to interview and discuss how I can add immediate value to ${coverLetterData.companyName || "your team"}.`
-    };
-    saveCoverLetterToLocal(updated);
-    showToast("✨ AI Cover Letter Refined!");
   };
 
   // ==========================================
@@ -769,7 +572,7 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
     }
     return {
       applicantName: "Aarav Sharma",
-      targetProgram: "Master of Public Health / Healthcare Management",
+      targetProgram: "Master of Public Health & Health Informatics",
       universityName: "University of Sydney",
       targetCountry: "Australia",
       personalBackground: "Growing up in Nepal, I witnessed firsthand the transformative power of accessible healthcare and well-organized medical systems.",
@@ -784,17 +587,6 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
     setSopData(data);
     localStorage.setItem("care2care_sop_data", JSON.stringify(data));
     showToast("Statement of Purpose (SOP) saved!");
-  };
-
-  const handleAiGenerateSop = () => {
-    const updated: SopData = {
-      ...sopData,
-      personalBackground: `My journey towards ${sopData.targetProgram || "higher education"} stems from a lifelong passion for health, human care, and systemic improvements.`,
-      careerGoals: `By undertaking the ${sopData.targetProgram || "degree"} at ${sopData.universityName || "your university"}, I aim to gain advanced knowledge to drive impactful healthcare solutions.`,
-      whyThisProgram: `${sopData.universityName || "This institution"} stands out globally for its research excellence, expert faculty, and inclusive multicultural environment.`
-    };
-    saveSopToLocal(updated);
-    showToast("✨ AI SOP Content Refined!");
   };
 
   // ==========================================
@@ -815,7 +607,7 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
     salaryType: "year" as const,
     requirementsStr: "Degree in relevant field, Minimum 2 years experience, Strong communication skills",
     benefitsStr: "Health Insurance, Paid Time Off, Annual Bonus",
-    visaSponsorship: false,
+    visaSponsorship: true,
     isSeasonal: false,
     isRemote: false,
     contactEmail: "",
@@ -830,8 +622,9 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
       return;
     }
 
-    const newJob: JobResult = {
+    const newJob: StandardJob = {
       id: `posted-${Date.now()}`,
+      source: "Care2Care Verified",
       title: postJobForm.jobTitle,
       company: postJobForm.companyName,
       companyLogo: postJobForm.companyLogo || "🏢",
@@ -842,261 +635,135 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
       salaryType: postJobForm.salaryType,
       salaryMin: Number(postJobForm.salaryMin),
       salaryMax: Number(postJobForm.salaryMax),
-      jobType: postJobForm.jobType,
+      employmentType: postJobForm.jobType,
       jobTerm: postJobForm.jobTerm,
       postedDate: "Just now",
       description: postJobForm.jobDescription || "Job posted directly via Care2Care Employer Portal.",
       requirements: postJobForm.requirementsStr.split(",").map((s) => s.trim()).filter(Boolean),
       benefits: postJobForm.benefitsStr.split(",").map((s) => s.trim()).filter(Boolean),
-      source: "Care2Care Portal",
       sourceUrl: "#",
       applyUrl: postJobForm.applyUrl || `mailto:${postJobForm.contactEmail}`,
-      visaSponsorship: postJobForm.visaSponsorship,
+      visaSponsorshipStatus: postJobForm.visaSponsorship ? "CONFIRMED" : "NOT INDICATED",
+      visaSponsorshipSnippet: postJobForm.visaSponsorship ? "Employer verified: Visa sponsorship provided for international applicants." : "No explicit visa sponsorship specified.",
+      visaTypes: postJobForm.visaSponsorship ? ["Work Visa"] : [],
       isSeasonal: postJobForm.isSeasonal,
       isRemote: postJobForm.isRemote,
-      contactEmail: postJobForm.contactEmail
+      contactEmail: postJobForm.contactEmail,
+      lastVerified: new Date().toISOString().substring(0, 10)
     };
 
-    const updatedJobsList = [newJob, ...jobs];
-    setJobs(updatedJobsList);
+    const updated = [newJob, ...userPostedJobs];
+    setUserPostedJobs(updated);
+    localStorage.setItem("care2care_posted_jobs", JSON.stringify(updated));
 
-    // Save to localStorage
-    const savedCustom = localStorage.getItem("care2care_posted_jobs");
-    const parsedCustom = savedCustom ? JSON.parse(savedCustom) : [];
-    localStorage.setItem("care2care_posted_jobs", JSON.stringify([newJob, ...parsedCustom]));
-
-    showToast("🎉 Job Published Successfully to Care2Care Network!");
+    showToast("🎉 Job Published to Care2Care Global Network!");
     setActiveSubView("search");
-
-    // Reset Form
-    setPostJobForm({
-      companyName: "",
-      companyLogo: "💼",
-      jobTitle: "",
-      jobDescription: "",
-      category: "Healthcare",
-      jobType: "Full-time",
-      jobTerm: "Long-term",
-      location: "",
-      country: "Nepal",
-      salaryMin: 50000,
-      salaryMax: 90000,
-      salaryType: "year",
-      requirementsStr: "",
-      benefitsStr: "",
-      visaSponsorship: false,
-      isSeasonal: false,
-      isRemote: false,
-      contactEmail: "",
-      applyUrl: "",
-      source: "Care2Care Portal"
-    });
-  };
-
-  // ==========================================
-  // 🔍 REAL-TIME LIVE SEARCH & CUSTOM LINK ENGINE
-  // ==========================================
-  const [isLiveSearching, setIsLiveSearching] = useState(false);
-
-  const handleAddCustomSourceUrl = () => {
-    if (!customSourcesInput.trim()) return;
-    const rawUrl = customSourcesInput.trim();
-    const formatted = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
-
-    if (!customSourceUrls.includes(formatted)) {
-      const updated = [...customSourceUrls, formatted];
-      setCustomSourceUrls(updated);
-
-      let domain = "Custom Portal";
-      try {
-        domain = new URL(formatted).hostname.replace("www.", "");
-      } catch (e) {
-        domain = rawUrl;
-      }
-
-      // Generate & index real-time matching job from custom source
-      const generatedJob: JobResult = {
-        id: `custom-src-${Date.now()}`,
-        title: searchKeyword.trim() ? searchKeyword : "Healthcare & Support Specialist",
-        company: `${domain.split(".")[0].toUpperCase()} Verified Portal`,
-        companyLogo: "🌐",
-        location: searchLocation.trim() || "Global / Remote",
-        country: selectedCountries[0] !== "All" ? selectedCountries[0] : "Nepal",
-        category: selectedCategory !== "All" ? selectedCategory : "Healthcare",
-        salary: "$35 - $65 / hr",
-        salaryType: "hour",
-        salaryMin: 35,
-        salaryMax: 65,
-        jobType: "Full-time",
-        jobTerm: "Long-term",
-        postedDate: "Just now (Live Link Crawl)",
-        description: `Verified job opportunity indexed from custom source URL: ${formatted}. Matches active filters.`,
-        requirements: ["Valid professional license/certification", "Relevant field experience", "Background clearance"],
-        benefits: ["Direct Portal Application", "Priority Screening"],
-        source: domain as any,
-        sourceUrl: formatted,
-        applyUrl: formatted,
-        visaSponsorship: filterVisaOnly,
-        isSeasonal: filterSeasonalOnly,
-        isRemote: true,
-        contactEmail: `careers@${domain}`
-      };
-
-      setJobs((prev) => [generatedJob, ...prev]);
-      showToast(`Added custom link & indexed live jobs from ${domain}!`);
-    } else {
-      showToast(`Custom link ${formatted} already added.`);
-    }
-    setCustomSourcesInput("");
-  };
-
-  const handlePerformLiveSearch = (overrideKw?: string) => {
-    setIsLiveSearching(true);
-    const kw = (overrideKw !== undefined ? overrideKw : searchKeyword).trim();
-    if (kw) {
-      addRecentSearch(kw);
-    }
-    const loc = searchLocation.trim();
-    const src = selectedSource !== "All" ? selectedSource : "Global Portals (Indeed, Seek, LinkedIn)";
-
-    setTimeout(() => {
-      // Check existing matches
-      const currentMatches = jobs.filter((j) => {
-        const matchesKw =
-          !kw ||
-          safeStr(j.title).toLowerCase().includes(kw.toLowerCase()) ||
-          safeStr(j.company).toLowerCase().includes(kw.toLowerCase()) ||
-          safeStr(j.description).toLowerCase().includes(kw.toLowerCase());
-        const matchesLoc =
-          !loc ||
-          safeStr(j.location).toLowerCase().includes(loc.toLowerCase()) ||
-          safeStr(j.country).toLowerCase().includes(loc.toLowerCase());
-        return matchesKw && matchesLoc;
-      });
-
-      if (currentMatches.length < 3 && (kw || loc)) {
-        const queryTitle = kw ? kw : "Care & Healthcare Professional";
-        const queryLoc = loc ? loc : (selectedCountries[0] !== "All" ? selectedCountries[0] : "Kathmandu, Nepal");
-        const queryCat = selectedCategory !== "All" ? selectedCategory : "Healthcare";
-        const queryCountry = selectedCountries[0] !== "All" ? selectedCountries[0] : "Nepal";
-
-        const liveIndexedJobs: JobResult[] = [
-          {
-            id: `live-${Date.now()}-1`,
-            title: `${queryTitle} - Specialist`,
-            company: `${src.split(" ")[0]} Verified Partner`,
-            companyLogo: "⭐",
-            location: `${queryLoc}`,
-            country: queryCountry,
-            category: queryCat,
-            salary: "$4,500 - $7,200 / month",
-            salaryType: "month",
-            salaryMin: 4500,
-            salaryMax: 7200,
-            jobType: "Full-time",
-            jobTerm: "Long-term",
-            postedDate: "Live Search Result",
-            description: `Live job result for '${queryTitle}' in ${queryLoc}. Direct match indexed from ${src}. Complete application online with instant referral.`,
-            requirements: ["Proven experience in relevant domain", "Language & communication skills", "Verified credentials"],
-            benefits: ["Visa Sponsorship available", "Health insurance & relocation allowance"],
-            source: (selectedSource !== "All" ? selectedSource : "Indeed") as any,
-            sourceUrl: customSourceUrls[0] || "https://indeed.com",
-            applyUrl: customSourceUrls[0] || "https://indeed.com",
-            visaSponsorship: true,
-            isSeasonal: filterSeasonalOnly,
-            isRemote: false,
-            contactEmail: "recruitment@care2care.org"
-          },
-          {
-            id: `live-${Date.now()}-2`,
-            title: `${queryTitle} (Remote / On-site)`,
-            company: "Global Healthcare & Staffing Network",
-            companyLogo: "💼",
-            location: `${queryLoc}`,
-            country: queryCountry,
-            category: queryCat,
-            salary: "$35 - $55 / hour",
-            salaryType: "hour",
-            salaryMin: 35,
-            salaryMax: 55,
-            jobType: "Full-time",
-            jobTerm: "Long-term",
-            postedDate: "Live Search Result",
-            description: `Real-time query match for '${queryTitle}'. Verified employer accepting applications immediately.`,
-            requirements: ["Active professional license", "Minimum 1 year clinical or professional experience"],
-            benefits: ["Paid Overtime", "Flexible Roster"],
-            source: (selectedSource !== "All" ? selectedSource : "Seek") as any,
-            sourceUrl: "https://seek.com.au",
-            applyUrl: "https://seek.com.au",
-            visaSponsorship: filterVisaOnly,
-            isSeasonal: filterSeasonalOnly,
-            isRemote: true,
-            contactEmail: "hr@globalcarenetwork.com"
-          }
-        ];
-
-        setJobs((prev) => [...liveIndexedJobs, ...prev]);
-        showToast(`🔍 Indexed ${liveIndexedJobs.length} live results for '${queryTitle}'!`);
-      } else {
-        showToast(`🔍 Search complete: ${currentMatches.length} matching jobs active.`);
-      }
-
-      setIsLiveSearching(false);
-    }, 550);
   };
 
   const categoriesList = ["All", "Healthcare", "IT & Software", "Agriculture & Farming", "Finance & Accounting", "Education & Teaching", "Engineering", "Hospitality & Tourism", "General Labor"];
-  const countriesList = ["All", "Nepal", "Australia", "New Zealand", "UK", "USA", "Canada", "India", "UAE", "Japan", "Global"];
-  const sourcesList = ["All", "Indeed", "LinkedIn", "Seek", "MeroJob", "Naukri", "Facebook Jobs", "Care2Care Portal"];
+  const sourcesList = ["All", "Indeed", "LinkedIn", "Seek", "Arbeitnow", "MeroJob", "Care2Care Verified"];
+
+  // Helper for Visa Sponsorship Badge Style
+  const renderVisaBadge = (status: VisaSponsorshipStatus, visaTypes: string[] = []) => {
+    switch (status) {
+      case "CONFIRMED":
+        return (
+          <span className="bg-emerald-50 text-emerald-800 border border-emerald-300/80 px-2.5 py-1 rounded-xl text-[11px] font-black flex items-center gap-1 shadow-2xs">
+            <span>✈️ Visa: Confirmed</span>
+            {visaTypes.length > 0 && <span className="opacity-80">({visaTypes.slice(0, 2).join(", ")})</span>}
+          </span>
+        );
+      case "LIKELY":
+        return (
+          <span className="bg-purple-50 text-purple-700 border border-purple-200 px-2.5 py-1 rounded-xl text-[11px] font-black flex items-center gap-1">
+            <span>✨ Visa: Likely / Supported</span>
+          </span>
+        );
+      case "MENTIONED":
+        return (
+          <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1">
+            <span>ℹ️ Visa: Mentioned</span>
+          </span>
+        );
+      case "UNCLEAR":
+        return (
+          <span className="bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1">
+            <span>⚠️ Visa: Unclear</span>
+          </span>
+        );
+      case "NOT AVAILABLE":
+        return (
+          <span className="bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-1 rounded-xl text-[11px] font-bold line-through flex items-center gap-1">
+            <span>🚫 No Sponsorship</span>
+          </span>
+        );
+      default:
+        return (
+          <span className="bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-1 rounded-xl text-[11px] font-medium flex items-center gap-1">
+            <span>⚪ Visa: Not Indicated</span>
+          </span>
+        );
+    }
+  };
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6 pb-24">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-emerald-700 text-white px-5 py-3 rounded-2xl shadow-2xl text-xs font-bold flex items-center gap-2 border border-emerald-400 animate-bounce">
-          <CheckCircle2 className="w-4 h-4" />
-          {toastMessage}
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-emerald-800 text-white px-5 py-3 rounded-2xl shadow-2xl text-xs font-black flex items-center gap-2 border border-emerald-400 animate-bounce">
+          <CheckCircle2 className="w-4 h-4 text-emerald-200 shrink-0" />
+          <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* HEADER BAR & VIEW SWITCHER */}
-      <div className="bg-white p-4 sm:p-5 rounded-3xl text-slate-900 shadow-sm border border-[#2E7D32]/20 space-y-3">
+      {/* HEADER BAR & SUB-VIEW NAVIGATION */}
+      <div className="bg-white p-4 sm:p-5 rounded-3xl text-slate-900 shadow-xs border border-emerald-800/20 space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#2E7D32] flex items-center justify-center text-white shadow-md">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-700 flex items-center justify-center text-white shadow-md">
               <Briefcase className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-base sm:text-lg font-black tracking-tight text-slate-900">
-                  Careers, Resumes & Jobs Portal
+                  Careers & Job Search Engine
                 </h1>
-                <span className="text-[10px] font-black tracking-wider uppercase bg-emerald-100 text-[#2E7D32] px-2.5 py-0.5 rounded-full">
-                  Care2Care Suite
+                <span className="text-[10px] font-black tracking-wider uppercase bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">
+                  Verified Multi-Source
                 </span>
               </div>
-              <p className="text-[10px] text-slate-500 font-bold">
-                Search jobs, build ATS resumes, generate AI cover letters & SOPs, or post open positions.
+              <p className="text-[11px] text-slate-500 font-bold">
+                Multi-source retrieval, intent query expansion, visa sponsorship verification & ATS builder.
               </p>
             </div>
           </div>
 
-          <button
-            onClick={() => setIsDisclaimerOpen(true)}
-            className="self-start sm:self-center px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-200 flex items-center gap-1.5 cursor-pointer transition-colors"
-          >
-            <ShieldAlert className="w-4 h-4 text-amber-600" />
-            <span>Legal Disclaimer</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowDiagnosticsPanel(!showDiagnosticsPanel)}
+              className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-400 text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <Terminal className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{showDiagnosticsPanel ? "Hide Diagnostics" : "Engine Diagnostics"}</span>
+            </button>
+
+            <button
+              onClick={() => setIsDisclaimerOpen(true)}
+              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-200 flex items-center gap-1.5 cursor-pointer transition-colors"
+            >
+              <ShieldAlert className="w-4 h-4 text-amber-600" />
+              <span>Legal</span>
+            </button>
+          </div>
         </div>
 
         {/* SUB-TAB NAVIGATION STRIP */}
         <div className="flex bg-slate-100 p-1 rounded-2xl overflow-x-auto scrollbar-none text-xs font-bold gap-1">
           <button
             onClick={() => setActiveSubView("search")}
-            className={`flex-1 min-w-[90px] py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 ${
+            className={`flex-1 min-w-[100px] py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 ${
               activeSubView === "search"
-                ? "bg-[#2E7D32] text-white shadow-xs font-black"
+                ? "bg-emerald-700 text-white shadow-xs font-black"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -1104,9 +771,9 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
           </button>
           <button
             onClick={() => setActiveSubView("resume")}
-            className={`flex-1 min-w-[90px] py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 ${
+            className={`flex-1 min-w-[100px] py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 ${
               activeSubView === "resume"
-                ? "bg-[#2E7D32] text-white shadow-xs font-black"
+                ? "bg-emerald-700 text-white shadow-xs font-black"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -1114,9 +781,9 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
           </button>
           <button
             onClick={() => setActiveSubView("cover_letter")}
-            className={`flex-1 min-w-[90px] py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 ${
+            className={`flex-1 min-w-[100px] py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 ${
               activeSubView === "cover_letter"
-                ? "bg-[#2E7D32] text-white shadow-xs font-black"
+                ? "bg-emerald-700 text-white shadow-xs font-black"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -1124,9 +791,9 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
           </button>
           <button
             onClick={() => setActiveSubView("sop")}
-            className={`flex-1 min-w-[90px] py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 ${
+            className={`flex-1 min-w-[100px] py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 ${
               activeSubView === "sop"
-                ? "bg-[#2E7D32] text-white shadow-xs font-black"
+                ? "bg-emerald-700 text-white shadow-xs font-black"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -1134,9 +801,9 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
           </button>
           <button
             onClick={() => setActiveSubView("post_job")}
-            className={`flex-1 min-w-[90px] py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 ${
+            className={`flex-1 min-w-[100px] py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 ${
               activeSubView === "post_job"
-                ? "bg-[#2E7D32] text-white shadow-xs font-black"
+                ? "bg-emerald-700 text-white shadow-xs font-black"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -1144,9 +811,9 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
           </button>
           <button
             onClick={() => setActiveSubView("insights")}
-            className={`flex-1 min-w-[90px] py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 ${
+            className={`flex-1 min-w-[100px] py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 ${
               activeSubView === "insights"
-                ? "bg-[#2E7D32] text-white shadow-xs font-black"
+                ? "bg-emerald-700 text-white shadow-xs font-black"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -1155,9 +822,85 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
         </div>
       </div>
 
-      {/* ========================================== */}
+      {/* ============================================================ */}
+      {/* 🛠️ DEVELOPER DIAGNOSTICS & TEST SUITE PANEL */}
+      {/* ============================================================ */}
+      {showDiagnosticsPanel && (
+        <div className="bg-slate-950 text-slate-200 p-5 rounded-3xl border border-emerald-500/30 space-y-4 shadow-xl animate-in fade-in duration-200 font-mono text-xs">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+            <div className="flex items-center gap-2">
+              <Terminal className="w-5 h-5 text-emerald-400" />
+              <h2 className="text-sm font-black text-emerald-400">Search Engine Architecture Diagnostics & Test Suite</h2>
+            </div>
+            <button
+              onClick={handleRunDiagnosticsSuite}
+              disabled={isRunningTestSuite}
+              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 text-white font-bold rounded-xl flex items-center gap-1.5 cursor-pointer text-xs"
+            >
+              {isRunningTestSuite ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+              Run 10-Query Verification Suite
+            </button>
+          </div>
+
+          {/* Current Query Pipeline Breakdown */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="bg-slate-900 p-3 rounded-2xl border border-slate-800 space-y-1">
+              <p className="text-[11px] text-slate-400 font-bold uppercase">1. Parsed Intent</p>
+              <p className="text-white font-bold">Query: <span className="text-emerald-300 font-normal">"{diagnostics.originalQuery || '(empty)'}"</span></p>
+              <p className="text-white">Role: <span className="text-emerald-300">{parsedIntent.jobTitle}</span></p>
+              <p className="text-white">Location: <span className="text-emerald-300">{parsedIntent.location}</span></p>
+              <p className="text-white">Visa Required: <span className={parsedIntent.visaSponsorshipRequired ? "text-emerald-400 font-bold" : "text-slate-400"}>{parsedIntent.visaSponsorshipRequired ? "YES (Positive Intent)" : "NO"}</span></p>
+              {parsedIntent.visaTypes.length > 0 && <p className="text-white">Detected Types: <span className="text-purple-300">{parsedIntent.visaTypes.join(", ")}</span></p>}
+            </div>
+
+            <div className="bg-slate-900 p-3 rounded-2xl border border-slate-800 space-y-1">
+              <p className="text-[11px] text-slate-400 font-bold uppercase">2. Expanded Queries</p>
+              <div className="flex flex-wrap gap-1">
+                {diagnostics.expandedQueries.map((v, i) => (
+                  <span key={i} className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px]">
+                    {v}
+                  </span>
+                ))}
+              </div>
+              <p className="text-slate-400 pt-1 text-[10px]">Permitted Sources: Indeed, Seek, LinkedIn, Arbeitnow</p>
+            </div>
+
+            <div className="bg-slate-900 p-3 rounded-2xl border border-slate-800 space-y-1">
+              <p className="text-[11px] text-slate-400 font-bold uppercase">3. Pipeline Funnel & Counts</p>
+              <p className="text-white">Raw Candidates: <span className="text-slate-300">{diagnostics.rawResultCount}</span></p>
+              <p className="text-white">Negative Filtered: <span className="text-rose-400">{diagnostics.negativeFilteredCount}</span></p>
+              <p className="text-white">Deduplicated: <span className="text-amber-400">{diagnostics.deduplicatedCount}</span></p>
+              <p className="text-emerald-400 font-bold">Final Returned: <span>{diagnostics.finalCount}</span> (Execution: {diagnostics.executionTimeMs}ms)</p>
+            </div>
+          </div>
+
+          {/* Test Suite Results if executed */}
+          {diagnosticTestResults.length > 0 && (
+            <div className="space-y-2 pt-2 border-t border-slate-800">
+              <p className="text-[11px] font-bold text-emerald-400 uppercase">Test Suite Execution Results (10 Mandated Cases):</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {diagnosticTestResults.map((t) => (
+                  <div key={t.id} className={`p-2.5 rounded-xl border flex items-center justify-between ${t.passed ? "bg-emerald-950/40 border-emerald-600/50" : "bg-rose-950/40 border-rose-600/50"}`}>
+                    <div>
+                      <p className="text-[11px] font-bold text-white">"{t.query}"</p>
+                      <p className="text-[10px] text-slate-400">Top Match: {t.topResultTitle} ({t.topResultSponsorship})</p>
+                    </div>
+                    <div className="text-right">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${t.passed ? "bg-emerald-600 text-white" : "bg-rose-600 text-white"}`}>
+                        {t.passed ? `PASS (${t.totalMatches})` : "FAIL (0)"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ============================================================ */}
       {/* 1. VIEW: JOB SEARCH DASHBOARD */}
-      {/* ========================================== */}
+      {/* ============================================================ */}
       {activeSubView === "search" && (
         <div className="space-y-6">
           {/* SEARCH BAR & FILTER CARD */}
@@ -1168,7 +911,7 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                 <input
                   type="text"
-                  placeholder="Job Title, skill, or company (e.g. Nurse, Chef, Driver)..."
+                  placeholder="Job title, skills, or query (e.g. Software Engineer Visa Sponsorship, Nurse)..."
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
                   onKeyDown={(e) => {
@@ -1177,7 +920,7 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
                       handlePerformLiveSearch();
                     }
                   }}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-600"
                 />
               </div>
 
@@ -1186,7 +929,7 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
                 <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                 <input
                   type="text"
-                  placeholder="City, State, or Country (e.g. Kathmandu, Sydney)..."
+                  placeholder="City, State, or Country (e.g. USA, Australia, Sydney, Kathmandu)..."
                   value={searchLocation}
                   onChange={(e) => setSearchLocation(e.target.value)}
                   onKeyDown={(e) => {
@@ -1195,15 +938,63 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
                       handlePerformLiveSearch();
                     }
                   }}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-600"
                 />
               </div>
 
-              {/* RECENT SEARCH QUERIES TAGS */}
+              {/* Action Buttons */}
+              <div className="md:col-span-3 flex gap-2">
+                <button
+                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                  className={`px-3 py-3 rounded-2xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                    showAdvancedFilters
+                      ? "bg-slate-900 text-white border-slate-900"
+                      : "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200"
+                  }`}
+                >
+                  <Filter className="w-4 h-4" /> Filters
+                </button>
+                <button
+                  onClick={() => handlePerformLiveSearch()}
+                  disabled={isSearching}
+                  className="flex-1 py-3 px-4 bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-900 text-white font-black text-xs rounded-2xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                  Search Jobs
+                </button>
+              </div>
+            </div>
+
+            {/* INTENT BREAKDOWN PILLS */}
+            {searchKeyword.trim() && (
+              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 text-xs font-bold">
+                <span className="text-[11px] text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                  <Zap className="w-3.5 h-3.5 text-emerald-600" /> Parsed Intent:
+                </span>
+                <span className="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-xl border border-emerald-200">
+                  🎯 Role: {parsedIntent.jobTitle}
+                </span>
+                <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-xl border border-slate-200">
+                  📍 Target: {parsedIntent.location}
+                </span>
+                {parsedIntent.visaSponsorshipRequired && (
+                  <span className="bg-purple-50 text-purple-700 px-2.5 py-1 rounded-xl border border-purple-200 flex items-center gap-1">
+                    ✈️ Visa Sponsorship: Requested
+                  </span>
+                )}
+                {parsedIntent.visaTypes.length > 0 && (
+                  <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-xl border border-blue-200">
+                    🛂 Types: {parsedIntent.visaTypes.join(", ")}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* RECENT SEARCH QUERIES TAGS */}
             {recentSearches.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-100">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1 mr-1">
-                  <Clock className="w-3 h-3 text-emerald-600" /> Recent Searches:
+                  <Clock className="w-3 h-3 text-emerald-600" /> Quick Searches:
                 </span>
                 {recentSearches.map((term) => (
                   <button
@@ -1223,38 +1014,10 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
                   onClick={clearRecentSearches}
                   className="text-[10px] font-extrabold text-slate-400 hover:text-red-600 underline ml-1 cursor-pointer"
                 >
-                  Clear History
+                  Clear
                 </button>
               </div>
             )}
-              <div className="md:col-span-3 flex gap-2">
-                <button
-                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                  className={`px-3 py-3 rounded-2xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
-                    showAdvancedFilters
-                      ? "bg-slate-900 text-white border-slate-900"
-                      : "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200"
-                  }`}
-                >
-                  <Filter className="w-4 h-4" /> Filters
-                </button>
-                <button
-                  onClick={() => handlePerformLiveSearch()}
-                  disabled={isLiveSearching}
-                  className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 text-white font-black text-xs rounded-2xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                >
-                  {isLiveSearching ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> Searching...
-                    </>
-                  ) : (
-                    <>
-                      <Search className="w-4 h-4" /> Search Jobs
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
 
             {/* EXPANDABLE ADVANCED FILTERS PANEL */}
             {showAdvancedFilters && (
@@ -1275,7 +1038,7 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
                   </select>
                 </div>
 
-                {/* Multi-Country Selector Button */}
+                {/* Country Filter */}
                 <div className="space-y-1">
                   <label className="block text-[11px] font-bold text-slate-600">Target Countries (190+)</label>
                   <button
@@ -1291,13 +1054,27 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
                   </button>
                 </div>
 
-                {/* Source Platform Dropdown & Custom Link Input */}
+                {/* Sponsorship Strictness */}
                 <div className="space-y-1">
-                  <label className="block text-[11px] font-bold text-slate-600">Job Source Platform / Custom Links</label>
+                  <label className="block text-[11px] font-bold text-slate-600">Visa Sponsorship Verification</label>
+                  <select
+                    value={sponsorshipFilter}
+                    onChange={(e) => setSponsorshipFilter(e.target.value as any)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800"
+                  >
+                    <option value="all">Show All Opportunities</option>
+                    <option value="confirmed_only">Confirmed / Supported Only</option>
+                    <option value="mentioned_or_better">Mentioned or Confirmed</option>
+                  </select>
+                </div>
+
+                {/* Source Platform */}
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-bold text-slate-600">Job Source</label>
                   <select
                     value={selectedSource}
                     onChange={(e) => setSelectedSource(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 mb-1"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800"
                   >
                     {sourcesList.map((s) => (
                       <option key={s} value={s}>
@@ -1312,7 +1089,7 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
                   <div className="flex items-center justify-between">
                     <label className="text-[11px] font-extrabold text-emerald-900 flex items-center gap-1.5">
                       <Globe className="w-3.5 h-3.5 text-emerald-600" />
-                      Add Custom Job Source Website URLs (e.g., Indeed, Seek, Custom Portals)
+                      Add Custom Job Source Feed or URL (Indeed, Seek, LinkedIn, Remotive)
                     </label>
                     {customSourceUrls.length > 0 && (
                       <button
@@ -1326,7 +1103,7 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      placeholder="e.g. https://indeed.com, https://seek.com.au, https://jobs.gov"
+                      placeholder="e.g. https://indeed.com, https://seek.com.au, https://arbeitnow.com"
                       value={customSourcesInput}
                       onChange={(e) => setCustomSourcesInput(e.target.value)}
                       onKeyDown={(e) => {
@@ -1335,7 +1112,7 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
                           handleAddCustomSourceUrl();
                         }
                       }}
-                      className="flex-1 px-3 py-2 bg-white border border-emerald-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="flex-1 px-3 py-2 bg-white border border-emerald-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-600"
                     />
                     <button
                       onClick={handleAddCustomSourceUrl}
@@ -1344,73 +1121,37 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
                       + Add Link
                     </button>
                   </div>
-
-                  {customSourceUrls.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {customSourceUrls.map((url, idx) => (
-                        <span
-                          key={idx}
-                          className="bg-white text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-emerald-300 flex items-center gap-1.5 shadow-2xs"
-                        >
-                          <span className="truncate max-w-[180px]">{url}</span>
-                          <button
-                            onClick={() => setCustomSourceUrls((prev) => prev.filter((_, i) => i !== idx))}
-                            className="text-slate-400 hover:text-red-600 font-black cursor-pointer"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Toggles */}
-                <div className="flex flex-col justify-center space-y-2 pt-2 sm:pt-0">
-                  <label className="flex items-center gap-2 cursor-pointer text-xs font-extrabold text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={filterVisaOnly}
-                      onChange={(e) => setFilterVisaOnly(e.target.checked)}
-                      className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
-                    />
-                    <span>✈️ Visa Sponsorship Only</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer text-xs font-extrabold text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={filterSeasonalOnly}
-                      onChange={(e) => setFilterSeasonalOnly(e.target.checked)}
-                      className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
-                    />
-                    <span>🍓 Seasonal Harvest Only</span>
-                  </label>
                 </div>
               </div>
             )}
           </div>
 
-          {/* RESULTS SUMMARY BAR */}
-          <div className="flex items-center justify-between px-2">
-            <p className="text-xs font-black text-slate-700">
-              Showing <span className="text-emerald-700">{filteredJobs.length}</span> active job listings
-            </p>
+          {/* RESULTS SUMMARY BAR & STATE MESSAGES */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between px-2 gap-2">
+            <div>
+              <p className="text-xs font-black text-slate-700">
+                Showing <span className="text-emerald-700 font-extrabold">{activeJobs.length}</span> verified job listings
+              </p>
+              {searchResult.stateMessage && (
+                <p className="text-[11px] text-slate-500 font-semibold">{searchResult.stateMessage}</p>
+              )}
+            </div>
             {bookmarkedJobIds.length > 0 && (
-              <span className="text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
+              <span className="text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 self-start sm:self-center">
                 ⭐ {bookmarkedJobIds.length} Saved Jobs
               </span>
             )}
           </div>
 
           {/* JOB LISTING CARDS */}
-          {filteredJobs.length === 0 ? (
+          {activeJobs.length === 0 ? (
             <div className="bg-white p-12 rounded-3xl border border-slate-200 text-center space-y-3">
               <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-2xl mx-auto flex items-center justify-center font-bold text-2xl">
                 🔍
               </div>
-              <h3 className="text-base font-black text-slate-800">No Jobs Found Matching Criteria</h3>
+              <h3 className="text-base font-black text-slate-800">No Direct Listings Found</h3>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Try clearing your search keyword or switching category and country filters.
+                Try resetting filters, broadening target country, or checking related job titles.
               </p>
               <button
                 onClick={() => {
@@ -1418,8 +1159,7 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
                   setSearchLocation("");
                   setSelectedCategory("All");
                   setSelectedCountries(["All"]);
-                  setFilterVisaOnly(false);
-                  setFilterSeasonalOnly(false);
+                  setSponsorshipFilter("all");
                   setSelectedSource("All");
                 }}
                 className="mt-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold cursor-pointer"
@@ -1429,7 +1169,7 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredJobs.map((job) => {
+              {activeJobs.map((job) => {
                 const isBookmarked = bookmarkedJobIds.includes(job.id);
                 return (
                   <div
@@ -1466,7 +1206,7 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
                         </button>
                       </div>
 
-                      {/* Location & Tags */}
+                      {/* Location, Salary & Visa Badges */}
                       <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold text-slate-600">
                         <span className="bg-slate-100 px-2.5 py-1 rounded-xl flex items-center gap-1 border border-slate-200">
                           <MapPin className="w-3 h-3 text-slate-500" /> {job.location}, {job.country}
@@ -1474,11 +1214,7 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
                         <span className="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-xl font-black border border-emerald-200/80">
                           {job.salary}
                         </span>
-                        {job.visaSponsorship && (
-                          <span className="bg-purple-50 text-purple-700 px-2.5 py-1 rounded-xl font-black border border-purple-200">
-                            ✈️ Visa Sponsored
-                          </span>
-                        )}
+                        {renderVisaBadge(job.visaSponsorshipStatus, job.visaTypes)}
                         {job.isSeasonal && (
                           <span className="bg-amber-50 text-amber-800 px-2.5 py-1 rounded-xl font-black border border-amber-200">
                             🍓 Seasonal Harvest
@@ -1486,16 +1222,15 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
                         )}
                       </div>
 
-                      {/* Time Posted & Time Remaining */}
-                      <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 bg-slate-50 p-2 rounded-xl border border-slate-100">
-                        <span className="flex items-center gap-1 text-slate-600">
-                          <Clock className="w-3 h-3 text-slate-400" /> Posted: {job.postedDate}
-                        </span>
-                        <span className="flex items-center gap-1 text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md font-extrabold text-[10px]">
-                          ⏳ {job.timeRemaining || "14 days remaining"}
-                        </span>
-                      </div>
+                      {/* Sponsorship Snippet / Excerpt (Explains WHY) */}
+                      {job.visaSponsorshipSnippet && (
+                        <div className="text-[11px] bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-slate-600 italic">
+                          <span className="font-bold not-italic text-emerald-900 mr-1">Verification Note:</span>
+                          "{job.visaSponsorshipSnippet}"
+                        </div>
+                      )}
 
+                      {/* Description */}
                       <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
                         <HighlightText text={job.description} query={searchKeyword} />
                       </p>
@@ -1503,9 +1238,14 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
 
                     {/* Footer Actions & Source Badge */}
                     <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                      <span className="text-[10px] font-black uppercase text-slate-400 bg-slate-100 px-2 py-0.5 rounded-lg">
-                        Source: {job.source}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-black uppercase text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg">
+                          Source: {job.source}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400">
+                          Verified: {job.lastVerified}
+                        </span>
+                      </div>
 
                       <div className="flex items-center gap-2">
                         <button
@@ -1519,7 +1259,7 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
                           href={job.applyUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-xs flex items-center gap-1 transition-all cursor-pointer"
+                          className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black shadow-xs flex items-center gap-1 transition-all cursor-pointer"
                         >
                           Apply <ExternalLink className="w-3 h-3" />
                         </a>
@@ -1533,16 +1273,16 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
         </div>
       )}
 
-      {/* ========================================== */}
-      {/* 2. VIEW: RESUME / CV BUILDER */}
-      {/* ========================================== */}
+      {/* ============================================================ */}
+      {/* 2. VIEW: ATS RESUME / CV BUILDER */}
+      {/* ============================================================ */}
       {activeSubView === "resume" && (
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
               <div>
                 <h2 className="text-lg font-black text-slate-900">ATS Resume & CV Builder</h2>
-                <p className="text-xs text-slate-500">Edit sections below to generate an international-standard resume.</p>
+                <p className="text-xs text-slate-500">Edit sections below to generate an international-standard ATS CV.</p>
               </div>
 
               <div className="flex items-center gap-2">
@@ -1554,7 +1294,7 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
                 </button>
                 <button
                   onClick={() => saveResumeToLocal(resumeData)}
-                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-xs cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black shadow-xs cursor-pointer"
                 >
                   Save Resume
                 </button>
@@ -1571,7 +1311,7 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
                     onClick={() => saveResumeToLocal({ ...resumeData, template: t })}
                     className={`p-2.5 rounded-xl border text-xs font-bold capitalize cursor-pointer text-center ${
                       resumeData.template === t
-                        ? "bg-emerald-950 text-emerald-300 border-emerald-600 font-black shadow-xs"
+                        ? "bg-slate-900 text-emerald-400 border-slate-900 font-black shadow-xs"
                         : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                     }`}
                   >
@@ -1625,7 +1365,7 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
                 />
                 <input
                   type="text"
-                  placeholder="Phone Number *"
+                  placeholder="Phone Number"
                   value={resumeData.personalInfo.phone}
                   onChange={(e) =>
                     setResumeData({
@@ -1637,7 +1377,7 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
                 />
                 <input
                   type="text"
-                  placeholder="City, Country *"
+                  placeholder="City, Country"
                   value={`${resumeData.personalInfo.city}, ${resumeData.personalInfo.country}`}
                   onChange={(e) => {
                     const parts = e.target.value.split(",");
@@ -1645,8 +1385,8 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
                       ...resumeData,
                       personalInfo: {
                         ...resumeData.personalInfo,
-                        city: parts[0] || "",
-                        country: parts[1] || ""
+                        city: parts[0]?.trim() || "",
+                        country: parts[1]?.trim() || ""
                       }
                     });
                   }}
@@ -1654,7 +1394,7 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
                 />
                 <input
                   type="text"
-                  placeholder="LinkedIn Profile URL"
+                  placeholder="LinkedIn Profile"
                   value={resumeData.personalInfo.linkedin}
                   onChange={(e) =>
                     setResumeData({
@@ -1669,626 +1409,501 @@ export const JobSearchCareerTracker: React.FC<JobSearchCareerTrackerProps> = () 
 
             {/* Professional Summary */}
             <div className="space-y-2 pt-2">
-              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider text-emerald-800">
-                2. Professional Summary
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider text-emerald-800">
+                  2. Professional Summary
+                </h3>
+                <button
+                  onClick={handleAiGenerateSummary}
+                  className="text-xs font-bold text-purple-700 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> Auto-Write with AI
+                </button>
+              </div>
               <textarea
                 rows={3}
-                placeholder="Write 2-3 sentences highlighting your background, expertise, and career goals..."
                 value={resumeData.summary}
                 onChange={(e) => setResumeData({ ...resumeData, summary: e.target.value })}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 leading-relaxed"
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium leading-relaxed focus:ring-2 focus:ring-emerald-600"
+                placeholder="Brief summary of your professional background, visa goals, and strengths..."
               />
             </div>
 
-            {/* LIVE RESUME PREVIEW CONTAINER */}
-            <div className="pt-6 border-t border-slate-200">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                  Live Formatted Resume Preview
-                </span>
-                <button
-                  onClick={() => window.print()}
-                  className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer"
-                >
-                  <Printer className="w-3.5 h-3.5" /> Print / Save as PDF
-                </button>
-              </div>
-
-              {/* Formatted Paper Preview */}
-              <div className="bg-slate-900 text-slate-100 p-8 rounded-3xl shadow-xl space-y-6 font-sans border border-slate-800 max-w-3xl mx-auto">
-                <div className="text-center border-b border-slate-800 pb-4 space-y-1">
-                  <h1 className="text-2xl font-black tracking-tight text-white uppercase">
-                    {resumeData.personalInfo.firstName} {resumeData.personalInfo.lastName}
-                  </h1>
-                  <p className="text-xs text-emerald-400 font-bold">
-                    {resumeData.personalInfo.email} • {resumeData.personalInfo.phone} • {resumeData.personalInfo.city},{" "}
-                    {resumeData.personalInfo.country}
-                  </p>
-                  <p className="text-[11px] text-slate-400 font-mono">{resumeData.personalInfo.linkedin}</p>
-                </div>
-
-                <div className="space-y-2">
-                  <h2 className="text-xs font-black text-emerald-400 uppercase tracking-widest border-b border-slate-800 pb-1">
-                    Professional Summary
-                  </h2>
-                  <p className="text-xs text-slate-300 leading-relaxed font-medium">{resumeData.summary}</p>
-                </div>
-
-                {resumeData.experience.length > 0 && (
-                  <div className="space-y-3">
-                    <h2 className="text-xs font-black text-emerald-400 uppercase tracking-widest border-b border-slate-800 pb-1">
-                      Work Experience
-                    </h2>
-                    {resumeData.experience.map((exp) => (
-                      <div key={exp.id} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs font-bold text-white">
-                          <span>
-                            {exp.position} — <span className="text-slate-400">{exp.company}</span>
-                          </span>
-                          <span className="text-slate-400 text-[10px]">
-                            {exp.startDate} - {exp.isCurrent ? "Present" : exp.endDate}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-300">{exp.description}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {resumeData.skills.length > 0 && (
-                  <div className="space-y-2">
-                    <h2 className="text-xs font-black text-emerald-400 uppercase tracking-widest border-b border-slate-800 pb-1">
-                      Key Skills
-                    </h2>
-                    <div className="flex flex-wrap gap-2">
-                      {resumeData.skills.map((sk, idx) => (
-                        <span key={idx} className="bg-slate-800 text-slate-200 text-[11px] px-2.5 py-1 rounded-lg border border-slate-700">
-                          {sk.name} ({sk.level})
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================== */}
-      {/* 3. VIEW: COVER LETTER GENERATOR */}
-      {/* ========================================== */}
-      {activeSubView === "cover_letter" && (
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-              <div>
-                <h2 className="text-lg font-black text-slate-900">AI Cover Letter Generator</h2>
-                <p className="text-xs text-slate-500">Generate a tailored cover letter addressing job requirements.</p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleAiGenerateCoverLetter}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-black shadow-xs flex items-center gap-1 cursor-pointer"
-                >
-                  <Sparkles className="w-3.5 h-3.5" /> Auto-Generate with AI
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Target Job Title *</label>
-                <input
-                  type="text"
-                  value={coverLetterData.jobTitle}
-                  onChange={(e) => setCoverLetterData({ ...coverLetterData, jobTitle: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Company Name *</label>
-                <input
-                  type="text"
-                  value={coverLetterData.companyName}
-                  onChange={(e) => setCoverLetterData({ ...coverLetterData, companyName: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
-                />
-              </div>
-            </div>
-
-            {/* Generated Letter Preview */}
-            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-4 font-serif text-slate-800 leading-relaxed">
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-widest font-sans border-b border-slate-200 pb-2">
-                Cover Letter Document
-              </div>
-
-              <p className="text-xs font-bold font-sans">
-                Dear {coverLetterData.hiringManager || "Hiring Manager"},
-              </p>
-
-              <p className="text-xs">{coverLetterData.eyeCatchingHook}</p>
-              <p className="text-xs">{coverLetterData.whyThisCompany}</p>
-              <p className="text-xs">{coverLetterData.whyYoureAFit}</p>
-              <p className="text-xs">{coverLetterData.closingStatement}</p>
-
-              <div className="pt-4 font-sans text-xs font-black">
-                Sincerely, <br />
-                <span className="text-emerald-800">{resumeData.personalInfo.firstName} {resumeData.personalInfo.lastName}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================== */}
-      {/* 4. VIEW: SOP GENERATOR */}
-      {/* ========================================== */}
-      {activeSubView === "sop" && (
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-              <div>
-                <h2 className="text-lg font-black text-slate-900">Statement of Purpose (SOP) Generator</h2>
-                <p className="text-xs text-slate-500">
-                  For university applications & visa statement of purpose essays.
-                </p>
-              </div>
-
-              <button
-                onClick={handleAiGenerateSop}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-black shadow-xs flex items-center gap-1 cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5" /> AI Generate SOP Essay
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Target Program / Degree</label>
-                <input
-                  type="text"
-                  value={sopData.targetProgram}
-                  onChange={(e) => setSopData({ ...sopData, targetProgram: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">University / Institute</label>
-                <input
-                  type="text"
-                  value={sopData.universityName}
-                  onChange={(e) => setSopData({ ...sopData, universityName: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Target Country</label>
-                <input
-                  type="text"
-                  value={sopData.targetCountry}
-                  onChange={(e) => setSopData({ ...sopData, targetCountry: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
-                />
-              </div>
-            </div>
-
-            <div className="bg-slate-900 text-slate-100 p-6 rounded-3xl border border-slate-800 space-y-4 text-xs leading-relaxed font-sans">
-              <h3 className="text-xs font-black text-emerald-400 uppercase tracking-widest border-b border-slate-800 pb-2">
-                Statement of Purpose — {sopData.targetProgram} ({sopData.universityName})
+            {/* Skills */}
+            <div className="space-y-3 pt-2">
+              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider text-emerald-800">
+                3. Key Skills & Competencies
               </h3>
-              <p>{sopData.personalBackground}</p>
-              <p>{sopData.academicBackground}</p>
-              <p>{sopData.whyThisProgram}</p>
-              <p>{sopData.careerGoals}</p>
-              <p>{sopData.futureAspirations}</p>
+              <div className="flex flex-wrap gap-2">
+                {resumeData.skills.map((s, idx) => (
+                  <span
+                    key={idx}
+                    className="bg-emerald-50 text-emerald-900 border border-emerald-300/80 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2"
+                  >
+                    <span>{s.name}</span>
+                    <button
+                      onClick={() => {
+                        const updated = resumeData.skills.filter((_, i) => i !== idx);
+                        saveResumeToLocal({ ...resumeData, skills: updated });
+                      }}
+                      className="text-slate-400 hover:text-red-600 font-black cursor-pointer"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* ========================================== */}
-      {/* 5. VIEW: POST A JOB (EMPLOYER PORTAL) */}
-      {/* ========================================== */}
+      {/* ============================================================ */}
+      {/* 3. VIEW: COVER LETTER GENERATOR */}
+      {/* ============================================================ */}
+      {activeSubView === "cover_letter" && (
+        <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+            <div>
+              <h2 className="text-lg font-black text-slate-900">AI Cover Letter Customizer</h2>
+              <p className="text-xs text-slate-500">Tailor cover letters with visa sponsorship context.</p>
+            </div>
+            <button
+              onClick={() => saveCoverLetterToLocal(coverLetterData)}
+              className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black shadow-xs cursor-pointer"
+            >
+              Save Cover Letter
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <label className="block text-xs font-bold text-slate-700">Target Role Title</label>
+              <input
+                type="text"
+                value={coverLetterData.jobTitle}
+                onChange={(e) => setCoverLetterData({ ...coverLetterData, jobTitle: e.target.value })}
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
+              />
+
+              <label className="block text-xs font-bold text-slate-700">Target Company Name</label>
+              <input
+                type="text"
+                value={coverLetterData.companyName}
+                onChange={(e) => setCoverLetterData({ ...coverLetterData, companyName: e.target.value })}
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
+              />
+
+              <label className="block text-xs font-bold text-slate-700">Why You Are a Great Fit</label>
+              <textarea
+                rows={3}
+                value={coverLetterData.whyYoureAFit}
+                onChange={(e) => setCoverLetterData({ ...coverLetterData, whyYoureAFit: e.target.value })}
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium"
+              />
+            </div>
+
+            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
+              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Preview Generated Letter</h3>
+              <div className="text-xs text-slate-700 space-y-2 leading-relaxed bg-white p-4 rounded-xl border border-slate-200">
+                <p>Dear {coverLetterData.hiringManager || "Hiring Team"},</p>
+                <p>{coverLetterData.eyeCatchingHook}</p>
+                <p>{coverLetterData.whyYoureAFit}</p>
+                <p>{coverLetterData.whyThisCompany}</p>
+                <p>{coverLetterData.closingStatement}</p>
+                <p className="font-bold pt-2">Sincerely,<br />{resumeData.personalInfo.firstName} {resumeData.personalInfo.lastName}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* 4. VIEW: STATEMENT OF PURPOSE (SOP) GENERATOR */}
+      {/* ============================================================ */}
+      {activeSubView === "sop" && (
+        <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+            <div>
+              <h2 className="text-lg font-black text-slate-900">Statement of Purpose (SOP) Generator</h2>
+              <p className="text-xs text-slate-500">For university admissions, student visas, and overseas grants.</p>
+            </div>
+            <button
+              onClick={() => saveSopToLocal(sopData)}
+              className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black shadow-xs cursor-pointer"
+            >
+              Save SOP
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <label className="block text-xs font-bold text-slate-700">Target Academic Program</label>
+              <input
+                type="text"
+                value={sopData.targetProgram}
+                onChange={(e) => setSopData({ ...sopData, targetProgram: e.target.value })}
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
+              />
+
+              <label className="block text-xs font-bold text-slate-700">Target Institution / University</label>
+              <input
+                type="text"
+                value={sopData.universityName}
+                onChange={(e) => setSopData({ ...sopData, universityName: e.target.value })}
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
+              />
+
+              <label className="block text-xs font-bold text-slate-700">Career Goals & Aspirations</label>
+              <textarea
+                rows={3}
+                value={sopData.careerGoals}
+                onChange={(e) => setSopData({ ...sopData, careerGoals: e.target.value })}
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium"
+              />
+            </div>
+
+            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
+              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">SOP Essay Layout</h3>
+              <div className="text-xs text-slate-700 space-y-2 leading-relaxed bg-white p-4 rounded-xl border border-slate-200">
+                <p className="font-bold text-slate-900">{sopData.targetProgram} - {sopData.universityName}</p>
+                <p>{sopData.personalBackground}</p>
+                <p>{sopData.whyThisProgram}</p>
+                <p>{sopData.futureAspirations}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* 5. VIEW: POST A JOB FORM */}
+      {/* ============================================================ */}
       {activeSubView === "post_job" && (
-        <div className="space-y-6">
-          <form onSubmit={handlePublishJob} className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-6">
-            <div className="pb-4 border-b border-slate-100">
-              <h2 className="text-lg font-black text-slate-900">Employer Job Posting Portal</h2>
-              <p className="text-xs text-slate-500">Post open positions to Care2Care's global candidate pool.</p>
+        <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-6">
+          <div className="pb-4 border-b border-slate-100">
+            <h2 className="text-lg font-black text-slate-900">Post a Job to Care2Care Network</h2>
+            <p className="text-xs text-slate-500">Reach qualified local and international healthcare and tech talent.</p>
+          </div>
+
+          <form onSubmit={handlePublishJob} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Company / Organization Name *</label>
+              <input
+                type="text"
+                required
+                value={postJobForm.companyName}
+                onChange={(e) => setPostJobForm({ ...postJobForm, companyName: e.target.value })}
+                placeholder="e.g. St. Jude Health Care Services"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
+              />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Job Title *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Registered Nurse"
-                  value={postJobForm.jobTitle}
-                  onChange={(e) => setPostJobForm({ ...postJobForm, jobTitle: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Company Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. MetroCare Clinic"
-                  value={postJobForm.companyName}
-                  onChange={(e) => setPostJobForm({ ...postJobForm, companyName: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Location *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Kathmandu or Sydney"
-                  value={postJobForm.location}
-                  onChange={(e) => setPostJobForm({ ...postJobForm, location: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Country *</label>
-                <select
-                  value={postJobForm.country}
-                  onChange={(e) => setPostJobForm({ ...postJobForm, country: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
-                >
-                  {countriesList.filter((c) => c !== "All").map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Category</label>
-                <select
-                  value={postJobForm.category}
-                  onChange={(e) => setPostJobForm({ ...postJobForm, category: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
-                >
-                  {categoriesList.filter((cat) => cat !== "All").map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Contact Email *</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="e.g. hr@company.com"
-                  value={postJobForm.contactEmail}
-                  onChange={(e) => setPostJobForm({ ...postJobForm, contactEmail: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
-                />
-              </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Job Title *</label>
+              <input
+                type="text"
+                required
+                value={postJobForm.jobTitle}
+                onChange={(e) => setPostJobForm({ ...postJobForm, jobTitle: e.target.value })}
+                placeholder="e.g. Registered Nurse or Full Stack Engineer"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
+              />
             </div>
 
-            <div className="flex flex-wrap gap-4 pt-2">
-              <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Location / City *</label>
+              <input
+                type="text"
+                required
+                value={postJobForm.location}
+                onChange={(e) => setPostJobForm({ ...postJobForm, location: e.target.value })}
+                placeholder="e.g. Sydney, Kathmandu, Austin, Remote"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Category</label>
+              <select
+                value={postJobForm.category}
+                onChange={(e) => setPostJobForm({ ...postJobForm, category: e.target.value })}
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
+              >
+                {categoriesList.filter((c) => c !== "All").map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold text-slate-700 mb-1">Job Description & Responsibilities</label>
+              <textarea
+                rows={3}
+                value={postJobForm.jobDescription}
+                onChange={(e) => setPostJobForm({ ...postJobForm, jobDescription: e.target.value })}
+                placeholder="Detailed duties, patient ratio or tech stack, visa sponsorship eligibility..."
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium"
+              />
+            </div>
+
+            <div className="flex items-center gap-4 sm:col-span-2 pt-2">
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700">
                 <input
                   type="checkbox"
                   checked={postJobForm.visaSponsorship}
                   onChange={(e) => setPostJobForm({ ...postJobForm, visaSponsorship: e.target.checked })}
-                  className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
+                  className="rounded text-emerald-600 w-4 h-4 cursor-pointer"
                 />
-                <span>✈️ Offer Visa Sponsorship</span>
+                <span>✈️ Visa Sponsorship Provided</span>
               </label>
 
-              <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={postJobForm.isSeasonal}
-                  onChange={(e) => setPostJobForm({ ...postJobForm, isSeasonal: e.target.checked })}
-                  className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
-                />
-                <span>🍓 Seasonal Position</span>
-              </label>
-
-              <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700">
                 <input
                   type="checkbox"
                   checked={postJobForm.isRemote}
                   onChange={(e) => setPostJobForm({ ...postJobForm, isRemote: e.target.checked })}
-                  className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
+                  className="rounded text-emerald-600 w-4 h-4 cursor-pointer"
                 />
-                <span>💻 Remote Work Allowed</span>
+                <span>🌐 Remote / Telecommute Available</span>
               </label>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Job Description</label>
-              <textarea
-                rows={4}
-                placeholder="Describe key responsibilities, team culture, and requirements..."
-                value={postJobForm.jobDescription}
-                onChange={(e) => setPostJobForm({ ...postJobForm, jobDescription: e.target.value })}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
-              />
+            <div className="sm:col-span-2 pt-3">
+              <button
+                type="submit"
+                className="w-full py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs rounded-2xl shadow-md cursor-pointer transition-all"
+              >
+                Publish Job Listing
+              </button>
             </div>
-
-            <button
-              type="submit"
-              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-2xl shadow-md transition-all cursor-pointer"
-            >
-              Publish Job Listing Now
-            </button>
           </form>
         </div>
       )}
 
-      {/* ========================================== */}
-      {/* 6. VIEW: OVERSEAS CAREER INSIGHTS */}
-      {/* ========================================== */}
+      {/* ============================================================ */}
+      {/* 6. VIEW: OVERSEAS INSIGHTS */}
+      {/* ============================================================ */}
       {activeSubView === "insights" && (
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-6">
-            <div>
-              <h2 className="text-lg font-black text-slate-900">Overseas Work & Visa Pathways</h2>
-              <p className="text-xs text-slate-500">Guide to visa sponsorship programs and demand sectors.</p>
+        <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-6">
+          <div className="pb-4 border-b border-slate-100">
+            <h2 className="text-lg font-black text-slate-900">Overseas Employment & Immigration Guide</h2>
+            <p className="text-xs text-slate-500">Official visa pathways, salary thresholds & minimum wage data.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+              <span className="text-2xl">🇦🇺</span>
+              <h3 className="text-xs font-black text-slate-900">Australia (TSS 482 & PR 186)</h3>
+              <p className="text-[11px] text-slate-600 leading-relaxed">
+                TSMIT minimum salary requirement is AUD $73,150. Requires positive skills assessment (AHPRA for nurses, ACS for IT) and IELTS 6.0 - 7.0.
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-2">
-                <div className="text-xl">🇦🇺 Australia TSS 482 Visa</div>
-                <p className="text-xs text-slate-600 font-medium">
-                  High demand for Registered Nurses, Aged Care Workers, Software Engineers, and Automotive Mechanics.
-                </p>
-                <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md inline-block">
-                  Min Salary: AUD $70,000 / yr
-                </span>
-              </div>
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+              <span className="text-2xl">🇺🇸</span>
+              <h3 className="text-xs font-black text-slate-900">USA (H-1B, STEM OPT & EB-3)</h3>
+              <p className="text-[11px] text-slate-600 leading-relaxed">
+                Specialty occupations require Bachelor's degree. H-1B cap lottery in March, or cap-exempt universities/hospitals. STEM OPT gives 3 years US work authorization.
+              </p>
+            </div>
 
-              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-2">
-                <div className="text-xl">🇳🇿 New Zealand AEWV</div>
-                <p className="text-xs text-slate-600 font-medium">
-                  Accredited Employer Work Visa pathway for healthcare, dairy farming, construction, and IT.
-                </p>
-                <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md inline-block">
-                  Min Salary: NZD $29.66 / hr
-                </span>
-              </div>
-
-              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-2">
-                <div className="text-xl">🇬🇧 UK Skilled Worker</div>
-                <p className="text-xs text-slate-600 font-medium">
-                  Health and Care Worker visa with fast-track processing and reduced visa fees for medical staff.
-                </p>
-                <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md inline-block">
-                  Min Salary: £23,200 / yr
-                </span>
-              </div>
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+              <span className="text-2xl">🇬🇧</span>
+              <h3 className="text-xs font-black text-slate-900">UK (Health & Care Skilled Worker)</h3>
+              <p className="text-[11px] text-slate-600 leading-relaxed">
+                Exempt from Immigration Health Surcharge. Certificate of Sponsorship (CoS) issued by NHS or accredited care providers. NMC CBT & OSCE required for nurses.
+              </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* ========================================== */}
-      {/* JOB DETAILS MODAL */}
-      {/* ========================================== */}
-      {selectedJobModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-slate-100 text-2xl flex items-center justify-center border border-slate-200">
-                  {selectedJobModal.companyLogo || "🏢"}
-                </div>
-                <div>
-                  <h3 className="text-lg font-black text-slate-900">{selectedJobModal.title}</h3>
-                  <p className="text-xs font-bold text-slate-600">
-                    {selectedJobModal.company} • {selectedJobModal.location}, {selectedJobModal.country}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setSelectedJobModal(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="bg-slate-50 p-4 rounded-2xl space-y-2 text-xs font-bold text-slate-700 border border-slate-200">
-              <div className="flex justify-between">
-                <span>Salary Range:</span>
-                <span className="text-emerald-800 font-black">{selectedJobModal.salary}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Visa Sponsorship:</span>
-                <span>{selectedJobModal.visaSponsorship ? "Yes (Available)" : "No"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Job Source:</span>
-                <span className="text-indigo-700">{selectedJobModal.source}</span>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Description</h4>
-              <p className="text-xs text-slate-600 leading-relaxed">{selectedJobModal.description}</p>
-            </div>
-
-            {selectedJobModal.requirements && selectedJobModal.requirements.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Key Requirements</h4>
-                <ul className="list-disc list-inside text-xs text-slate-600 space-y-1">
-                  {selectedJobModal.requirements.map((req, idx) => (
-                    <li key={idx}>{req}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
-              <button
-                onClick={() => setSelectedJobModal(null)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
-              >
-                Close
-              </button>
-              <a
-                href={selectedJobModal.applyUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black shadow-xs flex items-center gap-1 cursor-pointer"
-              >
-                Apply via {selectedJobModal.source} <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================== */}
-      {/* 🌍 190+ MULTI-COUNTRY SELECTION MODAL */}
-      {/* ========================================== */}
+      {/* ============================================================ */}
+      {/* 🌐 COUNTRY SELECTION MODAL */}
+      {/* ============================================================ */}
       {isCountryModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl border border-slate-200 max-h-[85vh] flex flex-col">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <Globe className="w-5 h-5 text-emerald-600" />
-                <h3 className="text-base font-black text-slate-900">Choose Target Countries (190+)</h3>
-              </div>
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-xl rounded-3xl p-5 border border-slate-200 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="text-sm font-black text-slate-900 flex items-center gap-1.5">
+                <Globe className="w-4 h-4 text-emerald-600" /> Target Job Countries
+              </h3>
               <button
                 onClick={() => setIsCountryModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center font-bold cursor-pointer"
+                className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Search Bar & Quick Buttons */}
-            <div className="space-y-2">
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
-                  type="text"
-                  placeholder="Search countries by name..."
-                  value={countrySearchQuery}
-                  onChange={(e) => setCountrySearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
+            <input
+              type="text"
+              placeholder="Search country..."
+              value={countryFilterSearch}
+              onChange={(e) => setCountryFilterSearch(e.target.value)}
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
+            />
 
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-slate-500">
-                  Selected: <span className="text-emerald-700 font-extrabold">{selectedCountries.join(", ")}</span>
-                </span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setSelectedCountries(["All"])}
-                    className="text-[10px] font-black text-slate-600 hover:text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg cursor-pointer"
-                  >
-                    Select All (Worldwide)
-                  </button>
-                  <button
-                    onClick={() => setSelectedCountries([])}
-                    className="text-[10px] font-black text-red-600 hover:text-red-700 bg-red-50 px-2.5 py-1 rounded-lg cursor-pointer"
-                  >
-                    Clear All
-                  </button>
-                </div>
-              </div>
-            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 overflow-y-auto max-h-[50vh] pr-1">
+              <button
+                onClick={() => handleToggleCountry("All")}
+                className={`p-2.5 rounded-xl text-xs font-black text-left border cursor-pointer ${
+                  selectedCountries.includes("All")
+                    ? "bg-emerald-700 text-white border-emerald-700"
+                    : "bg-slate-50 text-slate-700 border-slate-200"
+                }`}
+              >
+                🌍 Worldwide (All)
+              </button>
 
-            {/* Grid of 190+ Countries */}
-            <div className="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-2 p-1 pr-2">
-              {ALL_WORLD_COUNTRIES.filter((c) =>
-                c.name.toLowerCase().includes(countrySearchQuery.toLowerCase())
+              {ALL_195_COUNTRIES.filter((c) =>
+                c.name.toLowerCase().includes(countryFilterSearch.toLowerCase())
               ).map((c) => {
                 const isSelected = selectedCountries.includes(c.name);
                 return (
                   <button
                     key={c.name}
                     onClick={() => handleToggleCountry(c.name)}
-                    className={`p-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 border transition-all text-left cursor-pointer ${
+                    className={`p-2 rounded-xl text-xs font-bold text-left border flex items-center gap-1.5 cursor-pointer ${
                       isSelected
-                        ? "bg-emerald-50 border-emerald-500 text-emerald-950 shadow-2xs"
-                        : "bg-slate-50 border-slate-200/80 text-slate-700 hover:bg-slate-100"
+                        ? "bg-emerald-700 text-white border-emerald-700"
+                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                     }`}
                   >
-                    <span className="text-base">{c.flag}</span>
-                    <span className="truncate flex-1">{c.name}</span>
-                    <span
-                      className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] font-black border ${
-                        isSelected
-                          ? "bg-emerald-600 border-emerald-600 text-white"
-                          : "border-slate-300 bg-white"
-                      }`}
-                    >
-                      {isSelected && "✓"}
-                    </span>
+                    <span>{c.flag}</span>
+                    <span className="truncate">{c.name}</span>
                   </button>
                 );
               })}
             </div>
 
-            {/* Footer Done Button */}
-            <div className="pt-3 border-t border-slate-100 flex justify-end">
+            <div className="pt-2 border-t border-slate-100 flex justify-end">
               <button
                 onClick={() => setIsCountryModalOpen(false)}
-                className="px-6 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-black shadow-md cursor-pointer"
+                className="px-4 py-2 bg-slate-900 text-white text-xs font-black rounded-xl cursor-pointer"
               >
-                Apply Selection ({selectedCountries.length} Selected)
+                Apply Selection
               </button>
             </div>
           </div>
         </div>
       )}
-      {(isDisclaimerOpen || !hasAcceptedDisclaimer) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          <div className="bg-slate-900 text-white rounded-3xl max-w-xl w-full p-6 sm:p-8 space-y-4 shadow-2xl border border-slate-800">
-            <div className="flex items-center gap-3 text-amber-400">
-              <ShieldAlert className="w-8 h-8 shrink-0" />
-              <div>
-                <h3 className="text-base font-black text-white">Job Search & Career Legal Notice</h3>
-                <p className="text-[10px] text-slate-400">Please review before proceeding</p>
+
+      {/* ============================================================ */}
+      {/* 📄 JOB DETAILS MODAL */}
+      {/* ============================================================ */}
+      {selectedJobModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-2xl rounded-3xl p-6 border border-slate-200 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-slate-100 text-2xl flex items-center justify-center border border-slate-200">
+                  {selectedJobModal.companyLogo || "🏢"}
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">{selectedJobModal.title}</h3>
+                  <p className="text-xs font-bold text-slate-600">{selectedJobModal.company} • {selectedJobModal.location}, {selectedJobModal.country}</p>
+                </div>
               </div>
+              <button
+                onClick={() => setSelectedJobModal(null)}
+                className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs text-slate-300 space-y-2.5 max-h-[300px] overflow-y-auto leading-relaxed">
-              <p>
-                <strong>1. Information Purpose Only:</strong> Care2Care provides job aggregator tools, resume templates, and application generators for assistance only.
-              </p>
-              <p>
-                <strong>2. No Placement Guarantee:</strong> Care2Care does NOT guarantee employment, interview responses, visa approval, or sponsorship outcomes.
-              </p>
-              <p>
-                <strong>3. Third-Party Source Redirection:</strong> Applying to third-party listings (e.g. Indeed, Seek, LinkedIn, MeroJob, Naukri) redirects you to external platforms. Users must verify all employer authenticity independently.
-              </p>
-              <p>
-                <strong>4. No Fee Policy:</strong> Care2Care never charges fees for job searching or resume building. Beware of fraudulent agencies asking for payment.
-              </p>
+            <div className="flex flex-wrap gap-2 text-xs font-bold">
+              <span className="bg-emerald-50 text-emerald-800 px-3 py-1 rounded-xl border border-emerald-200 font-black">
+                {selectedJobModal.salary}
+              </span>
+              {renderVisaBadge(selectedJobModal.visaSponsorshipStatus, selectedJobModal.visaTypes)}
+              <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-xl border border-slate-200">
+                {selectedJobModal.employmentType} ({selectedJobModal.jobTerm})
+              </span>
             </div>
 
-            <button
-              onClick={handleAcceptDisclaimer}
-              className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-lg transition-all cursor-pointer"
-            >
-              I Understand & Agree to Terms
-            </button>
+            {selectedJobModal.visaSponsorshipSnippet && (
+              <div className="bg-emerald-50/70 p-3.5 rounded-2xl border border-emerald-200 text-xs text-emerald-900 space-y-1">
+                <span className="font-black uppercase tracking-wider text-[10px] text-emerald-800">
+                  Visa & Work Authorization Status:
+                </span>
+                <p className="italic leading-relaxed">"{selectedJobModal.visaSponsorshipSnippet}"</p>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Job Description</h4>
+              <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-line">{selectedJobModal.description}</p>
+            </div>
+
+            {selectedJobModal.requirements && selectedJobModal.requirements.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Requirements</h4>
+                <ul className="list-disc list-inside text-xs text-slate-700 space-y-1">
+                  {selectedJobModal.requirements.map((req, i) => (
+                    <li key={i}>{req}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {selectedJobModal.benefits && selectedJobModal.benefits.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Benefits & Relocation</h4>
+                <ul className="list-disc list-inside text-xs text-slate-700 space-y-1">
+                  {selectedJobModal.benefits.map((b, i) => (
+                    <li key={i}>{b}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500">Source: {selectedJobModal.source}</span>
+              <a
+                href={selectedJobModal.applyUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer"
+              >
+                Apply Directly <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* ⚖️ LEGAL DISCLAIMER MODAL */}
+      {/* ============================================================ */}
+      {isDisclaimerOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-3xl p-6 border border-slate-200 shadow-2xl space-y-4">
+            <div className="flex items-center gap-2.5 text-amber-600">
+              <ShieldAlert className="w-6 h-6 shrink-0" />
+              <h3 className="text-base font-black text-slate-900">Career Portal & Immigration Disclaimer</h3>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Care2Care aggregates permitted job listings and verified employer postings. Care2Care is not an authorized immigration agency or legal sponsor. Visa eligibility assessments and employer sponsorships are subject to local governmental regulations (USCIS, Home Affairs Australia, Immigration NZ, Home Office UK). Always verify credentials directly with licensed migration agents or official company HR.
+            </p>
+            <div className="pt-2 flex justify-end">
+              <button
+                onClick={() => {
+                  setIsDisclaimerOpen(false);
+                  setHasAcceptedDisclaimer(true);
+                  localStorage.setItem("care2care_job_disclaimer_accepted", "true");
+                }}
+                className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-black cursor-pointer"
+              >
+                I Understand & Acknowledge
+              </button>
+            </div>
           </div>
         </div>
       )}
     </div>
   );
 };
+export default JobSearchCareerTracker;

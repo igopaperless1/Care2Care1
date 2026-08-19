@@ -38,6 +38,9 @@ import {
   HeartHandshake
 } from "lucide-react";
 import { Patient } from "../types";
+import { propagateUserProfileUpdates, SyncLogEntry } from "../utils/DataPropagationEngine";
+import { SyncReviewModal } from "./SyncReviewModal";
+import { DashboardCustomization } from "./DashboardCustomization";
 
 export interface PersonalProfileDetails {
   fullName: string;
@@ -124,6 +127,7 @@ interface UserProfileManagerModalProps {
   onClose: () => void;
   patients?: Patient[];
   onAddSubAccount?: (patient: Patient) => void;
+  initialTab?: "personal" | "professional" | "dependents" | "dashboard_customization";
 }
 
 // ==========================================
@@ -470,10 +474,19 @@ export const UserProfileManagerModal: React.FC<UserProfileManagerModalProps> = (
   isOpen,
   onClose,
   patients = [],
-  onAddSubAccount
+  onAddSubAccount,
+  initialTab = "personal"
 }) => {
-  const [activeTab, setActiveTab] = useState<"personal" | "professional" | "dependents">("personal");
+  const [activeTab, setActiveTab] = useState<"personal" | "professional" | "dependents" | "dashboard_customization">(initialTab);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
+  const [activeSyncLog, setActiveSyncLog] = useState<SyncLogEntry | null>(null);
+  const [isSyncReviewOpen, setIsSyncReviewOpen] = useState(false);
 
   // PERSONAL PROFILE STATE
   const [personalData, setPersonalData] = useState<PersonalProfileDetails>(() => {
@@ -506,7 +519,23 @@ export const UserProfileManagerModal: React.FC<UserProfileManagerModalProps> = (
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  const handleSaveProfile = () => {
+    const { syncLog, summaryText } = propagateUserProfileUpdates(
+      personalData,
+      {},
+      "Profile Settings"
+    );
+
+    setActiveSyncLog(syncLog);
+    showToast(`💾 Saved Profile! ${summaryText}`);
+
+    // Auto open review modal for full user transparency
+    setTimeout(() => {
+      setIsSyncReviewOpen(true);
+    }, 300);
   };
 
   // Auto Calculations for Personal
@@ -657,6 +686,18 @@ export const UserProfileManagerModal: React.FC<UserProfileManagerModalProps> = (
           >
             <Users className="w-4 h-4 text-amber-200" />
             <span>Care Dependents ({patients.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("dashboard_customization")}
+            className={`flex-1 py-2.5 px-4 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
+              activeTab === "dashboard_customization"
+                ? "bg-orange-600 text-white shadow-xs font-black"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-amber-300" />
+            <span>Home & Dashboard Customizer</span>
           </button>
         </div>
 
@@ -1297,12 +1338,28 @@ export const UserProfileManagerModal: React.FC<UserProfileManagerModalProps> = (
               )}
             </div>
           )}
+
+          {/* ======================================================== */}
+          {/* TAB 4: DASHBOARD & HOME DISPLAY CUSTOMIZATION */}
+          {/* ======================================================== */}
+          {activeTab === "dashboard_customization" && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <DashboardCustomization
+                currentProfileMode="personal"
+                patients={patients}
+                onClose={onClose}
+                onSavePreferences={() => {
+                  showToast("✨ Command Center display preferences updated!");
+                }}
+              />
+            </div>
+          )}
         </div>
 
         {/* MODAL FOOTER */}
         <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
           <span className="text-[11px] text-slate-500 font-bold flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-[#2E7D32]" /> Care2Care Profile Data Encrypted & Saved Locally
+            <ShieldCheck className="w-4 h-4 text-[#2E7D32]" /> Care2Care Profile Data Encrypted & Auto-Propagated Across Ecosystem
           </span>
 
           <div className="flex items-center gap-2">
@@ -1313,16 +1370,20 @@ export const UserProfileManagerModal: React.FC<UserProfileManagerModalProps> = (
               Close
             </button>
             <button
-              onClick={() => {
-                showToast("💾 Saved profile details & AI analysis!");
-                onClose();
-              }}
+              onClick={handleSaveProfile}
               className="px-5 py-2 bg-[#2E7D32] hover:bg-[#1b5e20] text-white font-black text-xs rounded-xl shadow-md cursor-pointer flex items-center gap-1.5"
             >
-              <Check className="w-4 h-4" /> Save Profile Details
+              <Check className="w-4 h-4" /> Save & Auto-Sync Modules
             </button>
           </div>
         </div>
+
+        {/* DATA PROPAGATION REVIEW MODAL */}
+        <SyncReviewModal
+          isOpen={isSyncReviewOpen}
+          onClose={() => setIsSyncReviewOpen(false)}
+          syncLog={activeSyncLog}
+        />
       </div>
     </div>
   );

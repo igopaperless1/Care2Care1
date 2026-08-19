@@ -5,6 +5,7 @@ import { ToolsAndUtilitiesSuite } from "./ToolsAndUtilitiesSuite";
 import { CashCollectionCreditLedgerTracker } from "./CashCollectionCreditLedgerTracker";
 import { CustomStoreMarketplace } from "./CustomStoreMarketplace";
 import { TicketQueueManagementTracker } from "./TicketQueueManagementTracker";
+import { useLanguage } from "../context/LanguageContext";
 import {
   Grid,
   FileText,
@@ -42,7 +43,8 @@ import {
   Star,
   Sliders,
   HardDrive,
-  Cloud
+  Cloud,
+  ArrowLeft
 } from "lucide-react";
 
 interface ServicesAndToolsViewProps {
@@ -55,6 +57,7 @@ interface ServicesAndToolsViewProps {
   onExportBackup: () => void;
   onImportBackup: (jsonStr: string) => void;
   onSelectCareSubTab?: (subTab: string) => void;
+  onBack?: () => void;
 }
 
 export const ServicesAndToolsView: React.FC<ServicesAndToolsViewProps> = ({
@@ -67,7 +70,9 @@ export const ServicesAndToolsView: React.FC<ServicesAndToolsViewProps> = ({
   onExportBackup,
   onImportBackup,
   onSelectCareSubTab,
+  onBack,
 }) => {
+  const { t, formatNumber, formatCurrency, formatDate, formatTime } = useLanguage();
   const [activeSection, setActiveSection] = useState<"services" | "calc" | "docs" | "memo" | "marketplace" | "backup" | "hotel_sales" | "cash_collector" | "pro_directory" | "custom_store" | "ticket_queue">("services");
 
   // Active Interactive Service Modal State
@@ -441,13 +446,26 @@ export const ServicesAndToolsView: React.FC<ServicesAndToolsViewProps> = ({
   return (
     <div className="space-y-5 pb-20">
       {/* Top Header */}
-      <div>
-        <h1 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
-          <Grid className="w-5 h-5 text-indigo-600" /> Care2Care Services Hub
-        </h1>
-        <p className="text-xs text-slate-500">
-          Complete directory of 150+ personal, family, professional, land, document, and utility tools.
-        </p>
+      <div className="flex items-center gap-3">
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-xs flex items-center gap-1 font-bold text-xs shrink-0"
+            title="Back to Previous Screen"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back</span>
+          </button>
+        )}
+        <div>
+          <h1 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
+            <Grid className="w-5 h-5 text-indigo-600" /> Care2Care Services Hub
+          </h1>
+          <p className="text-xs text-slate-500">
+            Complete directory of 150+ personal, family, professional, land, document, and utility tools.
+          </p>
+        </div>
       </div>
 
       {/* Navigation Pills Bar */}

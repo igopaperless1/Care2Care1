@@ -90,6 +90,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   email TEXT UNIQUE NOT NULL,
   role TEXT CHECK (role IN ('user', 'admin')) DEFAULT 'user',
   subscription_plan TEXT CHECK (subscription_plan IN ('Free', 'Premium', 'Family', 'Enterprise')) DEFAULT 'Free',
+  daily_reward_claimed TIMESTAMPTZ,
   paddle_customer_id TEXT,
   paddle_subscription_id TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -150,7 +151,42 @@ CREATE TABLE IF NOT EXISTS public.medications (
   warnings TEXT
 );
 
--- 7. Staff Attendance & Payroll Records
+-- 7. 21-Day Habit Challenges Table
+CREATE TABLE IF NOT EXISTS public.habit_challenges (
+  id TEXT PRIMARY KEY,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  description TEXT,
+  category TEXT DEFAULT 'General',
+  icon TEXT DEFAULT '🏆',
+  color TEXT DEFAULT '#2E7D32',
+  current_day INT DEFAULT 1,
+  total_days INT DEFAULT 21,
+  status TEXT DEFAULT 'Active',
+  streak_count INT DEFAULT 0,
+  completed_days INT[] DEFAULT '{}',
+  last_completed_date DATE,
+  missed_days INT DEFAULT 0,
+  penalty_count INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 8. Penalty Accountability History Logs
+CREATE TABLE IF NOT EXISTS public.penalty_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  challenge_id TEXT NOT NULL,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  day_number INT NOT NULL,
+  penalty_type TEXT NOT NULL,
+  penalty_title TEXT NOT NULL,
+  target_value INT NOT NULL,
+  completed_value INT NOT NULL,
+  unit TEXT NOT NULL,
+  verified_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 9. Staff Attendance & Payroll Records
 CREATE TABLE IF NOT EXISTS public.staff_payroll (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   staff_name TEXT NOT NULL,
@@ -161,17 +197,36 @@ CREATE TABLE IF NOT EXISTS public.staff_payroll (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 8. Enable Row Level Security (RLS)
+-- 10. Admin Audit Logs (Immutable Security & Compliance Stream)
+CREATE TABLE IF NOT EXISTS public.admin_audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_user_id TEXT NOT NULL,
+  target_user_id TEXT,
+  action_type TEXT NOT NULL,
+  reason_text TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 11. Enable Row Level Security (RLS)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.patients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vitals_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.water_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.medications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.habit_challenges ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.penalty_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.staff_payroll ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admin_audit_logs ENABLE ROW LEVEL SECURITY;
 
--- 9. Create RLS Policies
+-- 12. Create RLS Policies
 CREATE POLICY "Users can read own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Users access own habit challenges" ON public.habit_challenges FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users access own penalty logs" ON public.penalty_logs FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Admins full access profiles" ON public.profiles FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+CREATE POLICY "Admins read audit logs" ON public.admin_audit_logs FOR SELECT USING (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
 `;

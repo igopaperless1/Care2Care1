@@ -10,11 +10,7 @@ export interface SupportedLanguage {
 export const SUPPORTED_LANGUAGES: SupportedLanguage[] = [
   { code: "en", name: "English", nativeName: "English", flag: "🇺🇸" },
   { code: "np", name: "Nepali", nativeName: "नेपाली", flag: "🇳🇵" },
-  { code: "es", name: "Spanish", nativeName: "Español", flag: "🇪🇸" },
-  { code: "fr", name: "French", nativeName: "Français", flag: "🇫🇷" },
-  { code: "de", name: "German", nativeName: "Deutsch", flag: "🇩🇪" },
-  { code: "hi", name: "Hindi", nativeName: "हिन्दी", flag: "🇮🇳" },
-  { code: "ar", name: "Arabic", nativeName: "العربية", flag: "🇦🇪" }
+  { code: "bn", name: "Bangla", nativeName: "বাংলা", flag: "🇧🇩" }
 ];
 
 export interface CurrencyConfig {
@@ -94,146 +90,82 @@ const TRANSLATIONS: Record<string, Record<string, string>> = {
   home: {
     en: "Home",
     np: "गृहपृष्ठ",
-    es: "Inicio",
-    fr: "Accueil",
-    de: "Startseite",
-    hi: "मुख्य पृष्ठ",
-    ar: "الرئيسية"
+    bn: "হোমপেজ"
   },
   careSuite: {
     en: "Care Suite",
     np: "हेरचाह सुइट",
-    es: "Suite de Cuidado",
-    fr: "Suite de Soins",
-    de: "Pflegetools",
-    hi: "देखभाल सुइट",
-    ar: "جناح الرعاية"
+    bn: "কেয়ার স্যুট"
   },
   scan: {
     en: "Scan",
     np: "स्क्यान",
-    es: "Escanear",
-    fr: "Scanner",
-    de: "Scannen",
-    hi: "स्कैन",
-    ar: "مسح"
+    bn: "স্ক্যান"
   },
   plan: {
     en: "Plan",
     np: "योजना",
-    es: "Planificar",
-    fr: "Planifier",
-    de: "Planen",
-    hi: "योजना",
-    ar: "خطة"
+    bn: "পরিকল্পনা"
   },
   more: {
     en: "More",
     np: "थप",
-    es: "Más",
-    fr: "Plus",
-    de: "Mehr",
-    hi: "अधिक",
-    ar: "المزيد"
+    bn: "আরও"
   },
   welcomeScreen: {
     en: "Welcome Screen",
     np: "स्वागत स्क्रिन",
-    es: "Pantalla de Bienvenida",
-    fr: "Écran de Bienvenue",
-    de: "Willkommensbildschirm",
-    hi: "स्वागत स्क्रीन",
-    ar: "شاشة الترحيب"
+    bn: "স্বাগতম স্ক্রিন"
   },
   signIn: {
     en: "Sign In",
     np: "साइन इन गर्नुहोस्",
-    es: "Iniciar Sesión",
-    fr: "Se Connecter",
-    de: "Anmelden",
-    hi: "साइन इन करें",
-    ar: "تسجيل الدخول"
+    bn: "সাইন ইন করুন"
   },
   signUp: {
     en: "Sign Up Free",
     np: "निःशुल्क साइन अप गर्नुहोस्",
-    es: "Registrarse Gratis",
-    fr: "Inscription Gratuite",
-    de: "Kostenlos Registrieren",
-    hi: "निःशुल्क साइन अप करें",
-    ar: "تسجيل مجاني"
+    bn: "বিনামূল্যে সাইন আপ"
   },
   adminDashboard: {
     en: "Admin Dashboard",
     np: "व्यवस्थापक ड्यासबोर्ड",
-    es: "Panel de Admin",
-    fr: "Tableau de Bord Admin",
-    de: "Admin-Dashboard",
-    hi: "एडमिन डैशबोर्ड",
-    ar: "لوحة التحكم"
+    bn: "এডমিন ড্যাশবোর্ড"
   },
   userDashboard: {
     en: "User Dashboard",
     np: "प्रयोगकर्ता ड्यासबोर्ड",
-    es: "Panel de Usuario",
-    fr: "Tableau de Bord Utilisateur",
-    de: "Benutzer-Dashboard",
-    hi: "उपयोगकर्ता डैशबोर्ड",
-    ar: "لوحة المستخدم"
+    bn: "ইউজার ড্যাশবোর্ড"
   },
   upgrade: {
     en: "Upgrade / Billing",
     np: "अपग्रेड / भुक्तानी",
-    es: "Mejorar / Facturación",
-    fr: "Améliorer / Facturation",
-    de: "Upgrade / Abrechnung",
-    hi: "अपग्रेड / बिलिंग",
-    ar: "ترقية / الفواتير"
+    bn: "আপগ্রেড / বিলিং"
   },
   sosEmergency: {
     en: "SOS Emergency",
-    np: "आत्त्कालीन SOS",
-    es: "Emergencia SOS",
-    fr: "Urgence SOS",
-    de: "SOS Notfall",
-    hi: "आपातकालीन SOS",
-    ar: "طوارئ SOS"
+    np: "आपत्कालीन SOS",
+    bn: "জরুরি SOS"
   },
   payrollAndStaff: {
     en: "Staff & Payroll",
     np: "कर्मचारी र तलब",
-    es: "Personal y Nomina",
-    fr: "Personnel et Paie",
-    de: "Personal & Gehalt",
-    hi: "स्टाफ और पेरोल",
-    ar: "الموظفين والرواتب"
+    bn: "স্টাফ ও পে-রোল"
   },
   cashManagement: {
     en: "Cash & Finance",
     np: "नगद र वित्त व्यवस्थापन",
-    es: "Efectivo y Finanzas",
-    fr: "Trésorerie et Finance",
-    de: "Bargeld & Finanzen",
-    hi: "नकद और वित्त",
-    ar: "النقدية والمالية"
+    bn: "নগদ ও অর্থ"
   },
   qrGenerator: {
     en: "Paperless QR & Card Studio",
     np: "कागजविहीन QR र कार्ड स्टुडियो",
-    es: "Estudio de Tarjetas y QR",
-    fr: "Studio QR et Cartes",
-    de: "QR & Karten Studio",
-    hi: "कागज रहित QR और कार्ड स्टूडियो",
-    ar: "استوديو البطاقات و QR"
+    bn: "পেপারলেস QR ও কার্ড স্টুডিও"
   },
   allRightsReserved: {
     en: "All rights reserved. Encrypted & Local-First Privacy.",
     np: "सर्वाधिकार सुरक्षित। इन्क्रिप्टेड र गोपनीयता सुरक्षित।",
-    es: "Todos los derechos reservados. Privacidad encriptada.",
-    fr: "Tous droits réservés. Confidentialité chiffrée.",
-    de: "Alle Rechte vorbehalten. Verschlüsselte Privatsphäre.",
-    hi: "सर्वाधिकार सुरक्षित। एन्क्रिप्टेड गोपनीयता।",
-    ar: "جميع الحقوق محفوظة. الخصوصية المشفرة."
+    bn: "সর্বস্বত্ব সংরক্ষিত। এনক্রিপ্ট করা প্রাইভেসি।"
   }
 };
 

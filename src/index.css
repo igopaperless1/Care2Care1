@@ -1,1 +1,22 @@
 @import "tailwindcss";
+
+@layer base {
+  .dark {
+    --bg-main: #0a1128;
+    --bg-card: #131d38;
+    --bg-card-hover: #1a274c;
+    --border-color: #1e294b;
+    --text-primary: #ffffff;
+    --text-secondary: #94a3b8;
+    --google-blue: #1a73e8;
+    --google-blue-hover: #1557b0;
+    --google-blue-light: #8ab4f8;
+    background-color: #0b132b;
+    color: #f8fafc;
+  }
+}
+
+.dark body {
+  background-color: #0b132b;
+  color: #f8fafc;
+}

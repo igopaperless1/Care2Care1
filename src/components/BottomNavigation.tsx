@@ -1,8 +1,20 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Home, Droplets, Camera, Calendar, Menu, Plus, Bot, Sparkles, Mic, ChevronUp, ChevronDown } from "lucide-react";
-import { t } from "../lib/i18n";
+import {
+  Home,
+  LayoutGrid,
+  Plus,
+  Activity,
+  User,
+  Camera,
+  Bot,
+  Sparkles,
+  Mic,
+  ChevronUp,
+  ChevronDown
+} from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 
-export type NavTab = "home" | "track" | "plan" | "care" | "more";
+export type NavTab = "home" | "track" | "plan" | "care" | "more" | "services";
 
 interface BottomNavigationProps {
   activeTab: NavTab;
@@ -11,7 +23,9 @@ interface BottomNavigationProps {
   onOpenCamera: () => void;
   onOpenAiAssistant?: () => void;
   onOpenVoiceAssistant?: () => void;
+  onOpenProfile?: () => void;
   currentLanguage?: string;
+  onExpandChange?: (expanded: boolean) => void;
 }
 
 export const BottomNavigation: React.FC<BottomNavigationProps> = ({
@@ -21,33 +35,49 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   onOpenCamera,
   onOpenAiAssistant,
   onOpenVoiceAssistant,
-  currentLanguage = "en",
+  onOpenProfile,
+  onExpandChange,
 }) => {
+  const { t } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const navToolsRef = useRef<HTMLDivElement | null>(null);
 
   const resetTimer = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       setIsExpanded(false);
-    }, 4000);
+    }, 3000);
   };
 
   useEffect(() => {
+    onExpandChange?.(isExpanded);
     if (isExpanded) {
       resetTimer();
+
+      const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+        if (navToolsRef.current && !navToolsRef.current.contains(event.target as Node)) {
+          setIsExpanded(false);
+        }
+      };
+
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
+
+      return () => {
+        if (timerRef.current) clearTimeout(timerRef.current);
+        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("touchstart", handleClickOutside);
+      };
     } else if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [isExpanded]);
+  }, [isExpanded, onExpandChange]);
 
   return (
     <>
-      {/* FLOATING STACK ON BOTTOM RIGHT (AUTO-COLLAPSES WHEN INACTIVE OR MOUSE LEAVES) */}
-      <div className="fixed bottom-20 right-4 sm:right-8 z-40">
+      {/* FLOATING STACK ON BOTTOM RIGHT (AI VOICE & SCANNER TOOLS) */}
+      <div ref={navToolsRef} className="fixed bottom-20 right-4 sm:right-8 z-40">
         {!isExpanded ? (
           /* Collapsed Compact Floating Trigger Pill */
           <button
@@ -60,12 +90,12 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
               setIsExpanded(true);
               resetTimer();
             }}
-            className="px-3.5 py-2.5 rounded-full bg-gradient-to-r from-emerald-700 via-teal-700 to-indigo-800 text-white font-black text-xs shadow-2xl border-2 border-white/80 flex items-center gap-2 hover:scale-105 active:scale-95 transition-all cursor-pointer group"
-            title="Hover or click to expand AI Voice, AI Bot & Quick Tools"
+            className="px-3.5 py-2 rounded-full bg-gradient-to-r from-[#FF6A45] via-orange-600 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-extrabold text-xs shadow-lg shadow-orange-900/20 border border-orange-300/40 flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all cursor-pointer group"
+            title="AI Tools & Scanner"
           >
-            <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
-            <span className="tracking-tight text-[11px]">AI & Tools</span>
-            <ChevronUp className="w-3.5 h-3.5 text-emerald-300 group-hover:-translate-y-0.5 transition-transform" />
+            <Sparkles className="w-4 h-4 text-amber-200 animate-pulse" />
+            <span className="tracking-tight text-xs font-black">AI Tools</span>
+            <ChevronUp className="w-3.5 h-3.5 text-orange-100 group-hover:-translate-y-0.5 transition-transform" />
           </button>
         ) : (
           /* Expanded Floating Tools Stack */
@@ -73,20 +103,19 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
             onMouseEnter={resetTimer}
             onMouseMove={resetTimer}
             onMouseLeave={() => setIsExpanded(false)}
-            className="flex flex-col items-center gap-2.5 p-2 rounded-3xl bg-slate-900/90 backdrop-blur-md border border-white/20 shadow-2xl animate-in fade-in zoom-in duration-200"
+            className="flex flex-col items-center gap-2.5 p-2.5 rounded-3xl bg-slate-900/95 backdrop-blur-md border border-slate-800 shadow-2xl animate-in fade-in zoom-in duration-200"
           >
             {/* 1. VOICE ASSISTANT FLOATING BUTTON */}
             {onOpenVoiceAssistant && (
               <button
                 onClick={() => {
                   onOpenVoiceAssistant();
-                  resetTimer();
+                  setIsExpanded(false);
                 }}
-                className="w-11 h-11 rounded-full bg-gradient-to-tr from-emerald-700 via-teal-600 to-cyan-500 hover:from-emerald-600 hover:to-teal-400 text-white flex items-center justify-center shadow-lg ring-2 ring-emerald-300/80 active:scale-95 transition-all cursor-pointer group relative"
+                className="w-11 h-11 rounded-full bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center border border-slate-700 active:scale-95 transition-all cursor-pointer group"
                 title="Voice Assistant & Audio Dictation"
               >
-                <Mic className="w-5 h-5 text-emerald-100 group-hover:scale-110 transition-transform" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse" />
+                <Mic className="w-5 h-5 text-emerald-400 group-hover:scale-110 transition-transform" />
               </button>
             )}
 
@@ -95,26 +124,25 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
               <button
                 onClick={() => {
                   onOpenAiAssistant();
-                  resetTimer();
+                  setIsExpanded(false);
                 }}
-                className="w-11 h-11 rounded-full bg-gradient-to-tr from-indigo-800 via-purple-700 to-amber-500 hover:from-indigo-700 hover:to-amber-400 text-white flex items-center justify-center shadow-lg ring-2 ring-amber-300/80 active:scale-95 transition-all cursor-pointer group relative"
+                className="w-11 h-11 rounded-full bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center border border-slate-700 active:scale-95 transition-all cursor-pointer group"
                 title="Care2Care AI Assistant"
               >
-                <Bot className="w-5 h-5 text-amber-200 group-hover:scale-110 transition-transform" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white animate-pulse" />
+                <Bot className="w-5 h-5 text-amber-300 group-hover:scale-110 transition-transform" />
               </button>
             )}
 
-            {/* 3. GLOBAL QUICK ACTION (+) BUTTON */}
+            {/* 3. CAMERA / SCANNER BUTTON */}
             <button
               onClick={() => {
-                onOpenQuickMenu();
+                onOpenCamera();
                 setIsExpanded(false);
               }}
-              className="w-12 h-12 rounded-full bg-gradient-to-tr from-emerald-600 via-teal-500 to-cyan-500 hover:from-emerald-500 hover:to-cyan-400 text-white flex items-center justify-center shadow-lg ring-2 ring-white active:scale-95 transition-all cursor-pointer group"
-              title="Global Quick Action Menu (+)"
+              className="w-11 h-11 rounded-full bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center border border-slate-700 active:scale-95 transition-all cursor-pointer group"
+              title="Camera: Capture Medicine & Scan QR"
             >
-              <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
+              <Camera className="w-5 h-5 text-sky-400 group-hover:scale-110 transition-transform" />
             </button>
 
             {/* Collapse Trigger */}
@@ -129,63 +157,82 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
         )}
       </div>
 
-      {/* BOTTOM NAVIGATION BAR */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 py-2 px-4 shadow-xl">
-        <div className="max-w-md mx-auto flex items-center justify-around relative">
-          {/* HOME */}
+      {/* BOTTOM NAVIGATION BAR (MATCHING SCREENSHOT WITH 5 UNIFIED BUTTONS) */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 py-2 px-4 shadow-xl">
+        <div className="max-w-md mx-auto flex items-center justify-between relative px-2">
+          {/* 1. HOME */}
           <button
+            type="button"
             onClick={() => setActiveTab("home")}
             className={`flex flex-col items-center gap-0.5 transition-all cursor-pointer ${
-              activeTab === "home" ? "text-emerald-600 font-extrabold scale-105" : "text-slate-400 hover:text-slate-600"
+              activeTab === "home"
+                ? "text-[#FF6A45] font-black scale-105"
+                : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
             }`}
           >
             <Home className="w-5 h-5" />
-            <span className="text-[10px] tracking-tight">{t("home", currentLanguage)}</span>
+            <span className="text-[10px] tracking-tight">{t("nav.home", "Home")}</span>
           </button>
 
-          {/* CARE */}
+          {/* 2. SERVICES */}
           <button
-            onClick={() => setActiveTab("care")}
+            type="button"
+            onClick={() => setActiveTab("services")}
             className={`flex flex-col items-center gap-0.5 transition-all cursor-pointer ${
-              activeTab === "care" ? "text-emerald-600 font-extrabold scale-105" : "text-slate-400 hover:text-slate-600"
+              activeTab === "services" || activeTab === "care"
+                ? "text-[#FF6A45] font-black scale-105"
+                : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
             }`}
           >
-            <Droplets className="w-5 h-5" />
-            <span className="text-[10px] tracking-tight">{t("careSuite", currentLanguage)}</span>
+            <LayoutGrid className="w-5 h-5" />
+            <span className="text-[10px] tracking-tight">{t("nav.services", "Services")}</span>
           </button>
 
-          {/* CENTRAL CAMERA / SCANNER BUTTON */}
+          {/* 3. CENTRAL ORANGE (+) ACTION BUTTON (MATCHING SCREENSHOT) */}
           <button
-            onClick={onOpenCamera}
-            className="flex flex-col items-center gap-0.5 transition-all cursor-pointer group text-slate-400 hover:text-emerald-600"
-            title="Camera: Capture Medicine & Scan QR Code"
+            type="button"
+            onClick={onOpenQuickMenu}
+            className="flex flex-col items-center -mt-5 transition-all cursor-pointer group"
+            title="Quick Action Menu"
           >
-            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-slate-900 via-slate-800 to-slate-950 text-emerald-400 flex items-center justify-center shadow-md ring-2 ring-emerald-500/30 group-hover:scale-110 transition-transform">
-              <Camera className="w-5 h-5 text-emerald-400" />
+            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#FF6A45] to-[#FB923C] text-white flex items-center justify-center shadow-lg shadow-orange-500/30 ring-4 ring-white dark:ring-slate-900 group-hover:scale-110 active:scale-95 transition-transform">
+              <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-200" />
             </div>
-            <span className="text-[10px] tracking-tight font-bold text-slate-500 group-hover:text-emerald-600">{t("scan", currentLanguage)}</span>
+            <span className="text-[9px] font-bold text-slate-400 group-hover:text-[#FF6A45] mt-0.5">Quick</span>
           </button>
 
-          {/* PLAN */}
+          {/* 4. PROGRESS / TRACK */}
           <button
-            onClick={() => setActiveTab("plan")}
+            type="button"
+            onClick={() => setActiveTab("track")}
             className={`flex flex-col items-center gap-0.5 transition-all cursor-pointer ${
-              activeTab === "plan" ? "text-emerald-600 font-extrabold scale-105" : "text-slate-400 hover:text-slate-600"
+              activeTab === "track"
+                ? "text-[#FF6A45] font-black scale-105"
+                : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
             }`}
           >
-            <Calendar className="w-5 h-5" />
-            <span className="text-[10px] tracking-tight">{t("plan", currentLanguage)}</span>
+            <Activity className="w-5 h-5" />
+            <span className="text-[10px] tracking-tight">{t("nav.progress", "Progress")}</span>
           </button>
 
-          {/* MORE */}
+          {/* 5. PROFILE */}
           <button
-            onClick={() => setActiveTab("more")}
+            type="button"
+            onClick={() => {
+              if (onOpenProfile) {
+                onOpenProfile();
+              } else {
+                setActiveTab("more");
+              }
+            }}
             className={`flex flex-col items-center gap-0.5 transition-all cursor-pointer ${
-              activeTab === "more" ? "text-emerald-600 font-extrabold scale-105" : "text-slate-400 hover:text-slate-600"
+              activeTab === "more"
+                ? "text-[#FF6A45] font-black scale-105"
+                : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
             }`}
           >
-            <Menu className="w-5 h-5" />
-            <span className="text-[10px] tracking-tight">{t("more", currentLanguage)}</span>
+            <User className="w-5 h-5" />
+            <span className="text-[10px] tracking-tight">{t("nav.profile", "Profile")}</span>
           </button>
         </div>
       </nav>

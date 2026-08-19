@@ -46,28 +46,20 @@ export const SplashEntranceAnimation: React.FC<SplashEntranceAnimationProps> = (
   onSelectLanguage,
   currentLanguage = "en"
 }) => {
-  // Slides: 0 = Language Selection, 1 = 4-Service Box, 2 = Analytics, 3 = Multi-Patient, 4 = Offline/Online, 5 = Security, 6 = Get Started
+  // Slides: 0 = Language Selection, 1 = 4-Service Box, 2 = Analytics, 3 = Multi-Patient, 4 = Offline/Online, 5 = Security
   const [currentSlide, setCurrentSlide] = useState(0);
   const [selectedLangCode, setSelectedLangCode] = useState(currentLanguage);
-  
-  // Auth / Get Started States
-  const [countryCode, setCountryCode] = useState("+977");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [emailOrPhone, setEmailOrPhone] = useState("");
-  const [isPhoneMode, setIsPhoneMode] = useState(true);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       setCurrentSlide(0);
-      setErrorMsg(null);
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
   const handleNextSlide = () => {
-    if (currentSlide < 6) {
+    if (currentSlide < 5) {
       setCurrentSlide((prev) => prev + 1);
     } else {
       handleCompleteOnboarding();
@@ -75,7 +67,7 @@ export const SplashEntranceAnimation: React.FC<SplashEntranceAnimationProps> = (
   };
 
   const handleSkipToAuth = () => {
-    setCurrentSlide(6);
+    handleCompleteOnboarding();
   };
 
   const handleCompleteOnboarding = () => {
@@ -88,23 +80,7 @@ export const SplashEntranceAnimation: React.FC<SplashEntranceAnimationProps> = (
       onSelectLanguage(selectedLangCode);
     }
     
-    // Open login/signup modal instead of bypassing auth
-    if (onOpenLogin) {
-      onOpenLogin();
-    } else {
-      onClose();
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    if (onSelectLanguage) {
-      onSelectLanguage(selectedLangCode);
-    }
-    try {
-      localStorage.setItem("care2care_welcome_seen", "true");
-    } catch (e) {}
-
-    // Redirect to login modal for authenticating
+    // Open consolidated login/signup modal
     if (onOpenLogin) {
       onOpenLogin();
     } else {
@@ -130,46 +106,34 @@ export const SplashEntranceAnimation: React.FC<SplashEntranceAnimationProps> = (
         </div>
 
         {/* TOP RIGHT CONTROLS: LANGUAGE PICKER & SKIP BUTTON */}
-        {currentSlide > 0 && currentSlide < 6 && (
-          <div className="flex items-center gap-2">
-            {/* LANGUAGE SELECTOR DROPDOWN */}
-            <div className="relative">
-              <select
-                value={selectedLangCode}
-                onChange={(e) => {
-                  setSelectedLangCode(e.target.value);
-                  if (onSelectLanguage) onSelectLanguage(e.target.value);
-                }}
-                className="appearance-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold py-1.5 pl-2.5 pr-6 rounded-xl cursor-pointer shadow-2xs focus:outline-none"
-              >
-                {SUPPORTED_LANGUAGES.map((lang) => (
-                  <option key={lang.code} value={lang.code}>
-                    {lang.flag} {lang.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
-
-            {/* SKIP BUTTON */}
-            <button
-              onClick={handleSkipToAuth}
-              className="px-3.5 py-1.5 bg-slate-200/70 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs transition-all cursor-pointer"
+        <div className="flex items-center gap-2">
+          {/* LANGUAGE SELECTOR DROPDOWN */}
+          <div className="relative">
+            <select
+              value={selectedLangCode}
+              onChange={(e) => {
+                setSelectedLangCode(e.target.value);
+                if (onSelectLanguage) onSelectLanguage(e.target.value);
+              }}
+              className="appearance-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold py-1.5 pl-2.5 pr-6 rounded-xl cursor-pointer shadow-2xs focus:outline-none"
             >
-              Skip
-            </button>
+              {SUPPORTED_LANGUAGES.map((lang) => (
+                <option key={lang.code} value={lang.code}>
+                  {lang.flag} {lang.name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
-        )}
 
-        {/* CLOSE BUTTON ON GET STARTED */}
-        {currentSlide === 6 && (
+          {/* SKIP BUTTON */}
           <button
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-full transition-colors cursor-pointer"
+            onClick={handleSkipToAuth}
+            className="px-3.5 py-1.5 bg-slate-200/70 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs transition-all cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            Skip
           </button>
-        )}
+        </div>
       </div>
 
       {/* MAIN CENTER CONTENT AREA */}
@@ -524,169 +488,13 @@ export const SplashEntranceAnimation: React.FC<SplashEntranceAnimationProps> = (
           </div>
         )}
 
-        {/* ==================================================================== */}
-        {/* SLIDE 6: LET'S GET STARTED (MATCHING REFERENCE IMAGE 7) */}
-        {/* ==================================================================== */}
-        {currentSlide === 6 && (
-          <div className="space-y-6 text-left animate-in fade-in zoom-in duration-300">
-            <div className="space-y-1">
-              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                Let's Get Started
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
-                Please enter phone number or email to continue
-              </p>
-            </div>
-
-            {/* INPUT METHOD TOGGLE CHIPS */}
-            <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs font-bold gap-1">
-              <button
-                type="button"
-                onClick={() => setIsPhoneMode(true)}
-                className={`flex-1 py-2 rounded-xl transition-all cursor-pointer text-center ${
-                  isPhoneMode ? "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs" : "text-slate-500"
-                }`}
-              >
-                📱 Phone Number
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsPhoneMode(false)}
-                className={`flex-1 py-2 rounded-xl transition-all cursor-pointer text-center ${
-                  !isPhoneMode ? "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs" : "text-slate-500"
-                }`}
-              >
-                ✉️ Email Address
-              </button>
-            </div>
-
-            {/* PHONE / EMAIL INPUT BOX */}
-            {isPhoneMode ? (
-              <div className="flex items-center gap-2 border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 p-2 shadow-2xs">
-                {/* COUNTRY CODE DROPDOWN */}
-                <div className="relative border-r border-slate-200 dark:border-slate-800 pr-2">
-                  <select
-                    value={countryCode}
-                    onChange={(e) => setCountryCode(e.target.value)}
-                    className="appearance-none bg-transparent text-xs font-extrabold text-slate-800 dark:text-slate-200 pr-5 focus:outline-none cursor-pointer"
-                  >
-                    <option value="+977">🇳🇵 +977</option>
-                    <option value="+1">🇺🇸 +1</option>
-                    <option value="+91">🇮🇳 +91</option>
-                    <option value="+44">🇬🇧 +44</option>
-                    <option value="+880">🇧🇩 +880</option>
-                  </select>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
-
-                <input
-                  type="tel"
-                  placeholder="9XXXXXXXXX"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="w-full bg-transparent text-sm font-bold text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400"
-                />
-              </div>
-            ) : (
-              <div className="border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 p-3 shadow-2xs">
-                <input
-                  type="email"
-                  placeholder="e.g. sarah.jenkins@care2care.org"
-                  value={emailOrPhone}
-                  onChange={(e) => setEmailOrPhone(e.target.value)}
-                  className="w-full bg-transparent text-sm font-bold text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400"
-                />
-              </div>
-            )}
-
-            {/* CONTINUE PRIMARY BUTTON */}
-            <button
-              onClick={handleCompleteOnboarding}
-              className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-sm rounded-2xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-98"
-            >
-              <span>Continue</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-
-            {/* OR DIVIDER */}
-            <div className="relative flex items-center justify-center my-4">
-              <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
-              <span className="bg-slate-50 dark:bg-slate-950 px-3 text-xs font-bold text-slate-400 uppercase">
-                or
-              </span>
-            </div>
-
-            {/* CONTINUE WITH GOOGLE BUTTON */}
-            <button
-              onClick={handleGoogleSignIn}
-              className="w-full py-3.5 px-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 text-slate-800 dark:text-slate-200 font-bold text-xs rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-3 shadow-2xs"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.15C3.26 21.3 7.35 24 12 24z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.99-3.15z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.26 2.7 1.29 6.61l3.99 3.15c.95-2.85 3.6-4.96 6.72-4.96z"
-                />
-              </svg>
-              <span>Continue with Google</span>
-            </button>
-
-            {/* DIRECT AUTH / SIGN IN OPTIONS */}
-            <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => {
-                  if (onOpenLogin) onOpenLogin();
-                  else onClose();
-                }}
-                className="font-black text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
-              >
-                Existing Account? Sign In
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (onOpenSignup) onOpenSignup();
-                  else onClose();
-                }}
-                className="font-black text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
-              >
-                New User? Register
-              </button>
-            </div>
-
-            {/* TERMS & PRIVACY FOOTER */}
-            <p className="text-[11px] text-center text-slate-400 font-medium leading-relaxed pt-2">
-              By continuing, you agree to our{" "}
-              <a href="#terms" onClick={(e) => e.preventDefault()} className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">
-                Terms of Use
-              </a>{" "}
-              &{" "}
-              <a href="#privacy" onClick={(e) => e.preventDefault()} className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">
-                Privacy Policy
-              </a>.
-            </p>
-          </div>
-        )}
-
       </div>
 
       {/* BOTTOM FOOTER NAVIGATION BAR */}
       <div className="w-full max-w-md mx-auto pt-2 pb-1 space-y-4">
 
         {/* PROGRESS INDICATOR DOTS */}
-        {currentSlide > 0 && currentSlide < 6 && (
+        {currentSlide > 0 && (
           <div className="flex items-center justify-center gap-1.5">
             {[1, 2, 3, 4, 5].map((slideNum) => {
               const isActive = currentSlide === slideNum;
@@ -704,37 +512,35 @@ export const SplashEntranceAnimation: React.FC<SplashEntranceAnimationProps> = (
           </div>
         )}
 
-        {/* BOTTOM BUTTONS FOR SLIDES 0 to 5 */}
-        {currentSlide < 6 && (
-          <div className="flex items-center gap-3">
-            {/* SKIP / CANCEL BUTTON (For Slide 0 or general) */}
-            {currentSlide === 0 ? (
-              <button
-                onClick={handleSkipToAuth}
-                className="w-full py-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-extrabold text-sm rounded-2xl cursor-pointer transition-all text-center"
-              >
-                Skip Language
-              </button>
-            ) : (
-              <button
-                onClick={handleSkipToAuth}
-                className="flex-1 py-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-extrabold text-sm rounded-2xl cursor-pointer transition-all text-center shadow-2xs"
-              >
-                Skip
-              </button>
-            )}
-
-            {/* CONTINUE / NEXT BUTTON */}
+        {/* BOTTOM BUTTONS */}
+        <div className="flex items-center gap-3">
+          {/* SKIP / CANCEL BUTTON (For Slide 0 or general) */}
+          {currentSlide === 0 ? (
             <button
-              onClick={handleNextSlide}
-              className={`${
-                currentSlide === 0 ? "w-full" : "flex-1"
-              } py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-sm rounded-2xl shadow-md transition-all cursor-pointer text-center flex items-center justify-center gap-2 active:scale-98`}
+              onClick={handleSkipToAuth}
+              className="w-full py-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-extrabold text-sm rounded-2xl cursor-pointer transition-all text-center"
             >
-              <span>{currentSlide === 5 ? "Get Started" : "Continue"}</span>
+              Skip Language
             </button>
-          </div>
-        )}
+          ) : (
+            <button
+              onClick={handleSkipToAuth}
+              className="flex-1 py-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-extrabold text-sm rounded-2xl cursor-pointer transition-all text-center shadow-2xs"
+            >
+              Skip
+            </button>
+          )}
+
+          {/* CONTINUE / NEXT BUTTON */}
+          <button
+            onClick={handleNextSlide}
+            className={`${
+              currentSlide === 0 ? "w-full" : "flex-1"
+            } py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-sm rounded-2xl shadow-md transition-all cursor-pointer text-center flex items-center justify-center gap-2 active:scale-98`}
+          >
+            <span>{currentSlide === 5 ? "Get Started" : "Continue"}</span>
+          </button>
+        </div>
       </div>
 
     </div>

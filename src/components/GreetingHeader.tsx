@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { Patient, AccountType } from "../types";
 import { convertDateToSystem } from "./CalendarConverterTracker";
+import { useLanguage } from "../context/LanguageContext";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 // Safe string & helper utilities
 const safeStr = (val: any, fallback = ""): string => (typeof val === "string" ? val : fallback);
@@ -56,6 +58,7 @@ export const GreetingHeader: React.FC<GreetingHeaderProps> = ({
   onOpenNotifications,
   notificationsCount = 3
 }) => {
+  const { t, formatDate, formatTime } = useLanguage();
   const [currentTimeStr, setCurrentTimeStr] = useState<string>("");
   const [currentDayStr, setCurrentDayStr] = useState<string>("");
   const [currentDateStr, setCurrentDateStr] = useState<string>("");
@@ -79,9 +82,7 @@ export const GreetingHeader: React.FC<GreetingHeaderProps> = ({
     try {
       const updateClock = () => {
         const now = new Date();
-        setCurrentTimeStr(
-          now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })
-        );
+        setCurrentTimeStr(formatTime(now));
         setCurrentDayStr(now.toLocaleDateString([], { weekday: "short" }));
 
         // Convert Gregorian date to target selected calendar
@@ -90,7 +91,7 @@ export const GreetingHeader: React.FC<GreetingHeaderProps> = ({
         if (calendarResult && calendarResult.formatted) {
           setCurrentDateStr(calendarResult.formatted);
         } else {
-          setCurrentDateStr(now.toLocaleDateString([], { year: "numeric", month: "short", day: "numeric" }));
+          setCurrentDateStr(formatDate(now));
         }
 
         const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -113,32 +114,32 @@ export const GreetingHeader: React.FC<GreetingHeaderProps> = ({
     } catch (e) {
       console.error("Error setting time interval", e);
     }
-  }, [selectedCalendar]);
+  }, [selectedCalendar, formatDate, formatTime]);
 
   // Time-based Greetings & Salutations
   const getTimeBasedGreeting = () => {
     try {
       const hour = new Date().getHours();
       if (hour >= 5 && hour < 12) {
-        return { text: "Good Morning 🌅", subText: "Start your morning care & hydration routine" };
+        return { text: t("greeting.morning", "Good Morning 🌅"), subText: t("greeting.morning_sub", "Start your morning care & hydration routine") };
       }
       if (hour >= 12 && hour < 17) {
-        return { text: "Good Afternoon ☀️", subText: "Check afternoon vitals & staff rosters" };
+        return { text: t("greeting.afternoon", "Good Afternoon ☀️"), subText: t("greeting.afternoon_sub", "Check afternoon vitals & staff rosters") };
       }
       if (hour >= 17 && hour < 22) {
-        return { text: "Good Evening 🌆", subText: "Review today's care logs & family health goals" };
+        return { text: t("greeting.evening", "Good Evening 🌆"), subText: t("greeting.evening_sub", "Review today's care logs & family health goals") };
       }
-      return { text: "Good Night 🌙", subText: "Rest well • Emergency SOS active 24/7" };
+      return { text: t("greeting.night", "Good Night 🌙"), subText: t("greeting.night_sub", "Rest well • Emergency SOS active 24/7") };
     } catch {
-      return { text: "Welcome to Care2Care 💚", subText: "Track health, family & professional care" };
+      return { text: t("greeting.welcome", "Welcome to Care2Care 💚"), subText: t("greeting.welcome_sub", "Track health, family & professional care") };
     }
   };
 
   const getSalutation = () => {
     try {
       const cat = (patient?.category || "").toLowerCase();
-      if (cat === "elderly") return "Elder";
-      if (cat === "pediatric" || cat === "kids") return "Champion";
+      if (cat === "elderly") return t("salutation.elder", "Elder");
+      if (cat === "pediatric" || cat === "kids") return t("salutation.champion", "Champion");
       return "";
     } catch {
       return "";
@@ -147,13 +148,10 @@ export const GreetingHeader: React.FC<GreetingHeaderProps> = ({
 
   const greeting = getTimeBasedGreeting();
   const salutation = getSalutation();
-  const patientName = safeStr(patient?.name, "Valued Member");
+  const patientName = safeStr(patient?.name, t("app.valued_member", "Valued Member"));
 
   return (
-    <div className="bg-gradient-to-br from-[#1b5e20] via-[#2E7D32] to-[#0f172a] text-white p-4 sm:p-5 rounded-3xl border border-emerald-500/30 shadow-xl space-y-3.5 relative overflow-hidden">
-      {/* Ambient background glow */}
-      <div className="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 bg-emerald-400/10 rounded-full blur-2xl pointer-events-none" />
-
+    <div className="bg-slate-900 text-white p-4 sm:p-5 rounded-3xl border border-slate-800 shadow-md space-y-3.5 relative overflow-hidden">
       {/* TOP ROW: Profile Avatar, Name, Persona Pill & Header Actions */}
       <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
         {/* User Identity Info */}
@@ -181,7 +179,7 @@ export const GreetingHeader: React.FC<GreetingHeaderProps> = ({
                   ? "bg-blue-400/20 text-blue-300 border border-blue-400/40"
                   : "bg-amber-400/20 text-amber-300 border border-amber-400/40"
               }`}>
-                {activePersona === "personal" ? "Personal" : activePersona === "professional" ? "Enterprise" : "Sub-Account"}
+                {activePersona === "personal" ? t("persona.personal", "Personal") : activePersona === "professional" ? t("persona.enterprise", "Enterprise") : t("persona.sub_account", "Sub-Account")}
               </span>
             </div>
             <p className="text-[11px] text-emerald-100/80 font-medium">
@@ -201,7 +199,7 @@ export const GreetingHeader: React.FC<GreetingHeaderProps> = ({
                 className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black rounded-xl shadow-md transition-all cursor-pointer flex items-center gap-1 border border-amber-300"
               >
                 <User className="w-3.5 h-3.5" />
-                <span className="hidden xs:inline">Switch</span>
+                <span className="hidden xs:inline">{t("buttons.switch", "Switch")}</span>
                 <ChevronDown className="w-3 h-3" />
               </button>
 
@@ -218,7 +216,7 @@ export const GreetingHeader: React.FC<GreetingHeaderProps> = ({
                     <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                       <div className="flex items-center gap-2">
                         <span className="p-1.5 bg-amber-400/20 text-amber-400 rounded-xl">👤</span>
-                        <span className="text-xs text-slate-200 uppercase tracking-wider font-extrabold">Select Active Profile</span>
+                        <span className="text-xs text-slate-200 uppercase tracking-wider font-extrabold">{t("persona.select_title", "Select Active Profile")}</span>
                       </div>
                       <button
                         type="button"
@@ -245,8 +243,8 @@ export const GreetingHeader: React.FC<GreetingHeaderProps> = ({
                         <div className="flex items-center gap-3">
                           <span className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl text-lg">🌿</span>
                           <div>
-                            <div className="text-sm font-extrabold text-white">Personal Care Profile</div>
-                            <div className="text-[11px] text-slate-400 font-normal mt-0.5">Health, routines & family care</div>
+                            <div className="text-sm font-extrabold text-white">{t("persona.personal_title", "Personal Care Profile")}</div>
+                            <div className="text-[11px] text-slate-400 font-normal mt-0.5">{t("persona.personal_desc", "Health, routines & family care")}</div>
                           </div>
                         </div>
                         {activePersona === "personal" && <Check className="w-5 h-5 text-emerald-400 shrink-0" />}
@@ -267,8 +265,8 @@ export const GreetingHeader: React.FC<GreetingHeaderProps> = ({
                         <div className="flex items-center gap-3">
                           <span className="p-2 bg-blue-500/20 text-blue-400 rounded-xl text-lg">💼</span>
                           <div>
-                            <div className="text-sm font-extrabold text-white">Professional Enterprise</div>
-                            <div className="text-[11px] text-slate-400 font-normal mt-0.5">Staff, store & contracts</div>
+                            <div className="text-sm font-extrabold text-white">{t("persona.enterprise_title", "Professional Enterprise")}</div>
+                            <div className="text-[11px] text-slate-400 font-normal mt-0.5">{t("persona.enterprise_desc", "Staff, store & contracts")}</div>
                           </div>
                         </div>
                         {activePersona === "professional" && <Check className="w-5 h-5 text-blue-400 shrink-0" />}
@@ -289,8 +287,8 @@ export const GreetingHeader: React.FC<GreetingHeaderProps> = ({
                         <div className="flex items-center gap-3">
                           <span className="p-2 bg-amber-500/20 text-amber-400 rounded-xl text-lg">👥</span>
                           <div>
-                            <div className="text-sm font-extrabold text-white">Sub-Account / Staff Mode</div>
-                            <div className="text-[11px] text-slate-400 font-normal mt-0.5">Task execution & shift logs</div>
+                            <div className="text-sm font-extrabold text-white">{t("persona.sub_title", "Sub-Account / Staff Mode")}</div>
+                            <div className="text-[11px] text-slate-400 font-normal mt-0.5">{t("persona.sub_desc", "Task execution & shift logs")}</div>
                           </div>
                         </div>
                         {activePersona === "sub_account" && <Check className="w-5 h-5 text-amber-400 shrink-0" />}
@@ -330,7 +328,7 @@ export const GreetingHeader: React.FC<GreetingHeaderProps> = ({
             <Clock className="w-3.5 h-3.5 text-emerald-400 animate-pulse shrink-0" />
             <span>{currentDayStr}, {currentDateStr}</span>
             <span className="text-white font-mono bg-emerald-900/80 px-1.5 py-0.5 rounded border border-emerald-500/30 text-[10px]">
-              {currentTimeStr || "Live Time"}
+              {currentTimeStr || t("clock.live_time", "Live Time")}
             </span>
           </div>
 
@@ -340,12 +338,14 @@ export const GreetingHeader: React.FC<GreetingHeaderProps> = ({
           </div>
         </div>
 
-        {/* Calendar Selector */}
-        <select
-          value={selectedCalendar}
-          onChange={(e) => setSelectedCalendar(e.target.value)}
-          className="bg-emerald-950 text-emerald-300 text-[10px] font-extrabold rounded-lg px-2 py-1 border border-emerald-600/50 focus:outline-none cursor-pointer"
-        >
+        <div className="flex items-center gap-1.5">
+          <LanguageSwitcher variant="compact" />
+          {/* Calendar Selector */}
+          <select
+            value={selectedCalendar}
+            onChange={(e) => setSelectedCalendar(e.target.value)}
+            className="bg-emerald-950 text-emerald-300 text-[10px] font-extrabold rounded-lg px-2 py-1 border border-emerald-600/50 focus:outline-none cursor-pointer"
+          >
           <option value="nepali_vs">🇳🇵 Bikram Sambat (BS)</option>
           <option value="gregorian">🌐 Gregorian (AD)</option>
           <option value="newari_ns">🇳🇵 Nepal Sambat (NS)</option>
@@ -356,6 +356,7 @@ export const GreetingHeader: React.FC<GreetingHeaderProps> = ({
           <option value="persian">🇮🇷 Solar Hijri</option>
         </select>
       </div>
+    </div>
 
       {/* THIRD ROW: AI & Voice Assistant Quick Actions Bar */}
       <div className="relative z-10 flex items-center justify-between gap-2 pt-1">
@@ -364,10 +365,10 @@ export const GreetingHeader: React.FC<GreetingHeaderProps> = ({
             <button
               type="button"
               onClick={onOpenVoiceAssistantModal}
-              className="px-3 py-1.5 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 font-extrabold text-xs rounded-xl flex items-center gap-1.5 border border-emerald-500/40 transition-all cursor-pointer"
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer"
             >
               <Mic className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Voice Dictation</span>
+              <span>{t("buttons.voice_dictation", "Voice Dictation")}</span>
             </button>
           )}
 
@@ -375,10 +376,10 @@ export const GreetingHeader: React.FC<GreetingHeaderProps> = ({
             <button
               type="button"
               onClick={onOpenAiAssistantModal}
-              className="px-3 py-1.5 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer"
             >
-              <Bot className="w-3.5 h-3.5 text-slate-950" />
-              <span>Care2Care AI</span>
+              <Bot className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{t("buttons.ai_assistant", "Care2Care AI")}</span>
             </button>
           )}
         </div>
@@ -390,7 +391,7 @@ export const GreetingHeader: React.FC<GreetingHeaderProps> = ({
             className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-emerald-200 text-xs font-bold rounded-xl flex items-center gap-1 transition-all cursor-pointer"
           >
             {isAllExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-            <span className="hidden xs:inline">{isAllExpanded ? "Compact" : "Expand"}</span>
+            <span className="hidden xs:inline">{isAllExpanded ? t("buttons.compact", "Compact") : t("buttons.expand", "Expand")}</span>
           </button>
         )}
       </div>

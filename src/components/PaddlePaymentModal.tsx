@@ -11,9 +11,12 @@ import {
   HelpCircle,
   Copy,
   Check,
-  FileCode
+  FileCode,
+  Building2,
+  QrCode
 } from "lucide-react";
 import { getSavedPaddleConfig, savePaddleConfig, PaddleConfig, REFINED_CARE2CARE_PADDLE_PROMPT } from "../lib/paddle";
+import { ManualPaymentWizardModal } from "./ManualPaymentWizardModal";
 
 interface PaddlePaymentModalProps {
   isOpen: boolean;
@@ -42,6 +45,7 @@ export const PaddlePaymentModal: React.FC<PaddlePaymentModalProps> = ({
 
   const [selectedGateway, setSelectedGateway] = useState<"esewa" | "khalti" | "fonepay" | "imepay" | "paddle">("esewa");
   const [walletPhone, setWalletPhone] = useState("9841000000");
+  const [isManualWizardOpen, setIsManualWizardOpen] = useState(false);
 
   if (!isOpen) return null;
 
@@ -376,6 +380,27 @@ export const PaddlePaymentModal: React.FC<PaddlePaymentModalProps> = ({
                 </button>
               </div>
 
+              {/* MANUAL BANK TRANSFER / OFFLINE QR OPTION */}
+              <div className="p-3 bg-indigo-50/80 rounded-2xl border border-indigo-200 text-indigo-950 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span className="p-2 bg-indigo-900 text-amber-300 rounded-xl">
+                    <Building2 className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <p className="font-extrabold text-xs">Offline Bank Transfer & UPI QR</p>
+                    <p className="text-[10px] text-indigo-700">Pay directly to Bank Account or UPI and upload receipt proof</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsManualWizardOpen(true)}
+                  className="px-3 py-1.5 bg-indigo-900 hover:bg-indigo-800 text-amber-300 font-black text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1 shrink-0"
+                >
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>Manual Pay Wizard</span>
+                </button>
+              </div>
+
               {/* WALLET INPUT FORM IF LOCAL GATEWAY */}
               {selectedGateway !== "paddle" && (
                 <div className="p-3 bg-slate-100 rounded-2xl border border-slate-200 flex flex-col sm:flex-row items-center gap-3">
@@ -515,6 +540,26 @@ export const PaddlePaymentModal: React.FC<PaddlePaymentModalProps> = ({
           </form>
         )}
       </div>
+
+      {/* MANUAL PAYMENT WIZARD MODAL */}
+      <ManualPaymentWizardModal
+        isOpen={isManualWizardOpen}
+        onClose={() => setIsManualWizardOpen(false)}
+        selectedPlan={selectedTier}
+        planPrice={
+          selectedTier === "Premium"
+            ? billingCycle === "monthly" ? 4.99 : 49.99
+            : selectedTier === "Family"
+            ? billingCycle === "monthly" ? 9.99 : 99.99
+            : billingCycle === "monthly" ? 29.99 : 299.99
+        }
+        billingCycle={billingCycle}
+        onSuccess={() => {
+          setIsManualWizardOpen(false);
+          showToast(`⏳ Payment request submitted! Pending Admin Verification.`);
+          onClose();
+        }}
+      />
     </div>
   );
 };

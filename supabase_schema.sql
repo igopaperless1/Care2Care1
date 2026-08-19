@@ -546,7 +546,145 @@ CREATE POLICY "Users can manage emergency contacts" ON public.emergency_contacts
 CREATE POLICY "Users can manage sos alerts" ON public.sos_alerts FOR ALL USING (auth.uid() = user_id OR public.is_admin());
 
 -- ============================================================================
--- 15. SAMPLE SEED DATA
+-- 15. 21-DAY GAMIFICATION ENGINE (HABIT CHALLENGES & PENALTIES)
+-- ============================================================================
+
+-- Add freeze_tokens, daily_reward_claimed, and coins to profiles
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS freeze_tokens INT DEFAULT 0;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS daily_reward_claimed BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS coins INT DEFAULT 100;
+
+-- 21-Day Habit Challenges Table
+CREATE TABLE IF NOT EXISTS public.habit_challenges (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT,
+    category TEXT DEFAULT 'Health' CHECK (category IN ('Health', 'Mindfulness', 'Physical', 'Productivity', 'Recovery', 'Custom')),
+    current_day INT DEFAULT 1 CHECK (current_day >= 1 AND current_day <= 21),
+    total_days INT DEFAULT 21 CHECK (total_days = 21),
+    status TEXT DEFAULT 'Active' CHECK (status IN ('Active', 'Not Started', 'Completed', 'Paused')),
+    streak_count INT DEFAULT 0,
+    last_completed_date TIMESTAMPTZ,
+    icon TEXT DEFAULT '🏆',
+    color TEXT DEFAULT '#F97316',
+    missed_days INT DEFAULT 0,
+    completed_days INT[] DEFAULT '{}',
+    tasks_json JSONB DEFAULT '[]'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Challenge Penalties Table
+CREATE TABLE IF NOT EXISTS public.challenge_penalties (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    challenge_id UUID REFERENCES public.habit_challenges(id) ON DELETE CASCADE,
+    penalty_type TEXT DEFAULT 'pushups' CHECK (penalty_type IN ('pushups', 'meditation', 'hydration', 'walk', 'freeze_token', 'custom')),
+    penalty_description TEXT NOT NULL,
+    is_paid BOOLEAN DEFAULT FALSE,
+    date_issued TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_habit_challenges_user ON public.habit_challenges(user_id);
+CREATE INDEX IF NOT EXISTS idx_challenge_penalties_user ON public.challenge_penalties(user_id);
+CREATE INDEX IF NOT EXISTS idx_challenge_penalties_challenge ON public.challenge_penalties(challenge_id);
+
+-- RLS Policies for Gamification Engine
+ALTER TABLE public.habit_challenges ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.challenge_penalties ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage own habit challenges" ON public.habit_challenges FOR ALL USING (auth.uid() = user_id OR user_id IS NULL OR public.is_admin());
+CREATE POLICY "Users can manage own challenge penalties" ON public.challenge_penalties FOR ALL USING (auth.uid() = user_id OR user_id IS NULL OR public.is_admin());
+
+-- ============================================================================
+-- 15. BEHAVIORAL CHALLENGES, TRIGGER PROFILES & DAILY BEHAVIOR METRICS
+-- ============================================================================
+
+-- Behavioral Challenges Table (Urge Tracking, Interventions & Recovery Protocols)
+CREATE TABLE IF NOT EXISTS public.behavioral_challenges (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    challenge_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    category TEXT DEFAULT 'Recovery',
+    is_sensitive BOOLEAN DEFAULT FALSE,
+    sensitive_category TEXT,
+    age_gate_verified BOOLEAN DEFAULT FALSE,
+    pin_locked BOOLEAN DEFAULT FALSE,
+    pin_hash TEXT,
+    urges_logged_count INT DEFAULT 0,
+    urges_resisted_count INT DEFAULT 0,
+    recovery_points INT DEFAULT 0,
+    top_trigger TEXT,
+    top_intervention TEXT,
+    active_streak_days INT DEFAULT 0,
+    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'paused', 'completed', 'archived')),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Trigger Profiles Table (Heatmaps, Patterns, Coping Mechanisms)
+CREATE TABLE IF NOT EXISTS public.trigger_profiles (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    challenge_id TEXT NOT NULL,
+    trigger_name TEXT NOT NULL,
+    trigger_category TEXT DEFAULT 'Emotional' CHECK (trigger_category IN ('Emotional', 'Environmental', 'Social', 'Physical', 'Time-Based', 'Other')),
+    frequency_count INT DEFAULT 1,
+    avg_intensity NUMERIC(3, 1) DEFAULT 5.0,
+    peak_hour INT CHECK (peak_hour >= 0 AND peak_hour <= 23),
+    preferred_intervention TEXT,
+    success_rate_percent NUMERIC(5, 2) DEFAULT 100.0,
+    notes TEXT,
+    last_triggered_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Daily Behavior Metrics Table (Urge Episodes, Interventions, Outcomes)
+CREATE TABLE IF NOT EXISTS public.daily_behavior_metrics (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    challenge_id TEXT NOT NULL,
+    day_number INT NOT NULL,
+    date DATE DEFAULT CURRENT_DATE,
+    goals_targeted INT DEFAULT 1,
+    goals_completed INT DEFAULT 0,
+    urges_experienced INT DEFAULT 0,
+    urges_overcome INT DEFAULT 0,
+    relapse_count INT DEFAULT 0,
+    recovery_points_earned INT DEFAULT 0,
+    micro_pauses_completed INT DEFAULT 0,
+    trigger_breakdown JSONB DEFAULT '{}'::jsonb,
+    hourly_distribution JSONB DEFAULT '[]'::jsonb,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes for Behavioral Tracking
+CREATE INDEX IF NOT EXISTS idx_behavioral_challenges_user ON public.behavioral_challenges(user_id);
+CREATE INDEX IF NOT EXISTS idx_behavioral_challenges_cid ON public.behavioral_challenges(challenge_id);
+CREATE INDEX IF NOT EXISTS idx_trigger_profiles_user ON public.trigger_profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_trigger_profiles_cid ON public.trigger_profiles(challenge_id);
+CREATE INDEX IF NOT EXISTS idx_daily_behavior_metrics_user ON public.daily_behavior_metrics(user_id);
+CREATE INDEX IF NOT EXISTS idx_daily_behavior_metrics_date ON public.daily_behavior_metrics(date);
+CREATE INDEX IF NOT EXISTS idx_daily_behavior_metrics_cid ON public.daily_behavior_metrics(challenge_id);
+
+-- RLS Policies for Behavioral Suite
+ALTER TABLE public.behavioral_challenges ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.trigger_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.daily_behavior_metrics ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage own behavioral challenges" ON public.behavioral_challenges FOR ALL USING (auth.uid() = user_id OR user_id IS NULL OR public.is_admin());
+CREATE POLICY "Users can manage own trigger profiles" ON public.trigger_profiles FOR ALL USING (auth.uid() = user_id OR user_id IS NULL OR public.is_admin());
+CREATE POLICY "Users can manage own daily behavior metrics" ON public.daily_behavior_metrics FOR ALL USING (auth.uid() = user_id OR user_id IS NULL OR public.is_admin());
+
+-- ============================================================================
+-- 16. SAMPLE SEED DATA
 -- ============================================================================
 
 INSERT INTO public.service_providers (name, category, rating, reviews_count, phone, available_now, location, hourly_rate)

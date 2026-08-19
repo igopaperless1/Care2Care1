@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Patient } from "../types";
+import { ServiceDashboard } from "./21DayLayouts/ServiceDashboard";
 import {
   HABIT_PRESETS,
   CATEGORY_INFOS,
@@ -54,7 +55,8 @@ import {
   ThumbsUp,
   Award,
   Layers,
-  Filter
+  Filter,
+  Trophy
 } from "lucide-react";
 
 // Safe string, number, and array helpers
@@ -1003,54 +1005,67 @@ export const HabitAndRecoveryTracker: React.FC<HabitAndRecoveryTrackerProps> = (
     }));
   }, [habits]);
 
+  const totalHabits = summaryStats.totalGood + summaryStats.totalBad;
+  const completedHabits = summaryStats.completedGoodToday + summaryStats.avoidedBadToday;
+  const habitsCompletionPercent = totalHabits > 0 ? Math.round((completedHabits / totalHabits) * 100) : 100;
+
   return (
-    <div className="w-full max-w-7xl mx-auto p-3 sm:p-6 space-y-6 text-slate-900 font-sans">
-      {/* GLOBAL TOAST NOTIFICATION */}
-      {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-800 flex items-center gap-2.5 animate-in fade-in slide-in-from-top-4 duration-200">
-          <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-          <span className="text-xs font-black">{toastMessage}</span>
-        </div>
-      )}
+    <ServiceDashboard
+      serviceId="habits"
+      icon="🎯"
+      todayTargetDisplay={`${totalHabits} Active Habits`}
+      todayProgressDisplay={`${completedHabits} Completed`}
+      todayProgressPercent={habitsCompletionPercent}
+      todayActionLabel="Add Good Habit"
+      onTodayActionClick={() => handleOpenCreateForm("good")}
+    >
+      <div className="w-full max-w-7xl mx-auto space-y-6 text-slate-900 dark:text-slate-100 font-sans">
+        {/* GLOBAL TOAST NOTIFICATION */}
+        {toastMessage && (
+          <div className="fixed top-5 right-5 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-800 flex items-center gap-2.5 animate-in fade-in slide-in-from-top-4 duration-200">
+            <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+            <span className="text-xs font-black">{toastMessage}</span>
+          </div>
+        )}
 
-      {/* HEADER BAR & TOP NAVIGATION */}
-      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[#2E7D32]/20 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-[#2E7D32] text-white flex items-center justify-center font-black text-2xl shadow-md">
-              🎯
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
-                  Habit Builder & Breaker
-                </h1>
-                <span className="px-2.5 py-0.5 rounded-full bg-[#E8F5E9] text-[#2E7D32] text-[10px] font-black uppercase tracking-wider border border-[#2E7D32]/30">
-                  Care2Care Suite
-                </span>
+        {/* HEADER BAR & TOP NAVIGATION */}
+        <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-black text-2xl shadow-md">
+                🎯
               </div>
-              <p className="text-[11px] text-slate-500 font-bold">
-                Build good habits, eliminate bad triggers, track cost savings & receive auto-wishes.
-              </p>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
+                    Habit Builder & Breaker Tools
+                  </h2>
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase tracking-wider border border-emerald-300 dark:border-emerald-800">
+                    Care2Care Suite
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-bold">
+                  Build good habits, eliminate bad triggers, track cost savings & receive auto-wishes.
+                </p>
+              </div>
+            </div>
+
+            {/* ADD HABIT BUTTONS */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => handleOpenCreateForm("good")}
+                className="px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-2xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+              >
+                <Plus className="w-4 h-4" /> Good Habit
+              </button>
+              <button
+                onClick={() => handleOpenCreateForm("bad")}
+                className="px-3.5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-2xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+              >
+                <Plus className="w-4 h-4" /> Bad Habit
+              </button>
             </div>
           </div>
-
-          {/* ADD HABIT BUTTONS */}
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => handleOpenCreateForm("good")}
-              className="px-3.5 py-2.5 bg-[#2E7D32] hover:bg-[#1B5E20] text-white text-xs font-black rounded-2xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
-            >
-              <Plus className="w-4 h-4" /> Good Habit
-            </button>
-            <button
-              onClick={() => handleOpenCreateForm("bad")}
-              className="px-3.5 py-2.5 bg-[#D32F2F] hover:bg-rose-800 text-white text-xs font-black rounded-2xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
-            >
-              <Plus className="w-4 h-4" /> Bad Habit
-            </button>
-          </div>
-        </div>
 
         {/* SUB-NAV NAVIGATION STRIP */}
         <div className="flex bg-slate-100 p-1.5 rounded-2xl overflow-x-auto scrollbar-none text-xs font-bold gap-1">
@@ -2183,6 +2198,7 @@ export const HabitAndRecoveryTracker: React.FC<HabitAndRecoveryTrackerProps> = (
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </ServiceDashboard>
   );
 };

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { MarketplaceWizard } from "./MarketplaceWizard";
 import {
   ShoppingBag,
   Store as StoreIcon,
@@ -93,6 +94,29 @@ export interface StoreProfile {
   reviewCount: number;
   plan: "Free" | "Basic" | "Pro" | "Enterprise";
   createdAt: string;
+
+  // Go Paperless Marketplace Setup Wizard Fields
+  tagline?: string;
+  brandColor?: string;
+  proprietorName?: string;
+  proprietorDob?: string;
+  businessType?: string;
+  bankName?: string;
+  bankAccountNumber?: string;
+  branchCode?: string;
+  accountHolderName?: string;
+  currency?: string;
+  payoutFrequency?: string;
+  bankVerificationStatus?: "verified" | "pending";
+  businessHours?: string;
+  fixedChargeDeliveryEnabled?: boolean;
+  fixedDeliveryCharge?: number;
+  freeDeliveryThresholdEnabled?: boolean;
+  freeDeliveryThreshold?: number;
+  localPickupAvailable?: boolean;
+  pickupInstructions?: string;
+  subdomain?: string;
+  customDomain?: string;
 }
 
 export interface ProductVariation {
@@ -234,7 +258,28 @@ const DEFAULT_STORE: StoreProfile = {
   rating: 4.9,
   reviewCount: 38,
   plan: "Pro",
-  createdAt: "2026-01-15"
+  createdAt: "2026-01-15",
+  tagline: "Verified Medical Equipment, Caregiver Tools & Digital SOPs",
+  brandColor: "#2E7D32",
+  proprietorName: "Dr. Rajesh Sharma",
+  proprietorDob: "1982-05-14",
+  businessType: "Private Limited Company (Pvt. Ltd.)",
+  bankName: "Nabil Bank Ltd.",
+  bankAccountNumber: "01001017500129",
+  branchCode: "NABIL-001-KTM",
+  accountHolderName: "Care2Care Health Solutions Pvt. Ltd.",
+  currency: "NPR (Rs.)",
+  payoutFrequency: "Weekly (Every Friday)",
+  bankVerificationStatus: "verified",
+  businessHours: "Mon-Sat: 8:00 AM - 8:00 PM (Emergency 24/7)",
+  fixedChargeDeliveryEnabled: true,
+  fixedDeliveryCharge: 150,
+  freeDeliveryThresholdEnabled: true,
+  freeDeliveryThreshold: 5000,
+  localPickupAvailable: true,
+  pickupInstructions: "Collect from Lazimpat Central Pharmacy Hub with Order ID & OTP verification.",
+  subdomain: "health-hub",
+  customDomain: "store.care2care.org"
 };
 
 const DEFAULT_PRODUCTS: ProductItem[] = [
@@ -911,7 +956,7 @@ export const CustomStoreMarketplace: React.FC<Props> = ({ onBackToServices }) =>
             }`}
           >
             <Settings className="w-4 h-4" />
-            <span>Settings</span>
+            <span>Store Setup Wizard</span>
           </button>
         </div>
       </div>
@@ -1193,335 +1238,14 @@ export const CustomStoreMarketplace: React.FC<Props> = ({ onBackToServices }) =>
       )}
 
       {/* ========================================================================= */}
-      {/* SECTION: STORE SETTINGS & PROFILE FILLERS */}
+      {/* SECTION: STORE SETTINGS & PROFILE FILLERS (GO PAPERLESS WIZARD) */}
       {/* ========================================================================= */}
       {activeTab === "settings" && (
-        <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-md space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-            <div>
-              <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                <Settings className="w-5 h-5 text-[#2E7D32]" /> Store Profile & Business Details
-              </h2>
-              <p className="text-xs text-slate-500 font-medium">
-                Configure VAT/PAN, office registration, document uploads, logos, banner backgrounds & payment gateways.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                saveStore(store);
-                alert("✅ Store profile and business registration details saved successfully!");
-              }}
-              className="px-5 py-2.5 bg-[#2E7D32] hover:bg-emerald-800 text-white font-black text-xs rounded-xl shadow-md cursor-pointer flex items-center gap-2"
-            >
-              <Check className="w-4 h-4" /> Save All Details
-            </button>
-          </div>
-
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              saveStore(store);
-              alert("✅ Store settings saved!");
-            }}
-            className="space-y-6 text-xs"
-          >
-            {/* SECTION A: MEDIA & BRANDING */}
-            <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
-              <h3 className="font-black text-slate-800 uppercase tracking-wider text-[11px] flex items-center gap-1.5 text-[#2E7D32]">
-                <Sparkles className="w-4 h-4" /> Store Media, Logo & Banner Customization
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Store Name *</label>
-                  <input
-                    type="text"
-                    value={store.storeName}
-                    onChange={(e) => setStore({ ...store, storeName: e.target.value })}
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Store Category *</label>
-                  <select
-                    value={store.category}
-                    onChange={(e) => setStore({ ...store, category: e.target.value as any })}
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-bold"
-                  >
-                    <option value="physical">Physical Goods & Medical Supplies 📦</option>
-                    <option value="digital">Digital Files & SOP Templates 💻</option>
-                    <option value="service">Healthcare Services & Consultations 🛠️</option>
-                    <option value="custom">Custom Hybrid Store 🏪</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Store Logo Image URL / Upload</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={store.storeLogo}
-                      onChange={(e) => setStore({ ...store, storeLogo: e.target.value })}
-                      placeholder="https://..."
-                      className="flex-1 p-2.5 bg-white border border-slate-200 rounded-xl"
-                    />
-                    <img src={store.storeLogo} alt="Logo" className="w-10 h-10 rounded-xl object-cover border border-slate-300 shrink-0" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Store Owner Profile Picture URL</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={store.profilePictureUrl || ""}
-                      onChange={(e) => setStore({ ...store, profilePictureUrl: e.target.value })}
-                      placeholder="https://..."
-                      className="flex-1 p-2.5 bg-white border border-slate-200 rounded-xl"
-                    />
-                    <img src={store.profilePictureUrl || store.storeLogo} alt="Profile" className="w-10 h-10 rounded-full object-cover border border-slate-300 shrink-0" />
-                  </div>
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="font-bold text-slate-700 block mb-1">Background Banner Cover Image URL</label>
-                  <input
-                    type="text"
-                    value={store.storeBanner}
-                    onChange={(e) => setStore({ ...store, storeBanner: e.target.value })}
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl"
-                  />
-                  {store.storeBanner && (
-                    <div className="mt-2 h-20 rounded-xl overflow-hidden border border-slate-200">
-                      <img src={store.storeBanner} alt="Banner Preview" className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="font-bold text-slate-700 block mb-1">Store About / Description</label>
-                  <textarea
-                    rows={2}
-                    value={store.description}
-                    onChange={(e) => setStore({ ...store, description: e.target.value })}
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* SECTION B: TAX & REGISTRATION FILLERS */}
-            <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
-              <h3 className="font-black text-slate-800 uppercase tracking-wider text-[11px] flex items-center gap-1.5 text-indigo-700">
-                <FileText className="w-4 h-4" /> Official Business Registration, Tax (VAT/PAN) & SSN Fillers
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">VAT / PAN Registration Number *</label>
-                  <input
-                    type="text"
-                    value={store.vatPanNumber || ""}
-                    onChange={(e) => setStore({ ...store, vatPanNumber: e.target.value })}
-                    placeholder="e.g. PAN-609812341"
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Social Security / SSF Registration No.</label>
-                  <input
-                    type="text"
-                    value={store.socialSecurityNumber || ""}
-                    onChange={(e) => setStore({ ...store, socialSecurityNumber: e.target.value })}
-                    placeholder="e.g. SSF-2081-88910"
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Company / Office Registration Number</label>
-                  <input
-                    type="text"
-                    value={store.officeRegistrationNumber || ""}
-                    onChange={(e) => setStore({ ...store, officeRegistrationNumber: e.target.value })}
-                    placeholder="e.g. REG-2080/19283-KTM"
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Business License / Document Upload Photo URL</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={store.registrationDocUrl || ""}
-                      onChange={(e) => setStore({ ...store, registrationDocUrl: e.target.value })}
-                      placeholder="https://... (Photo of Business License / PAN)"
-                      className="flex-1 p-2.5 bg-white border border-slate-200 rounded-xl"
-                    />
-                    {store.registrationDocUrl && (
-                      <a
-                        href={store.registrationDocUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-3 py-2 bg-indigo-100 text-indigo-800 font-bold rounded-xl text-[10px] flex items-center gap-1"
-                      >
-                        <ExternalLink className="w-3 h-3" /> View
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* SECTION C: CONTACT & LOCATION */}
-            <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
-              <h3 className="font-black text-slate-800 uppercase tracking-wider text-[11px] flex items-center gap-1.5 text-amber-700">
-                <MapPin className="w-4 h-4" /> Address & GPS Location Pin
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Official Phone Number *</label>
-                  <input
-                    type="text"
-                    value={store.phone}
-                    onChange={(e) => setStore({ ...store, phone: e.target.value })}
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Store Email *</label>
-                  <input
-                    type="email"
-                    value={store.email}
-                    onChange={(e) => setStore({ ...store, email: e.target.value })}
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Website URL</label>
-                  <input
-                    type="text"
-                    value={store.website}
-                    onChange={(e) => setStore({ ...store, website: e.target.value })}
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Street Address</label>
-                  <input
-                    type="text"
-                    value={store.address}
-                    onChange={(e) => setStore({ ...store, address: e.target.value })}
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">City & Country</label>
-                  <input
-                    type="text"
-                    value={`${store.city}, ${store.country}`}
-                    onChange={(e) => {
-                      const parts = e.target.value.split(",");
-                      setStore({ ...store, city: parts[0]?.trim() || store.city, country: parts[1]?.trim() || store.country });
-                    }}
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">GPS Location Coordinates</label>
-                  <input
-                    type="text"
-                    value={store.locationCoordinates || ""}
-                    onChange={(e) => setStore({ ...store, locationCoordinates: e.target.value })}
-                    placeholder="27.7172° N, 85.3240° E"
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono text-[11px]"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* SECTION D: PAYMENT GATEWAYS CONFIGURATION */}
-            <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
-              <h3 className="font-black text-slate-800 uppercase tracking-wider text-[11px] flex items-center gap-1.5 text-emerald-800">
-                <CreditCard className="w-4 h-4" /> Payment Gateways & Direct Payout Accounts
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">eSewa Merchant ID / QR Code Link 💚</label>
-                  <input
-                    type="text"
-                    value={store.esewaMerchantId || ""}
-                    onChange={(e) => setStore({ ...store, esewaMerchantId: e.target.value })}
-                    placeholder="e.g. ESEWA_LIVE_908123"
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Khalti Public Key 💜</label>
-                  <input
-                    type="text"
-                    value={store.khaltiPublicKey || ""}
-                    onChange={(e) => setStore({ ...store, khaltiPublicKey: e.target.value })}
-                    placeholder="e.g. khalti_live_secret_key_889123"
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Fonepay Merchant Code 📲</label>
-                  <input
-                    type="text"
-                    value={store.fonepayMerchantCode || ""}
-                    onChange={(e) => setStore({ ...store, fonepayMerchantCode: e.target.value })}
-                    placeholder="e.g. FONEPAY_MCH_4401"
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Bank Account & IBAN Payout Details 🏦</label>
-                  <input
-                    type="text"
-                    value={store.bankAccountDetails || ""}
-                    onChange={(e) => setStore({ ...store, bankAccountDetails: e.target.value })}
-                    placeholder="Nabil Bank Ltd, A/C: 01001017500129"
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl"
-                  />
-                </div>
-
-                <div className="md:col-span-2 flex items-center gap-3 pt-2">
-                  <input
-                    type="checkbox"
-                    id="enableCOD"
-                    checked={store.enableCOD !== false}
-                    onChange={(e) => setStore({ ...store, enableCOD: e.target.checked })}
-                    className="w-4 h-4 text-[#2E7D32] rounded cursor-pointer"
-                  />
-                  <label htmlFor="enableCOD" className="font-extrabold text-slate-800 cursor-pointer">
-                    Enable Cash on Delivery (COD) for physical deliveries
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2 flex justify-end">
-              <button
-                type="submit"
-                className="px-6 py-3 bg-[#2E7D32] hover:bg-emerald-800 text-white font-black text-xs rounded-xl shadow-lg cursor-pointer flex items-center gap-2"
-              >
-                <Check className="w-4 h-4" /> Save Profile & Settings
-              </button>
-            </div>
-          </form>
-        </div>
+        <MarketplaceWizard
+          store={store}
+          onUpdateStore={saveStore}
+          onFinish={() => setActiveTab("storefront")}
+        />
       )}
       {showAddProductModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">

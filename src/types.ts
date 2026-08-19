@@ -1130,17 +1130,466 @@ export interface SecurityAuditLog {
   id: string;
   userId: string;
   action: string;
-  platformName: string;
-  ipAddress: string;
-  deviceInfo: string;
-  timestamp: string;
+  details?: string;
+  ipAddress?: string;
   createdAt: string;
 }
 
+export interface AppState {
 
+  onboardingStep: number; // 0 = Welcome, 1 = Role Selection, 2 = Module Selection, 3 = Essentials, 4 = Dashboard Ready
+  activeModules: string[];
+  isOnboardingComplete: boolean;
+  selectedRoles: string[];
+  primaryMotivation: string;
+  essentialsData?: {
+    startingBalance?: number;
+    monthlyBudget?: number;
+    firstMedicineName?: string;
+    firstMedicineDosage?: string;
+    waterGoalMl?: number;
+    staffCount?: number;
+  };
+}
 
+// 21-Day Gamification & Adaptive Behavioral Engine Types
+export type ChallengeCategory =
+  | "Personal Growth"
+  | "Health"
+  | "Mental Health"
+  | "Learning"
+  | "Lifestyle"
+  | "Productivity"
+  | "Self Love"
+  | "Positivity"
+  | "Recovery"
+  | "Mindfulness"
+  | "Fitness"
+  | "Bad Habits to Avoid"
+  | "Physical"
+  | "Custom";
 
+export type BehaviorDirection =
+  | "build"
+  | "strengthen"
+  | "maintain"
+  | "reduce"
+  | "pause"
+  | "stop"
+  | "replace"
+  | "control"
+  | "recover"
+  | "custom";
 
+export type ChallengeArchetype =
+  | "habit"
+  | "fitness"
+  | "nutrition"
+  | "mindfulness"
+  | "productivity"
+  | "learning"
+  | "social"
+  | "addiction"
+  | "screen_time"
+  | "finance"
+  | "sleep"
+  | "custom";
 
+export type MeasurementType =
+  | "count"
+  | "duration"
+  | "quantity"
+  | "frequency"
+  | "interval"
+  | "time_window"
+  | "percentage"
+  | "yes_no"
+  | "scale"
+  | "free_response";
+
+export interface UrgeLog {
+  id: string;
+  challengeId: string;
+  timestamp: string;
+  dayNumber: number;
+  urgeIntensity: number; // 0-10
+  triggerType: string;
+  triggerDescription?: string;
+  actionTaken: "delay" | "alternative" | "reflected" | "episode_occurred";
+  delayMinutes?: number;
+  alternativeAction?: string;
+  reflectionNote?: string;
+  isOvercome: boolean;
+  recoveryPointsEarned: number;
+}
+
+export interface TriggerProfile {
+  id: string;
+  challengeId: string;
+  triggerType: string;
+  description: string;
+  count: number;
+  lastOccurred?: string;
+  hourlyDistribution?: Record<number, number>; // 0-23 hours count
+  dominantEmotion?: string;
+}
+
+export interface DailyBehaviorMetric {
+  id: string;
+  userId?: string;
+  challengeId: string;
+  date: string; // YYYY-MM-DD
+  dayNumber: number;
+  goalsTotal: number;
+  goalsCompleted: number;
+  completionRate: number; // 0 - 100
+  urgesReported: number;
+  urgesOvercome: number;
+  averageUrgeIntensity: number; // 0 - 10
+  recoveryActionsCompleted: number;
+  pointsEarned: number;
+  createdAt: string;
+}
+
+export interface WeeklyBehaviorSummary {
+  weekStartDate: string;
+  weekEndDate: string;
+  totalActiveChallenges: number;
+  overallCompletionPercentage: number;
+  completionTrendVsLastWeek: number; // e.g. +12%
+  totalUrgesLogged: number;
+  totalUrgesOvercome: number;
+  averageUrgeIntensity: number;
+  topTriggers: { triggerType: string; count: number }[];
+  topInterventions: { name: string; count: number }[];
+  totalRecoveryPoints: number;
+  dailyBreakdown: {
+    date: string;
+    dayLabel: string;
+    completedPercentage: number;
+    urgesCount: number;
+  }[];
+}
+
+export interface HourlyUrgeHeatmapPoint {
+  hour: number; // 0-23
+  hourLabel: string; // "12 AM", "1 AM", ...
+  urgeCount: number;
+  intensityAvg: number;
+  dominantTrigger?: string;
+}
+
+export interface RecoveryAction {
+  id: string;
+  title: string;
+  description: string;
+  category: "reflection" | "breathing" | "trigger_audit" | "micro_delay" | "hydration_stretch" | "environment_shift";
+  durationMinutes: number;
+}
+
+export interface ChallengeDayTask {
+  dayNumber: number;
+  title: string;
+  description: string;
+  isCompleted: boolean;
+  completedAt?: string;
+  scratchedAt?: string;
+  userNotes?: string;
+  objective?: string;
+  whyItMatters?: string;
+  estimatedTimeMinutes?: number;
+  measurementType?: MeasurementType;
+  targetValue?: string | number;
+  possibleRecoveryAction?: string;
+  alternativeAction?: string;
+  reflectionPrompt?: string;
+  urgeStateEnabled?: boolean;
+  recoveryActionCompleted?: boolean;
+  uniquePenalty?: {
+    title: string;
+    description: string;
+    type: "pushups" | "squats" | "meditation" | "hydration" | "walk" | "freeze_token" | "reading" | "custom";
+    repsOrMins: number;
+  };
+}
+
+export interface RestrictedContentConsent {
+  id: string;
+  userId?: string;
+  category: "adult_content" | "substances" | "sexual_compulsion" | "general_sensitive";
+  isAdult: boolean;
+  ageConfirmed: boolean;
+  consentGivenAt: string;
+  minimumAge: number;
+  status: "active" | "denied" | "revoked";
+  userAgent?: string;
+}
+
+export interface HabitChallenge {
+  id: string;
+  userId?: string;
+  title: string;
+  description: string;
+  category: ChallengeCategory;
+  currentDay: number;
+  totalDays: number;
+  status: "Active" | "Not Started" | "Completed" | "Paused";
+  streakCount: number;
+  lastCompletedDate?: string;
+  icon: string;
+  color: string;
+  missedDays: number;
+  completedDays: number[];
+  tasks?: ChallengeDayTask[];
+  penaltyCount?: number;
+  createdAt?: string;
+
+  // Behavioral Engine Evolutions
+  behaviorDirection?: BehaviorDirection;
+  challengeArchetype?: ChallengeArchetype;
+  measurementType?: MeasurementType;
+  baselineDescription?: string;
+  baselineValue?: string | number;
+  dailyTimeAvailableMinutes?: number;
+  safetyPathwayText?: string;
+  triggers?: string[];
+  urgeInterventions?: string[];
+  initialDelayMinutes?: number;
+  progressionStyle?: "gradual" | "balanced" | "aggressive";
+  isPrivate?: boolean;
+  discreetNotifications?: boolean;
+  urgeLogs?: UrgeLog[];
+  triggerProfiles?: TriggerProfile[];
+  replacementBehavior?: string;
+  lastEpisodeTimestamp?: string;
+  currentIntervalMinutes?: number;
+  recoveryActionTaken?: string;
+
+  // Age-Gating & Safety Protection Architecture
+  isSensitive?: boolean;
+  sensitiveCategory?: "adult_content" | "substances" | "general_sensitive" | "none";
+  requiresAgeGate?: boolean;
+  isAgeVerified?: boolean;
+  isPinProtected?: boolean;
+  pinCode?: string;
+  isLocked?: boolean;
+
+  customPenaltyType?: "pushups" | "squats" | "meditation" | "hydration" | "walk" | "freeze_token" | "cold_shower" | "custom";
+  customPenaltyRepsOrMins?: number;
+  customPenaltyText?: string;
+  dailyPenalties?: Record<number, { title: string; description: string; type: string; repsOrMins: number }>;
+  likesCount?: number;
+  isLiked?: boolean;
+  notificationsEnabled?: boolean;
+  reminderTime?: string;
+  notes?: Record<number, string>;
+
+  // Lifelong Continuation Architecture (Post-Day 21 Journey)
+  isLifelongContinuation?: boolean;
+  lifelongDayCount?: number;
+  formationCompletedAt?: string;
+  lifelongLogsCount?: number;
+  lifelongHistory?: Array<{
+    day: number;
+    date: string;
+    completed: boolean;
+    note?: string;
+    reductionValue?: string | number;
+  }>;
+  reductionGoalTarget?: string | number;
+  daysWithinTargetCount?: number;
+  bestSmokeFreeIntervalMinutes?: number;
+}
+
+export interface ChallengePenalty {
+  id: string;
+  userId?: string;
+  challengeId: string;
+  challengeTitle?: string;
+  dayNumber?: number;
+  penaltyType: "pushups" | "squats" | "meditation" | "hydration" | "walk" | "freeze_token" | "cold_shower" | "reading" | "custom";
+  penaltyDescription: string;
+  repsOrMins?: number;
+  isPaid: boolean;
+  dateIssued: string;
+  datePaid?: string;
+}
+
+export interface ChallengeQuestTask {
+  id: string;
+  title: string;
+  coinReward: number;
+  targetCount: number;
+  currentCount: number;
+  isCollected: boolean;
+  actionKey?: string;
+}
+
+// ============================================================
+// DASHBOARD & HOME DISPLAY PREFERENCES - DATA MODELS
+// ============================================================
+
+export interface DashboardTodayAttentionFilters {
+  medicine: boolean;
+  challenges: boolean;
+  water_habits: boolean;
+  finance_bills: boolean;
+  calendar_events: boolean;
+  staff_pending_tasks: boolean;
+}
+
+export interface DashboardContinueResumeLogic {
+  enabled_services: string[];
+  max_items: number;
+}
+
+export interface DashboardPinnedServices {
+  custom_list: string[];
+  max_items: number;
+  auto_update?: boolean;
+}
+
+export interface DashboardChallengeVisibility {
+  show_challenge_button: boolean;
+  show_streak_daily: boolean;
+}
+
+export interface DashboardPreferences {
+  today_attention_filters: DashboardTodayAttentionFilters;
+  continue_resume_logic: DashboardContinueResumeLogic;
+  pinned_services: DashboardPinnedServices;
+  challenge_visibility: DashboardChallengeVisibility;
+  sync_sub_accounts?: boolean;
+}
+
+export const DEFAULT_PERSONAL_DASHBOARD_PREFS: DashboardPreferences = {
+  today_attention_filters: {
+    medicine: true,
+    challenges: true,
+    water_habits: true,
+    finance_bills: false,
+    calendar_events: false,
+    staff_pending_tasks: false
+  },
+  continue_resume_logic: {
+    enabled_services: ["mood", "habit", "finance", "water", "yoga", "vitals"],
+    max_items: 2
+  },
+  pinned_services: {
+    custom_list: ["yoga", "medicine", "finance", "mood", "vitals", "water"],
+    max_items: 6,
+    auto_update: true
+  },
+  challenge_visibility: {
+    show_challenge_button: true,
+    show_streak_daily: true
+  },
+  sync_sub_accounts: false
+};
+
+export const DEFAULT_PROFESSIONAL_DASHBOARD_PREFS: DashboardPreferences = {
+  today_attention_filters: {
+    medicine: false,
+    challenges: false,
+    water_habits: false,
+    finance_bills: true,
+    calendar_events: true,
+    staff_pending_tasks: true
+  },
+  continue_resume_logic: {
+    enabled_services: ["finance", "staff_payroll", "inventory", "contracts", "jobs", "custom_store"],
+    max_items: 2
+  },
+  pinned_services: {
+    custom_list: ["finance", "staff_payroll", "inventory", "contracts", "jobs", "paperless"],
+    max_items: 6,
+    auto_update: true
+  },
+  challenge_visibility: {
+    show_challenge_button: false,
+    show_streak_daily: false
+  },
+  sync_sub_accounts: true
+};
+
+export const DEFAULT_SUBACCOUNT_DASHBOARD_PREFS: DashboardPreferences = {
+  today_attention_filters: {
+    medicine: true,
+    challenges: true,
+    water_habits: true,
+    finance_bills: false,
+    calendar_events: true,
+    staff_pending_tasks: false
+  },
+  continue_resume_logic: {
+    enabled_services: ["medicine", "vitals", "mood", "water", "elderly", "kids"],
+    max_items: 2
+  },
+  pinned_services: {
+    custom_list: ["medicine", "vitals", "water", "mood", "elderly", "sos"],
+    max_items: 6,
+    auto_update: true
+  },
+  challenge_visibility: {
+    show_challenge_button: true,
+    show_streak_daily: true
+  },
+  sync_sub_accounts: false
+};
+
+// ============================================================================
+// LIFELONG PROGRESSION, CARE ARCHETYPES & 21-DAY STABILIZATION TYPES
+// ============================================================================
+
+export type ServiceArchetype =
+  | "nourish"          // Water, Nutrition, Sleep, Exercise, Walking (Build and maintain)
+  | "heal_protect"     // Mood, Mental wellbeing, Medicine, Care, Vitals (Monitor and support)
+  | "build_grow"       // Finance, Learning, Career, Productivity, Farm (Accumulate and improve)
+  | "order_protect";   // Vehicles, Property, Pets, Family, Relationships, Passwords (Maintain and prevent neglect)
+
+export type CareLifecycleStage =
+  | "ignite"     // Days 1-21: Habit formation, progressive daily tasks, momentum
+  | "stabilize"  // Days 22-60: Consistency calendar, increasing independence, smart reminders
+  | "integrate"  // Day 61+: Lifelong maintenance, passive health score, minimal UI
+  | "recovery"   // Gentle reset: 3-day or 7-day supportive restart when consistency slips
+  | "review";    // Milestone review: 7d, 14d, 21d, 60d, quarterly
+
+export interface LifelongServiceProfile {
+  serviceId: string;
+  serviceName: string;
+  archetype: ServiceArchetype;
+  stage: CareLifecycleStage;
+  dayInCurrentStage: number;
+  totalActiveDays: number;
+  currentStreak: number;
+  bestStreak: number;
+  lastActiveDate: string;
+  consistencyScorePercent: number; // 0 - 100%
+  primaryGoalText: string;
+  dailyTargetLabel: string;
+  dailyTargetUnit: string;
+  dailyTargetValue: number;
+  activeChallengeId?: string;
+  careTone: "supportive" | "gentle" | "empowering";
+  milestoneHistory: {
+    milestoneDay: number; // 7, 14, 21, 60, 90, 365
+    completedAt: string;
+    stage: CareLifecycleStage;
+    celebrationNote: string;
+  }[];
+}
+
+export interface LifelongSetupConfig {
+  serviceId: string;
+  goal: string;
+  currentBaseline: string;
+  targetValue: number;
+  targetUnit: string;
+  frequency: "daily" | "weekdays" | "weekends" | "multiple_daily" | "weekly" | "custom";
+  preferredTime: string; // e.g. "08:00" or "morning"
+  reminderEnabled: boolean;
+  reminderStyle: "gentle" | "motivational" | "minimal" | "direct" | "encouraging";
+  careArchetype: ServiceArchetype;
+}
 
 

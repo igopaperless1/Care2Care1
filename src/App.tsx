@@ -10,8 +10,10 @@ import {
   VehicleItem,
   FarmRecord,
   FinancialRecord,
-  PetItem
+  PetItem,
+  AppState
 } from "./types";
+import { DEFAULT_ACTIVE_MODULE_IDS } from "./utils/ServiceFactory";
 import {
   INITIAL_PATIENTS,
   INITIAL_SERVICE_PROVIDERS,
@@ -36,6 +38,7 @@ import { ElderlyCareTracker } from "./components/ElderlyCareTracker";
 import { ExerciseTracker } from "./components/ExerciseTracker";
 import { MentalHealthTracker } from "./components/MentalHealthTracker";
 import { HabitAndRecoveryTracker } from "./components/HabitAndRecoveryTracker";
+import { HabitChallenges } from "./components/HabitChallenges";
 import { KidsCareTracker } from "./components/KidsCareTracker";
 import { FamilyTreeTracker } from "./components/FamilyTreeTracker";
 import { StaffAndPayrollTracker } from "./components/StaffAndPayrollTracker";
@@ -55,6 +58,7 @@ import { PlanAndScheduleView } from "./components/PlanAndScheduleView";
 import { ServicesAndToolsView } from "./components/ServicesAndToolsView";
 import { SosModal } from "./components/SosModal";
 import { HomeView } from "./components/HomeView";
+import { ServiceLibrary } from "./pages/ServiceLibrary";
 import { SosEmergencyTracker } from "./components/SosEmergencyTracker";
 import { CalendarConverterTracker } from "./components/CalendarConverterTracker";
 import { QuickActionOverlay } from "./components/QuickActionOverlay";
@@ -64,6 +68,7 @@ import { IGOPaperlessTracker } from "./components/IGOPaperlessTracker";
 import { LifeDatesTracker } from "./components/LifeDatesTracker";
 import { SleepTracker } from "./components/SleepTracker";
 import { HybridStorageManagerView } from "./components/HybridStorageManagerView";
+import { TicketQueueManagementTracker } from "./components/TicketQueueManagementTracker";
 import { Care2CareAiAssistantModal } from "./components/Care2CareAiAssistantModal";
 import { VoiceAssistantModal } from "./components/VoiceAssistantModal";
 import { PasswordManagementTracker } from "./components/PasswordManagementTracker";
@@ -71,11 +76,15 @@ import { generatePatientPDFReport } from "./lib/pdfReportGenerator";
 import { AdminDashboard, UserAccount } from "./components/AdminDashboard";
 import { AuthModalAndWelcome } from "./components/AuthModalAndWelcome";
 import { UserProfileManagerModal } from "./components/UserProfileManagerModal";
+import { UserReceiptVaultModal } from "./components/UserReceiptVaultModal";
 import { SplashEntranceAnimation } from "./components/SplashEntranceAnimation";
+import { OnboardingWizard } from "./components/OnboardingWizard";
+import { AddMemberModal, MemberFormData } from "./components/AddMemberModal";
 import { PaddlePaymentModal } from "./components/PaddlePaymentModal";
 import { AdPlacement } from "./components/AdPlacement";
 import { useAuthGuard } from "./hooks/useAuthGuard";
 import { ModuleLoadingSkeleton } from "./components/ModuleLoadingSkeleton";
+import { FeatureGuard } from "./components/FeatureGuard";
 import { useAutoLogout } from "./hooks/useAutoLogout";
 import {
   syncPatientsDebounced,
@@ -137,6 +146,11 @@ export default function App() {
   const [isSplashOpen, setIsSplashOpen] = useState<boolean>(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isUserProfileModalOpen, setIsUserProfileModalOpen] = useState<boolean>(false);
+  const [userProfileInitialTab, setUserProfileInitialTab] = useState<"personal" | "professional" | "dependents" | "dashboard_customization">("personal");
+  const [isReceiptVaultOpen, setIsReceiptVaultOpen] = useState<boolean>(false);
+  const [isReconfigModalOpen, setIsReconfigModalOpen] = useState<boolean>(false);
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState<boolean>(false);
+  const [isAiToolsExpanded, setIsAiToolsExpanded] = useState<boolean>(false);
 
   const [hasAutoPromptedAuth, setHasAutoPromptedAuth] = useState<boolean>(false);
 
@@ -171,7 +185,35 @@ export default function App() {
       console.error(e);
     }
   }, [isDarkMode]);
+  // Progressive Onboarding & Active Services AppState
+  const [appState, setAppState] = useState<AppState>(() => {
+    try {
+      const saved = localStorage.getItem("care2care_app_state");
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error("Error parsing care2care_app_state", e);
+    }
+    return {
+      onboardingStep: 0,
+      activeModules: DEFAULT_ACTIVE_MODULE_IDS,
+      isOnboardingComplete: false,
+      selectedRoles: ["Single Adult"],
+      primaryMotivation: "personal"
+    };
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("care2care_app_state", JSON.stringify(appState));
+    } catch (e) {
+      console.error("Error saving care2care_app_state", e);
+    }
+  }, [appState]);
+
   const [showInterstitialAd, setShowInterstitialAd] = useState<boolean>(false);
+
   const [activeTab, setActiveTab] = useState<NavTab>("home");
   // Independent active subTab preferences stored in localStorage
   const [personalCareSubTab, setPersonalCareSubTab] = useState<string>(() => {
@@ -191,6 +233,9 @@ export default function App() {
   });
 
   const [careSubTab, setCareSubTab] = useState<
+    | "vitals"
+    | "career"
+    | "ticket_queue"
     | "sos"
     | "calendar"
     | "water"
@@ -201,6 +246,8 @@ export default function App() {
     | "elderly"
     | "exercise"
     | "mental"
+    | "habit_challenges"
+    | "challenges"
     | "habit"
     | "kids"
     | "family_tree"
@@ -299,6 +346,32 @@ export default function App() {
     });
   };
 
+
+  // Navigation History Stack for Universal Immediate Back Navigation
+  const [navHistory, setNavHistory] = useState<Array<{ tab: NavTab; careSubTab?: string }>>([]);
+
+  const handleNavigateTo = (newTab: NavTab, newCareSubTab?: string) => {
+    if (newTab !== activeTab || (newCareSubTab && newCareSubTab !== careSubTab)) {
+      setNavHistory((prev) => [...prev, { tab: activeTab, careSubTab }]);
+    }
+    setActiveTab(newTab);
+    if (newCareSubTab) {
+      handleSelectCareSubTab(newCareSubTab);
+    }
+  };
+
+  const handleGoBack = () => {
+    if (navHistory.length > 0) {
+      const prev = navHistory[navHistory.length - 1];
+      setNavHistory((prevList) => prevList.slice(0, -1));
+      setActiveTab(prev.tab);
+      if (prev.careSubTab) {
+        setCareSubTab(prev.careSubTab as any);
+      }
+    } else {
+      setActiveTab("home");
+    }
+  };
 
   // Persistent State via localStorage
   const [patients, setPatients] = useState<Patient[]>(() => {
@@ -632,7 +705,7 @@ export default function App() {
 
   return (
     <LanguageProvider initialLanguage={currentLanguage as any}>
-      <div className={isDarkMode ? "min-h-screen bg-slate-950 text-slate-100 font-sans antialiased dark selection:bg-emerald-900 selection:text-emerald-100" : "min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-emerald-100 selection:text-emerald-900"}>
+      <div className={isDarkMode ? "min-h-screen bg-[#0B132B] text-slate-100 font-sans antialiased dark selection:bg-blue-800 selection:text-white" : "min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-emerald-100 selection:text-emerald-900"}>
       {/* Sticky Header */}
       <NavigationHeader
         accountType={accountType}
@@ -654,7 +727,13 @@ export default function App() {
         onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
         currentLanguage={currentLanguage}
         onSelectLanguage={(lang) => setCurrentLanguage(lang)}
-        onOpenUserProfileModal={() => setIsUserProfileModalOpen(true)}
+        onOpenUserProfileModal={() => {
+          setUserProfileInitialTab("personal");
+          setIsUserProfileModalOpen(true);
+        }}
+        onOpenReceiptVault={() => setIsReceiptVaultOpen(true)}
+        onOpenReconfigWizard={() => setIsReconfigModalOpen(true)}
+        onOpenAddMember={() => setIsAddMemberModalOpen(true)}
       />
 
       {/* Free Tier Top Banner Ad */}
@@ -723,7 +802,7 @@ export default function App() {
 
         {/* Real-time Sync Toast Indicator */}
         {syncStatus.isSyncing && (
-          <div className="fixed bottom-20 right-4 z-40 bg-slate-900/90 text-white text-xs font-bold px-3 py-1.5 rounded-full backdrop-blur-md shadow-lg border border-slate-700 flex items-center gap-2">
+          <div className="fixed bottom-20 left-4 z-40 bg-slate-900/90 text-white text-xs font-bold px-3 py-1.5 rounded-full backdrop-blur-md shadow-lg border border-slate-700 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
             <span>Syncing with Supabase...</span>
           </div>
@@ -743,16 +822,22 @@ export default function App() {
             <>
               {activeTab === "home" && (
                 <HomeView
+                  appState={appState}
+                  onUpdateAppState={setAppState}
                   accountType={accountType}
                   setAccountType={setAccountType}
                   patient={selectedPatient}
                   patients={patients}
+                  currentUser={currentUser}
                   onSelectPatient={setSelectedPatientId}
                   onAddPatient={handleAddPatient}
-                  onNavigateToTab={setActiveTab}
+                  onNavigateToTab={(tab) => handleNavigateTo(tab)}
                   onNavigateToCareSubTab={(sub) => {
-                    setActiveTab("care");
-                    setCareSubTab(sub as any);
+                    handleNavigateTo("care", sub);
+                  }}
+                  onNavigateToServicesLibrary={() => handleNavigateTo("services")}
+                  onNavigateToChallenges={() => {
+                    handleNavigateTo("care", "habit_challenges");
                   }}
                   onAddWater={handleAddWater}
                   onOpenSosModal={() => setIsSosOpen(true)}
@@ -763,19 +848,23 @@ export default function App() {
                     setAuthInitialTab("login");
                     setIsAuthModalOpen(true);
                   }}
+                  onOpenUserProfileModal={(tab) => {
+                    if (tab) setUserProfileInitialTab(tab);
+                    setIsUserProfileModalOpen(true);
+                  }}
+                  isAiToolsExpanded={isAiToolsExpanded}
                 />
               )}
 
               {activeTab === "track" && (
                 <TrackProgressView
                   patient={selectedPatient}
+                  onBack={handleGoBack}
                   onNavigateToWater={() => {
-                    setActiveTab("care");
-                    setCareSubTab("water");
+                    handleNavigateTo("care", "water");
                   }}
                   onNavigateToSubTab={(sub) => {
-                    setActiveTab("care");
-                    setCareSubTab(sub as any);
+                    handleNavigateTo("care", sub);
                   }}
                   onToggleMedication={handleToggleMedication}
                   onAddVitalSign={handleAddVitalSign}
@@ -787,12 +876,12 @@ export default function App() {
                 <div className="space-y-3 max-w-7xl mx-auto">
                   {/* CLEAN LIGHT CARE SUITE NAVIGATION BAR */}
                   <div className="bg-white p-2 sm:p-2.5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-2">
-                    {/* Back Button (Icon Only) */}
+                    {/* Back Button (Immediate Screen Back) */}
                     <button
                       type="button"
-                      onClick={() => setActiveTab("home")}
+                      onClick={handleGoBack}
                       className="w-9 h-9 bg-slate-100 hover:bg-slate-200 text-slate-800 text-base font-black rounded-xl border border-slate-300 flex items-center justify-center cursor-pointer transition-all shrink-0"
-                      title="Back to Dashboard"
+                      title="Back to Previous Screen"
                     >
                       ←
                     </button>
@@ -800,6 +889,7 @@ export default function App() {
                     {/* Scrollable Services (White for unselected, #2E7D32 Green for selected) */}
                     <div className="flex-1 min-w-0 overflow-x-auto scrollbar-none flex items-center gap-1.5 py-0.5">
                       {[
+                        { id: "vitals", label: "🩺 Vitals & SpO2" },
                         { id: "sos", label: "🆘 SOS" },
                         { id: "elderly", label: "👴 Elderly Care" },
                         { id: "medicine", label: "💊 Medicine" },
@@ -809,6 +899,7 @@ export default function App() {
                         { id: "mood", label: "😊 Mood" },
                         { id: "exercise", label: "🏋️ Exercise" },
                         { id: "mental", label: "🧠 Mental" },
+                        { id: "habit_challenges", label: "🏆 21-Day Challenges" },
                         { id: "habit", label: "📈 Habits" },
                         { id: "kids", label: "👶 Kids Care" },
                         { id: "family_tree", label: "👨‍👩‍👧‍👦 Family Tree" },
@@ -870,48 +961,146 @@ export default function App() {
                         <ModuleLoadingSkeleton moduleName={careSubTab} />
                       ) : (
                         <ErrorBoundary key={careSubTab} fallbackTitle="Service Module Render Protection">
-                          {careSubTab === "sos" && <SosEmergencyTracker patient={selectedPatient} />}
+                          {careSubTab === "vitals" && (
+                            <FeatureGuard featureId="health_vitals" featureName="Health Vitals & SpO2">
+                              <TrackProgressView
+                                patient={selectedPatient}
+                                onNavigateToWater={() => {
+                                  setActiveTab("care");
+                                  setCareSubTab("water");
+                                }}
+                                onNavigateToSubTab={(sub) => {
+                                  setActiveTab("care");
+                                  setCareSubTab(sub as any);
+                                }}
+                                onToggleMedication={handleToggleMedication}
+                                onAddVitalSign={handleAddVitalSign}
+                                onUpdateCaregiverNotes={handleUpdateCaregiverNotes}
+                              />
+                            </FeatureGuard>
+                          )}
+                          {careSubTab === "sos" && (
+                            <FeatureGuard featureId="sos_emergency" featureName="SOS Emergency Panic Button">
+                              <SosEmergencyTracker patient={selectedPatient} />
+                            </FeatureGuard>
+                          )}
                           {careSubTab === "calendar" && <CalendarConverterTracker />}
                           {careSubTab === "medicine" && (
-                            <MedicineTracker
-                              patient={selectedPatient}
-                              onToggleMedication={handleToggleMedication}
-                              onAddMedication={handleAddMedication}
-                            />
+                            <FeatureGuard featureId="medicine" featureName="Medicine & Refill Manager">
+                              <MedicineTracker
+                                patient={selectedPatient}
+                                onToggleMedication={handleToggleMedication}
+                                onAddMedication={handleAddMedication}
+                              />
+                            </FeatureGuard>
                           )}
                           {careSubTab === "water" && (
-                            <WaterTracker
-                              patient={selectedPatient}
-                              onAddWater={handleAddWater}
-                              onRemoveWaterLog={handleRemoveWaterLog}
-                            />
+                            <FeatureGuard featureId="water_hydration" featureName="Hydration & Water Tracker">
+                              <WaterTracker
+                                patient={selectedPatient}
+                                onAddWater={handleAddWater}
+                                onRemoveWaterLog={handleRemoveWaterLog}
+                              />
+                            </FeatureGuard>
                           )}
-                          {careSubTab === "steps" && <StepsTracker patient={selectedPatient} />}
-                          {careSubTab === "yoga" && <YogaMeditationTracker patient={selectedPatient} />}
-                          {careSubTab === "mood" && <MoodHabitJournal patient={selectedPatient} />}
-                          {careSubTab === "elderly" && <ElderlyCareTracker patient={selectedPatient} />}
+                          {careSubTab === "steps" && (
+                            <FeatureGuard featureId="steps_exercise" featureName="Steps & Activity Log">
+                              <StepsTracker patient={selectedPatient} />
+                            </FeatureGuard>
+                          )}
+                          {careSubTab === "yoga" && (
+                            <FeatureGuard featureId="yoga_meditation" featureName="Yoga & Mindfulness">
+                              <YogaMeditationTracker patient={selectedPatient} />
+                            </FeatureGuard>
+                          )}
+                          {careSubTab === "mood" && (
+                            <FeatureGuard featureId="mood_habits" featureName="Mood & Recovery Log">
+                              <MoodHabitJournal patient={selectedPatient} />
+                            </FeatureGuard>
+                          )}
+                          {careSubTab === "elderly" && (
+                            <FeatureGuard featureId="elderly_care" featureName="Elderly & Senior Portal">
+                              <ElderlyCareTracker patient={selectedPatient} />
+                            </FeatureGuard>
+                          )}
                           {careSubTab === "exercise" && <ExerciseTracker patient={selectedPatient} />}
                           {careSubTab === "mental" && <MentalHealthTracker patient={selectedPatient} />}
+                          {(careSubTab === "habit_challenges" || careSubTab === "challenges") && (
+                            <HabitChallenges onBackToHome={handleGoBack} />
+                          )}
                           {careSubTab === "habit" && <HabitAndRecoveryTracker patient={selectedPatient} />}
-                          {careSubTab === "kids" && <KidsCareTracker patient={selectedPatient} />}
-                          {careSubTab === "family_tree" && <FamilyTreeTracker patient={selectedPatient} />}
-                          {careSubTab === "staff_payroll" && <StaffAndPayrollTracker patient={selectedPatient} />}
-                          {careSubTab === "contracts" && <ContractManagementTracker patient={selectedPatient} />}
-                          {careSubTab === "vehicles" && <VehicleCareTracker patient={selectedPatient} />}
-                          {careSubTab === "property" && <PropertyLandTracker patient={selectedPatient} />}
-                          {careSubTab === "pets" && <PetCareTracker patient={selectedPatient} />}
+                          {careSubTab === "kids" && (
+                            <FeatureGuard featureId="kids_care" featureName="Kids & Pediatric Care">
+                              <KidsCareTracker patient={selectedPatient} />
+                            </FeatureGuard>
+                          )}
+                          {careSubTab === "family_tree" && (
+                            <FeatureGuard featureId="family_tree" featureName="Family Tree & Heritage">
+                              <FamilyTreeTracker patient={selectedPatient} />
+                            </FeatureGuard>
+                          )}
+                          {careSubTab === "staff_payroll" && (
+                            <FeatureGuard featureId="staff_payroll" featureName="Staff HR & Payroll">
+                              <StaffAndPayrollTracker patient={selectedPatient} />
+                            </FeatureGuard>
+                          )}
+                          {careSubTab === "contracts" && (
+                            <FeatureGuard featureId="contract_legal" featureName="Contract & Legal Vault">
+                              <ContractManagementTracker patient={selectedPatient} />
+                            </FeatureGuard>
+                          )}
+                          {careSubTab === "vehicles" && (
+                            <FeatureGuard featureId="vehicles_care" featureName="Vehicle Care & Mileage">
+                              <VehicleCareTracker patient={selectedPatient} />
+                            </FeatureGuard>
+                          )}
+                          {careSubTab === "property" && (
+                            <FeatureGuard featureId="property_farm" featureName="Property, Land & Farm">
+                              <PropertyLandTracker patient={selectedPatient} />
+                            </FeatureGuard>
+                          )}
+                          {careSubTab === "pets" && (
+                            <FeatureGuard featureId="pets_care" featureName="Pet & Vet Care">
+                              <PetCareTracker patient={selectedPatient} />
+                            </FeatureGuard>
+                          )}
                           {careSubTab === "nutrition" && <NutritionTracker patient={selectedPatient} />}
-                          {careSubTab === "finance" && <FinanceBudgetTracker patient={selectedPatient} />}
+                          {careSubTab === "finance" && (
+                            <FeatureGuard featureId="finance_budget" featureName="Finance & Cash Flow">
+                              <FinanceBudgetTracker patient={selectedPatient} />
+                            </FeatureGuard>
+                          )}
                           {careSubTab === "garden" && <GardenFarmTracker patient={selectedPatient} />}
-                          {careSubTab === "jobs" && <JobSearchCareerTracker patient={selectedPatient} />}
-                          {careSubTab === "paperless" && <IGOPaperlessTracker patient={selectedPatient} />}
+                          {(careSubTab === "jobs" || careSubTab === "career") && <JobSearchCareerTracker patient={selectedPatient} />}
+                          {careSubTab === "ticket_queue" && (
+                            <FeatureGuard featureId="ticket_queue" featureName="Digital Ticket & Queue Counter">
+                              <TicketQueueManagementTracker />
+                            </FeatureGuard>
+                          )}
+                          {careSubTab === "paperless" && (
+                            <FeatureGuard featureId="paperless_docs" featureName="Paperless Digital Vault">
+                              <IGOPaperlessTracker patient={selectedPatient} />
+                            </FeatureGuard>
+                          )}
                           {careSubTab === "life_dates" && <LifeDatesTracker patient={selectedPatient} />}
-                          {careSubTab === "inventory" && <InventoryManagementTracker patient={selectedPatient} />}
-                          {careSubTab === "passwords" && <PasswordManagementTracker />}
+                          {careSubTab === "inventory" && (
+                            <FeatureGuard featureId="retail_inventory_pos" featureName="Retail POS & Stock Inventory">
+                              <InventoryManagementTracker patient={selectedPatient} />
+                            </FeatureGuard>
+                          )}
+                          {careSubTab === "passwords" && (
+                            <FeatureGuard featureId="passwords_vault" featureName="Encrypted Password Manager">
+                              <PasswordManagementTracker />
+                            </FeatureGuard>
+                          )}
                           {careSubTab === "menstrual" && <MenstrualCycleTracker />}
                           {careSubTab === "sleep" && <SleepTracker />}
                           {careSubTab === "hybrid_storage" && <HybridStorageManagerView />}
-                          {careSubTab === "custom_store" && <CustomStoreMarketplace onBackToServices={() => setActiveTab("more")} />}
+                          {careSubTab === "custom_store" && (
+                            <FeatureGuard featureId="custom_store_marketplace" featureName="Custom E-Commerce Store & Marketplace">
+                              <CustomStoreMarketplace onBackToServices={() => handleNavigateTo("more")} />
+                            </FeatureGuard>
+                          )}
                         </ErrorBoundary>
                       )}
                     </div>
@@ -923,6 +1112,7 @@ export default function App() {
                 <PlanAndScheduleView
                   patient={selectedPatient}
                   onAddMedication={handleAddMedication}
+                  onBack={handleGoBack}
                 />
               )}
 
@@ -936,9 +1126,18 @@ export default function App() {
                   onAddMemoEntry={handleAddMemoEntry}
                   onExportBackup={handleExportBackup}
                   onImportBackup={handleImportBackup}
+                  onBack={handleGoBack}
                   onSelectCareSubTab={(tab) => {
-                    setActiveTab("care");
-                    handleSelectCareSubTab(tab);
+                    handleNavigateTo("care", tab);
+                  }}
+                />
+              )}
+
+              {activeTab === "services" && (
+                <ServiceLibrary
+                  onBackToHome={handleGoBack}
+                  onSelectService={(subTab) => {
+                    handleNavigateTo("care", subTab);
                   }}
                 />
               )}
@@ -947,18 +1146,7 @@ export default function App() {
         </ErrorBoundary>
       </main>
 
-      {/* Bottom Floating Navigation */}
-      <BottomNavigation
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onOpenQuickMenu={() => setIsQuickMenuOpen(true)}
-        onOpenCamera={() => setIsCameraOpen(true)}
-        onOpenAiAssistant={() => setIsAiAssistantOpen(true)}
-        onOpenVoiceAssistant={() => setIsVoiceAssistantOpen(true)}
-        currentLanguage={currentLanguage}
-      />
-
-      {/* Global Quick Action Overlay Menu */}
+      {/* Bottom Modals & Quick Actions (Bottom Navigation bar removed as per design system migration) */}
       <QuickActionOverlay
         isOpen={isQuickMenuOpen}
         onClose={() => setIsQuickMenuOpen(false)}
@@ -1079,8 +1267,83 @@ export default function App() {
       {/* User Personal & Professional Profile Details & AI Analysis Suite Modal */}
       <UserProfileManagerModal
         isOpen={isUserProfileModalOpen}
+        initialTab={userProfileInitialTab}
         onClose={() => setIsUserProfileModalOpen(false)}
         patients={patients}
+      />
+
+      {/* User Tax Receipts Vault Modal */}
+      <UserReceiptVaultModal
+        isOpen={isReceiptVaultOpen}
+        onClose={() => setIsReceiptVaultOpen(false)}
+      />
+
+      {/* Re-config Wizard (Smart Setup Choice Modal) */}
+      {isReconfigModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
+          <div className="w-full max-w-4xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl my-8 relative">
+            <button
+              type="button"
+              onClick={() => setIsReconfigModalOpen(false)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-full transition-colors cursor-pointer z-10"
+            >
+              ✕
+            </button>
+            <OnboardingWizard
+              appState={appState}
+              onUpdateAppState={setAppState}
+              onCompleteOnboarding={() => setIsReconfigModalOpen(false)}
+              isModalMode={true}
+              onCloseModal={() => setIsReconfigModalOpen(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Add Member / Family Member Form Modal */}
+      <AddMemberModal
+        isOpen={isAddMemberModalOpen}
+        onClose={() => setIsAddMemberModalOpen(false)}
+        isDarkMode={isDarkMode}
+        onAddMember={(newMember) => {
+          // Add to patients/family members list dynamically
+          if (newMember.category === "family" || newMember.category === "elderly") {
+            const newPatient: Patient = {
+              id: newMember.id,
+              name: newMember.name,
+              age: 65,
+              category: newMember.category === "elderly" ? "Elderly" : "General",
+              avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+              vitals: [],
+              waterCurrentMl: 0,
+              waterGoalMl: 2500,
+              waterLogs: [],
+              medications: [],
+              mood: "Calm",
+              sleepHours: 8,
+              caregiverNotes: newMember.notes || `${newMember.relationOrRole}`,
+              emergencyContact: {
+                name: "Primary Family",
+                phone: newMember.phone || "+977 9800000000",
+                relation: newMember.relationOrRole || "Family",
+              },
+              lastCheckIn: "Just added",
+              status: "Stable",
+              relationship: newMember.relationOrRole,
+            };
+            setPatients((prev) => [...prev, newPatient]);
+          } else if (newMember.category === "child") {
+            const newKid = {
+              id: newMember.id,
+              name: newMember.name,
+              dateOfBirth: newMember.dateOfBirth || "2020-01-01",
+              growthLogs: [],
+              milestones: [],
+              vaccinations: [],
+            };
+            setFamilyMembers((prev: any) => [...prev, newKid]);
+          }
+        }}
       />
 
       {/* Paddle Payment & Subscription Modal */}
@@ -1099,6 +1362,17 @@ export default function App() {
             }
           }
         }}
+      />
+
+      {/* Modern Bottom Navigation Suite */}
+      <BottomNavigation
+        activeTab={activeTab}
+        setActiveTab={(tab) => handleNavigateTo(tab)}
+        onOpenQuickMenu={() => setIsQuickMenuOpen(true)}
+        onOpenCamera={() => setIsCameraOpen(true)}
+        onOpenAiAssistant={() => setIsAiAssistantOpen(true)}
+        onOpenVoiceAssistant={() => setIsVoiceAssistantOpen(true)}
+        onOpenProfile={() => setIsUserProfileModalOpen(true)}
       />
       </div>
     </LanguageProvider>

@@ -527,6 +527,29 @@ export const AuthModalAndWelcome: React.FC<AuthModalAndWelcomeProps> = ({
           {/* TAB 2: CREATE ACCOUNT */}
           {activeTab === "signup" && (
             <form onSubmit={handleSignupSubmit} className="space-y-3">
+              {/* Quick 1-Click Demo Users */}
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 flex items-center justify-between gap-2">
+                <span className="text-[10px] font-extrabold text-slate-500 dark:text-slate-400">
+                  1-Click Quick Demo:
+                </span>
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={handleQuickDemoUser}
+                    className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-lg text-[10px] cursor-pointer shadow-2xs"
+                  >
+                    User Demo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleQuickDemoAdmin}
+                    className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-lg text-[10px] cursor-pointer shadow-2xs"
+                  >
+                    Admin Demo
+                  </button>
+                </div>
+              </div>
+
               {/* 3 Core Features Highlight */}
               <div className="p-2 bg-emerald-50/80 dark:bg-emerald-950/40 rounded-xl border border-emerald-200/80 dark:border-emerald-800/60 space-y-1">
                 <div className="flex items-center justify-between text-[10px] font-extrabold text-emerald-800 dark:text-emerald-300">
