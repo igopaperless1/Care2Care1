@@ -1,1842 +1,1787 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Patient } from "../types";
 import {
-  Heart,
   Calendar as CalendarIcon,
-  Activity,
-  Bell,
-  CheckCircle2,
-  AlertCircle,
-  Plus,
-  Trash2,
-  Edit2,
-  Share2,
-  Download,
-  Settings,
+  Heart,
+  Droplet,
+  Sun,
+  Flame,
+  Moon,
   Sparkles,
-  Calculator,
   ChevronLeft,
   ChevronRight,
+  Plus,
+  CheckCircle2,
+  Bell,
+  Settings as SettingsIcon,
+  BarChart3,
   TrendingUp,
-  Sun,
-  Shield,
+  Award,
+  Layers,
+  LayoutGrid,
+  Activity,
   Smile,
   Frown,
   Meh,
   Zap,
-  Droplet,
-  Baby,
-  User,
   Info,
+  Shield,
   Clock,
+  Download,
+  Trash2,
   Check,
-  RefreshCw,
-  Lock,
-  MessageCircle,
-  Smartphone
+  X,
+  Share2,
+  BookOpen,
+  ShoppingBag,
+  Sliders,
+  Filter,
+  Thermometer,
+  Scale
 } from "lucide-react";
 import {
   ResponsiveContainer,
+  BarChart,
+  Bar,
   LineChart,
   Line,
   XAxis,
   YAxis,
   Tooltip,
   CartesianGrid,
-  BarChart,
-  Bar,
-  Legend,
-  ReferenceLine
+  Legend
 } from "recharts";
-import {
-  CycleRecord,
-  CyclePrediction,
-  MenstrualReminder,
-  PregnancyRecord,
-  MenstrualUserSettings
-} from "../types";
 
-// ============================================================
-// DEFAULT INITIAL DEMO DATA
-// ============================================================
-const DEFAULT_SETTINGS: MenstrualUserSettings = {
-  userId: "user_1",
-  averageCycleLength: 28,
-  periodLength: 5,
-  ovulationDay: 14,
-  lutealPhaseLength: 14,
-  privacyMode: "Private",
-  notifications: true,
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString()
-};
+export type MenstrualTab =
+  | "dashboard"
+  | "log"
+  | "calendar"
+  | "symptoms"
+  | "flow"
+  | "insights"
+  | "analytics"
+  | "fertility"
+  | "reminders"
+  | "products"
+  | "settings"
+  | "programs";
 
-const INITIAL_RECORDS: CycleRecord[] = [
-  {
-    id: "cyc_1",
-    userId: "user_1",
-    startDate: "2026-07-10",
-    endDate: "2026-07-15",
-    cycleLength: 28,
-    periodLength: 5,
-    flowIntensity: "Medium",
-    flowColor: "Bright Red",
-    clots: false,
-    painLevel: 4,
-    symptoms: ["Cramps", "Headache", "Fatigue"],
-    mood: ["Irritable", "Tired"],
-    basalTemperature: 36.5,
-    weight: 58.2,
-    bloodPressure: "118/76",
-    exerciseLevel: "Low",
-    sleepQuality: "Fair",
-    notes: "Light cramping on day 1 and 2.",
-    createdAt: "2026-07-10T08:00:00Z",
-    updatedAt: "2026-07-15T18:00:00Z"
-  },
-  {
-    id: "cyc_2",
-    userId: "user_1",
-    startDate: "2026-06-12",
-    endDate: "2026-06-17",
-    cycleLength: 28,
-    periodLength: 5,
-    flowIntensity: "Heavy",
-    flowColor: "Bright Red",
-    clots: true,
-    painLevel: 6,
-    symptoms: ["Cramps", "Bloating", "Lower Back Pain"],
-    mood: ["Mood Swings", "Anxious"],
-    basalTemperature: 36.4,
-    weight: 58.5,
-    notes: "Took ibuprofen for cramps on day 2.",
-    createdAt: "2026-06-12T08:00:00Z",
-    updatedAt: "2026-06-17T18:00:00Z"
-  },
-  {
-    id: "cyc_3",
-    userId: "user_1",
-    startDate: "2026-05-15",
-    endDate: "2026-05-20",
-    cycleLength: 28,
-    periodLength: 5,
-    flowIntensity: "Medium",
-    flowColor: "Bright Red",
-    painLevel: 3,
-    symptoms: ["Fatigue", "Cravings"],
-    mood: ["Happy", "Calm"],
-    basalTemperature: 36.6,
-    weight: 57.9,
-    notes: "Normal period duration.",
-    createdAt: "2026-05-15T08:00:00Z",
-    updatedAt: "2026-05-20T18:00:00Z"
-  }
-];
+export interface MenstrualCycleProps {
+  patient?: Patient;
+}
 
-const INITIAL_REMINDERS: MenstrualReminder[] = [
-  {
-    id: "rem_1",
-    userId: "user_1",
-    type: "Period",
-    title: "Upcoming Period Alert",
-    description: "Period predicted to start in 2 days. Get pads/tampons ready!",
-    daysBefore: 2,
-    time: "09:00",
-    isEnabled: true,
-    isRecurring: true,
-    recurrencePattern: "Monthly",
-    notificationType: "Push",
-    vibration: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: "rem_2",
-    userId: "user_1",
-    type: "Ovulation",
-    title: "Ovulation & High Fertility Day",
-    description: "Peak ovulation predicted for today.",
-    daysBefore: 0,
-    time: "08:30",
-    isEnabled: true,
-    isRecurring: true,
-    recurrencePattern: "Monthly",
-    notificationType: "Push",
-    vibration: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: "rem_3",
-    userId: "user_1",
-    type: "Pill",
-    title: "Daily Birth Control / Vitamin Pill",
-    description: "Take daily supplement / contraceptive pill.",
-    daysBefore: 0,
-    time: "21:00",
-    isEnabled: true,
-    isRecurring: true,
-    recurrencePattern: "Daily",
-    notificationType: "Push",
-    vibration: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-];
+export interface DayFlowLog {
+  morning: "None" | "Light" | "Moderate" | "Heavy" | "Very Heavy";
+  afternoon: "None" | "Light" | "Moderate" | "Heavy" | "Very Heavy";
+  evening: "None" | "Light" | "Moderate" | "Heavy" | "Very Heavy";
+  night: "None" | "Light" | "Moderate" | "Heavy" | "Very Heavy";
+  notes?: string;
+}
 
-const SYMPTOM_OPTIONS = [
-  "Cramps",
-  "Headache",
-  "Bloating",
-  "Fatigue",
-  "Lower Back Pain",
-  "Breast Tenderness",
-  "Acne / Breakouts",
-  "Nausea",
-  "Food Cravings",
-  "Dizziness",
-  "Insomnia",
-  "Hot Flashes"
-];
+export interface MenstrualCycleRecord {
+  id: string;
+  startDate: string;
+  endDate: string;
+  cycleLength: number;
+  periodLength: number;
+  flowIntensity: "Light" | "Moderate" | "Heavy" | "Very Heavy";
+  painLevel: number;
+  symptoms: string[];
+  moods: string[];
+  basalTemp?: number;
+  weight?: number;
+  notes?: string;
+}
 
-const MOOD_OPTIONS = [
-  "Happy",
-  "Calm",
-  "Energetic",
-  "Irritable",
-  "Anxious",
-  "Sad",
-  "Mood Swings",
-  "Sensitive",
-  "Stressed",
-  "Focused"
-];
+export interface MenstrualProduct {
+  id: string;
+  title: string;
+  subtitle: string;
+  category: string;
+  icon: string;
+  description: string;
+  benefits: string[];
+  usageTip: string;
+}
 
-export const MenstrualCycleTracker: React.FC = () => {
-  // Navigation & View State
-  const [activeTab, setActiveTab] = useState<
-    "dashboard" | "log" | "calendar" | "analytics" | "calculators" | "reminders" | "pregnancy" | "settings"
-  >("dashboard");
+export interface MenstrualProgram {
+  id: string;
+  title: string;
+  subtitle: string;
+  totalDays: number;
+  completedDays: number;
+  category: string;
+  icon: string;
+  description: string;
+  tips: string[];
+}
 
-  // Main State persisted in localStorage
-  const [settings, setSettings] = useState<MenstrualUserSettings>(() => {
-    const saved = localStorage.getItem("care2care_cycle_settings");
-    return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
-  });
+export const MenstrualCycleTracker: React.FC<MenstrualCycleProps> = ({ patient }) => {
+  const userName = patient ? patient.name.split(" ")[0] : "Roshan";
 
-  const [records, setRecords] = useState<CycleRecord[]>(() => {
-    const saved = localStorage.getItem("care2care_cycle_records");
-    return saved ? JSON.parse(saved) : INITIAL_RECORDS;
-  });
-
-  const [reminders, setReminders] = useState<MenstrualReminder[]>(() => {
-    const saved = localStorage.getItem("care2care_cycle_reminders");
-    return saved ? JSON.parse(saved) : INITIAL_REMINDERS;
-  });
-
-  const [pregnancy, setPregnancy] = useState<PregnancyRecord | null>(() => {
-    const saved = localStorage.getItem("care2care_pregnancy_record");
-    return saved ? JSON.parse(saved) : null;
-  });
-
-  // Toast & Notifications
+  // Navigation tab state
+  const [activeTab, setActiveTab] = useState<MenstrualTab>("dashboard");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [isAlertDismissed, setIsAlertDismissed] = useState<boolean>(false);
-
-  // Form State for Logging Period
-  const [formStartDate, setFormStartDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
-  const [formEndDate, setFormEndDate] = useState(
-    new Date(Date.now() + 5 * 86400000).toISOString().split("T")[0]
-  );
-  const [formFlow, setFormFlow] = useState<"Light" | "Medium" | "Heavy">(
-    "Medium"
-  );
-  const [formPain, setFormPain] = useState<number>(3);
-  const [formSelectedSymptoms, setFormSelectedSymptoms] = useState<string[]>(
-    []
-  );
-  const [formSelectedMoods, setFormSelectedMoods] = useState<string[]>([]);
-  const [formBasalTemp, setFormBasalTemp] = useState<string>("36.6");
-  const [formWeight, setFormWeight] = useState<string>("58.0");
-  const [formNotes, setFormNotes] = useState<string>("");
-  const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
-
-  // Calendar Month State
-  const [calendarDate, setCalendarDate] = useState<Date>(new Date());
-  const [selectedCalendarDay, setSelectedCalendarDay] = useState<string | null>(null);
-
-  // Calculators State
-  const [calcLmpDate, setCalcLmpDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
-  );
-  const [calcCycleLen, setCalcCycleLen] = useState<number>(28);
-  const [calcResult, setCalcResult] = useState<any>(null);
-
-  // Save state to LocalStorage
-  useEffect(() => {
-    localStorage.setItem("care2care_cycle_settings", JSON.stringify(settings));
-  }, [settings]);
-
-  useEffect(() => {
-    localStorage.setItem("care2care_cycle_records", JSON.stringify(records));
-  }, [records]);
-
-  useEffect(() => {
-    localStorage.setItem("care2care_cycle_reminders", JSON.stringify(reminders));
-  }, [reminders]);
-
-  useEffect(() => {
-    if (pregnancy) {
-      localStorage.setItem("care2care_pregnancy_record", JSON.stringify(pregnancy));
-    } else {
-      localStorage.removeItem("care2care_pregnancy_record");
-    }
-  }, [pregnancy]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
+    setTimeout(() => setToastMessage(null), 3200);
   };
 
-  // Helper Calculations
-  const getLatestRecord = (): CycleRecord | undefined => {
-    if (records.length === 0) return undefined;
-    return [...records].sort(
-      (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-    )[0];
-  };
+  // Cycle Configuration Settings
+  const [cycleLength, setCycleLength] = useState<number>(() => {
+    const saved = localStorage.getItem("care2care_menstrual_cycle_len");
+    return saved ? parseInt(saved, 10) : 28;
+  });
+  const [periodLength, setPeriodLength] = useState<number>(() => {
+    const saved = localStorage.getItem("care2care_menstrual_period_len");
+    return saved ? parseInt(saved, 10) : 5;
+  });
+  const [lastPeriodStart, setLastPeriodStart] = useState<string>(() => {
+    const saved = localStorage.getItem("care2care_menstrual_last_start");
+    if (saved) return saved;
+    const d = new Date();
+    d.setDate(d.getDate() - 7); // Default 8th day of cycle
+    return d.toISOString().split("T")[0];
+  });
 
-  const calculatePredictions = (): CyclePrediction => {
-    const latest = getLatestRecord();
-    const cycleLen = settings.averageCycleLength || 28;
-    const periodLen = settings.periodLength || 5;
-
-    let baseStart = latest ? new Date(latest.startDate) : new Date();
-    // Add cycle length to last period start
-    const nextStart = new Date(baseStart.getTime() + cycleLen * 86400000);
-    const nextEnd = new Date(nextStart.getTime() + (periodLen - 1) * 86400000);
-
-    // Ovulation is usually 14 days before next period start
-    const ovulationDate = new Date(nextStart.getTime() - 14 * 86400000);
-    const fertileStart = new Date(ovulationDate.getTime() - 5 * 86400000);
-    const fertileEnd = new Date(ovulationDate.getTime() + 1 * 86400000);
-    const lutealStart = new Date(ovulationDate.getTime() + 1 * 86400000);
-
-    return {
-      userId: settings.userId,
-      nextPeriodStart: nextStart.toISOString().split("T")[0],
-      nextPeriodEnd: nextEnd.toISOString().split("T")[0],
-      ovulationDate: ovulationDate.toISOString().split("T")[0],
-      fertileWindowStart: fertileStart.toISOString().split("T")[0],
-      fertileWindowEnd: fertileEnd.toISOString().split("T")[0],
-      lutealPhaseStart: lutealStart.toISOString().split("T")[0],
-      confidence: records.length >= 3 ? 95 : records.length >= 1 ? 80 : 65,
-      cyclePattern: "Regular",
-      averageCycleLength: cycleLen,
-      shortestCycle: 27,
-      longestCycle: 29,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-  };
-
-  // Calculate predicted start dates for the next two cycles
-  const calculateNextTwoCycles = () => {
-    const latest = getLatestRecord();
-    const cycleLen = settings.averageCycleLength || 28;
-    const periodLen = settings.periodLength || 5;
-
-    let baseStart = latest ? new Date(latest.startDate) : new Date();
-
-    // Cycle 1 (Next Cycle)
-    const c1Start = new Date(baseStart.getTime() + cycleLen * 86400000);
-    const c1End = new Date(c1Start.getTime() + (periodLen - 1) * 86400000);
-    const c1Ovulation = new Date(c1Start.getTime() - 14 * 86400000);
-    const c1FertileStart = new Date(c1Ovulation.getTime() - 5 * 86400000);
-    const c1FertileEnd = new Date(c1Ovulation.getTime() + 1 * 86400000);
-
-    // Cycle 2 (Following Cycle)
-    const c2Start = new Date(c1Start.getTime() + cycleLen * 86400000);
-    const c2End = new Date(c2Start.getTime() + (periodLen - 1) * 86400000);
-    const c2Ovulation = new Date(c2Start.getTime() - 14 * 86400000);
-    const c2FertileStart = new Date(c2Ovulation.getTime() - 5 * 86400000);
-    const c2FertileEnd = new Date(c2Ovulation.getTime() + 1 * 86400000);
-
-    const todayMs = new Date().setHours(0, 0, 0, 0);
-    const daysToC1 = Math.ceil((c1Start.getTime() - todayMs) / (1000 * 3600 * 24));
-    const daysToC2 = Math.ceil((c2Start.getTime() - todayMs) / (1000 * 3600 * 24));
-
-    return {
-      cycle1: {
-        cycleNum: 1,
-        startDate: c1Start.toISOString().split("T")[0],
-        endDate: c1End.toISOString().split("T")[0],
-        ovulationDate: c1Ovulation.toISOString().split("T")[0],
-        fertileWindowStart: c1FertileStart.toISOString().split("T")[0],
-        fertileWindowEnd: c1FertileEnd.toISOString().split("T")[0],
-        daysRemaining: daysToC1,
+  // Cycle History Records
+  const [cycleRecords, setCycleRecords] = useState<MenstrualCycleRecord[]>(() => {
+    const saved = localStorage.getItem("care2care_menstrual_records");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return [
+      {
+        id: "cyc_1",
+        startDate: "2026-04-10",
+        endDate: "2026-04-15",
+        cycleLength: 28,
+        periodLength: 5,
+        flowIntensity: "Moderate",
+        painLevel: 3,
+        symptoms: ["Cramps", "Bloating", "Fatigue"],
+        moods: ["Calm", "Mood Swings"],
+        notes: "Mild cramping on day 1."
       },
-      cycle2: {
-        cycleNum: 2,
-        startDate: c2Start.toISOString().split("T")[0],
-        endDate: c2End.toISOString().split("T")[0],
-        ovulationDate: c2Ovulation.toISOString().split("T")[0],
-        fertileWindowStart: c2FertileStart.toISOString().split("T")[0],
-        fertileWindowEnd: c2FertileEnd.toISOString().split("T")[0],
-        daysRemaining: daysToC2,
+      {
+        id: "cyc_2",
+        startDate: "2026-03-13",
+        endDate: "2026-03-18",
+        cycleLength: 28,
+        periodLength: 5,
+        flowIntensity: "Heavy",
+        painLevel: 6,
+        symptoms: ["Cramps", "Headache", "Back Pain"],
+        moods: ["Irritability", "Sad"],
+        notes: "Heavy flow on day 2."
       },
-    };
-  };
+      {
+        id: "cyc_3",
+        startDate: "2026-02-14",
+        endDate: "2026-02-19",
+        cycleLength: 27,
+        periodLength: 5,
+        flowIntensity: "Moderate",
+        painLevel: 4,
+        symptoms: ["Fatigue", "Breast Tenderness"],
+        moods: ["Happy", "Calm"],
+        notes: "Smooth cycle."
+      },
+      {
+        id: "cyc_4",
+        startDate: "2026-01-18",
+        endDate: "2026-01-22",
+        cycleLength: 29,
+        periodLength: 4,
+        flowIntensity: "Moderate",
+        painLevel: 3,
+        symptoms: ["Bloating", "Acne"],
+        moods: ["Anxiety", "Mood Swings"],
+        notes: "Took warm herbal tea."
+      },
+      {
+        id: "cyc_5",
+        startDate: "2025-12-21",
+        endDate: "2025-12-26",
+        cycleLength: 28,
+        periodLength: 5,
+        flowIntensity: "Moderate",
+        painLevel: 4,
+        symptoms: ["Cramps", "Fatigue"],
+        moods: ["Calm"],
+        notes: "Normal flow."
+      },
+      {
+        id: "cyc_6",
+        startDate: "2025-11-23",
+        endDate: "2025-11-28",
+        cycleLength: 27,
+        periodLength: 5,
+        flowIntensity: "Light",
+        painLevel: 2,
+        symptoms: ["Breast Tenderness"],
+        moods: ["Happy", "Calm"],
+        notes: "Light and easy cycle."
+      }
+    ];
+  });
 
-  const nextTwoCycles = calculateNextTwoCycles();
+  // Calculate current cycle day & phase
+  const cycleDayNumber = useMemo(() => {
+    const start = new Date(lastPeriodStart);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return ((diffDays - 1) % cycleLength) + 1;
+  }, [lastPeriodStart, cycleLength]);
 
-  // Filter last 6 months of records for Recharts cycle length trend chart
-  const getSixMonthRecords = () => {
-    const today = new Date();
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(today.getMonth() - 6);
-
-    const filtered = records.filter(
-      (r) => new Date(r.startDate) >= sixMonthsAgo
-    );
-
-    const targetList = filtered.length >= 2 ? filtered : records;
-    const sorted = [...targetList]
-      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
-      .slice(-6);
-
-    return sorted.map((r) => ({
-      dateLabel: new Date(r.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-      startDate: r.startDate,
-      cycleLength: r.cycleLength || settings.averageCycleLength,
-      periodLength: r.periodLength || settings.periodLength,
-      painLevel: r.painLevel || 0,
-      avgCycleTarget: settings.averageCycleLength,
-    }));
-  };
-
-  const sixMonthChartData = getSixMonthRecords();
-
-  const prediction = calculatePredictions();
-  const latestRecord = getLatestRecord();
-
-  // Current Cycle Day calculation
-  const getCurrentCycleDay = (): number => {
-    if (!latestRecord) return 1;
-    const start = new Date(latestRecord.startDate).getTime();
-    const today = new Date().getTime();
-    const diffDays = Math.floor((today - start) / (1000 * 3600 * 24)) + 1;
-    return diffDays > 0 ? diffDays : 1;
-  };
-
-  const currentCycleDay = getCurrentCycleDay();
-
-  // Check Phase of current day
-  const getCurrentPhase = () => {
-    const todayStr = new Date().toISOString().split("T")[0];
-    if (
-      latestRecord &&
-      todayStr >= latestRecord.startDate &&
-      todayStr <= latestRecord.endDate
-    ) {
+  const currentPhaseInfo = useMemo(() => {
+    if (cycleDayNumber <= periodLength) {
       return {
         name: "Menstrual Phase",
+        description: "Your period is active. Focus on rest, hydration, and gentle care.",
+        color: "text-[#FF5A36] bg-rose-50 border-rose-200",
         badge: "🔴 Period Active",
-        color: "bg-rose-100 text-rose-800 border-rose-200",
-        desc: "Rest and stay hydrated. Light activity recommended."
+        daysToNextPeriod: cycleLength - cycleDayNumber,
+        icon: "🩸"
       };
-    }
-    if (
-      todayStr >= prediction.fertileWindowStart &&
-      todayStr <= prediction.fertileWindowEnd
-    ) {
-      if (todayStr === prediction.ovulationDate) {
-        return {
-          name: "Ovulation Day",
-          badge: "🟢 Peak Fertility",
-          color: "bg-emerald-100 text-emerald-800 border-emerald-200",
-          desc: "Peak chance of conception. Estrogen & LH levels at peak."
-        };
-      }
-      return {
-        name: "Fertile Window",
-        badge: "🟡 High Fertility",
-        color: "bg-amber-100 text-amber-800 border-amber-200",
-        desc: "Higher probability of pregnancy. Increased energy levels."
-      };
-    }
-    if (todayStr < prediction.fertileWindowStart) {
+    } else if (cycleDayNumber <= 13) {
       return {
         name: "Follicular Phase",
-        badge: "✨ Follicular Phase",
-        color: "bg-purple-100 text-purple-800 border-purple-200",
-        desc: "Energy and mood rising as estrogen builds up."
+        description: "Estrogen is rising. Energy and creativity are naturally peaking.",
+        color: "text-emerald-700 bg-emerald-50 border-emerald-200",
+        badge: "🌱 Follicular Phase",
+        daysToNextPeriod: cycleLength - cycleDayNumber,
+        icon: "🌸"
+      };
+    } else if (cycleDayNumber <= 16) {
+      return {
+        name: "Ovulation Phase",
+        description: "Peak fertility window. High chances of conception.",
+        color: "text-amber-700 bg-amber-50 border-amber-200",
+        badge: "☀️ Ovulation Window",
+        daysToNextPeriod: cycleLength - cycleDayNumber,
+        icon: "✨"
+      };
+    } else {
+      return {
+        name: "Luteal Phase",
+        description: "Progesterone rises. Prioritize magnesium-rich nutrition and stress relief.",
+        color: "text-purple-700 bg-purple-50 border-purple-200",
+        badge: "🌙 Luteal Phase",
+        daysToNextPeriod: cycleLength - cycleDayNumber,
+        icon: "🕯️"
       };
     }
-    return {
-      name: "Luteal Phase",
-      badge: "🌙 Luteal Phase",
-      color: "bg-indigo-100 text-indigo-800 border-indigo-200",
-      desc: "Progesterone dominates. Prepare for upcoming period rest."
-    };
-  };
+  }, [cycleDayNumber, periodLength, cycleLength]);
 
-  const currentPhase = getCurrentPhase();
+  // Next Period & Fertile Window Dates
+  const nextPeriodDateStr = useMemo(() => {
+    const start = new Date(lastPeriodStart);
+    start.setDate(start.getDate() + cycleLength);
+    return start.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
+  }, [lastPeriodStart, cycleLength]);
 
-  // Handle Save Log
-  const handleSaveRecord = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formStartDate) {
-      showToast("Please select period start date.");
-      return;
-    }
+  const fertileWindowStr = useMemo(() => {
+    const start = new Date(lastPeriodStart);
+    const fertStart = new Date(start);
+    fertStart.setDate(start.getDate() + 9);
+    const fertEnd = new Date(start);
+    fertEnd.setDate(start.getDate() + 15);
+    return `${fertStart.toLocaleDateString("en-US", { day: "numeric" })} - ${fertEnd.toLocaleDateString("en-US", { day: "numeric", month: "short" })}`;
+  }, [lastPeriodStart]);
 
-    const start = new Date(formStartDate);
-    const end = formEndDate ? new Date(formEndDate) : start;
-    const periodDays =
-      Math.max(1, Math.round((end.getTime() - start.getTime()) / (1000 * 3600 * 24))) + 1;
+  // -----------------------------------------------------------------
+  // 📝 LOG PERIOD STATE
+  // -----------------------------------------------------------------
+  const [isOnPeriod, setIsOnPeriod] = useState<boolean>(cycleDayNumber <= periodLength);
+  const [logFlowIntensity, setLogFlowIntensity] = useState<"Light" | "Moderate" | "Heavy" | "Very Heavy">("Moderate");
+  const [logPeriodDay, setLogPeriodDay] = useState<number>(cycleDayNumber <= periodLength ? cycleDayNumber : 1);
+  const [logNotes, setLogNotes] = useState<string>("");
 
-    const newRec: CycleRecord = {
-      id: editingRecordId || `cyc_${Date.now()}`,
-      userId: settings.userId,
-      startDate: formStartDate,
-      endDate: formEndDate || formStartDate,
-      cycleLength: settings.averageCycleLength,
-      periodLength: periodDays,
-      flowIntensity: formFlow,
-      painLevel: formPain,
-      symptoms: formSelectedSymptoms,
-      mood: formSelectedMoods,
-      basalTemperature: parseFloat(formBasalTemp) || 36.6,
-      weight: parseFloat(formWeight) || 58,
-      notes: formNotes,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    if (editingRecordId) {
-      setRecords(records.map((r) => (r.id === editingRecordId ? newRec : r)));
-      showToast("Cycle record updated successfully!");
+  const handleSavePeriodLog = () => {
+    if (isOnPeriod) {
+      showToast(`🩸 Period Day ${logPeriodDay} (${logFlowIntensity} flow) logged successfully!`);
     } else {
-      setRecords([newRec, ...records]);
-      showToast("New period log added successfully!");
-    }
-
-    // Reset Form
-    setEditingRecordId(null);
-    setFormNotes("");
-    setFormSelectedSymptoms([]);
-    setFormSelectedMoods([]);
-    setActiveTab("dashboard");
-  };
-
-  const handleDeleteRecord = (id: string) => {
-    if (confirm("Are you sure you want to delete this period log?")) {
-      setRecords(records.filter((r) => r.id !== id));
-      showToast("Period log deleted.");
+      showToast("✅ Period log updated: Not currently bleeding.");
     }
   };
 
-  const toggleSymptom = (sym: string) => {
-    if (formSelectedSymptoms.includes(sym)) {
-      setFormSelectedSymptoms(formSelectedSymptoms.filter((s) => s !== sym));
-    } else {
-      setFormSelectedSymptoms([...formSelectedSymptoms, sym]);
+  // -----------------------------------------------------------------
+  // 🤒 SYMPTOMS & MOODS LOGGING STATE
+  // -----------------------------------------------------------------
+  const [selectedPhysicalSymptoms, setSelectedPhysicalSymptoms] = useState<string[]>(["Cramps", "Fatigue"]);
+  const [selectedEmotionalSymptoms, setSelectedEmotionalSymptoms] = useState<string[]>(["Calm"]);
+  const [symptomIntensity, setSymptomIntensity] = useState<number>(7);
+
+  const PHYSICAL_SYMPTOMS_LIST = [
+    { id: "cramps", label: "Cramps", icon: "🩸" },
+    { id: "headache", label: "Headache", icon: "🤕" },
+    { id: "bloating", label: "Bloating", icon: "🎈" },
+    { id: "fatigue", label: "Fatigue", icon: "💤" },
+    { id: "back_pain", label: "Back Pain", icon: "🔙" },
+    { id: "breast_tender", label: "Breast Tenderness", icon: "🍈" },
+    { id: "acne", label: "Acne", icon: "🧖‍♀️" },
+    { id: "nausea", label: "Nausea", icon: "🤢" },
+    { id: "dizziness", label: "Dizziness", icon: "💫" },
+    { id: "cravings", label: "Cravings", icon: "🍫" }
+  ];
+
+  const EMOTIONAL_SYMPTOMS_LIST = [
+    { id: "mood_swings", label: "Mood Swings", icon: "🎭" },
+    { id: "anxiety", label: "Anxiety", icon: "😟" },
+    { id: "irritability", label: "Irritability", icon: "⚡" },
+    { id: "sad", label: "Sad", icon: "😢" },
+    { id: "happy", label: "Happy", icon: "😊" },
+    { id: "calm", label: "Calm", icon: "🧘" }
+  ];
+
+  const togglePhysicalSymptom = (label: string) => {
+    setSelectedPhysicalSymptoms((prev) =>
+      prev.includes(label) ? prev.filter((s) => s !== label) : [...prev, label]
+    );
+  };
+
+  const toggleEmotionalSymptom = (label: string) => {
+    setSelectedEmotionalSymptoms((prev) =>
+      prev.includes(label) ? prev.filter((s) => s !== label) : [...prev, label]
+    );
+  };
+
+  const handleSaveSymptoms = () => {
+    showToast(`✨ Saved ${selectedPhysicalSymptoms.length} physical & ${selectedEmotionalSymptoms.length} emotional symptoms (Intensity: ${symptomIntensity}/10)!`);
+  };
+
+  // -----------------------------------------------------------------
+  // 💧 FLOW TRACKING STATE (THROUGHOUT THE DAY)
+  // -----------------------------------------------------------------
+  const [dayFlow, setDayFlow] = useState<DayFlowLog>({
+    morning: "Light",
+    afternoon: "Moderate",
+    evening: "Moderate",
+    night: "Light",
+    notes: ""
+  });
+
+  const getDropletCount = (intensity: DayFlowLog["morning"]) => {
+    switch (intensity) {
+      case "Light":
+        return 1;
+      case "Moderate":
+        return 2;
+      case "Heavy":
+        return 3;
+      case "Very Heavy":
+        return 4;
+      default:
+        return 0;
     }
   };
 
-  const toggleMood = (m: string) => {
-    if (formSelectedMoods.includes(m)) {
-      setFormSelectedMoods(formSelectedMoods.filter((item) => item !== m));
-    } else {
-      setFormSelectedMoods([...formSelectedMoods, m]);
-    }
+  const setFlowForTime = (time: keyof Omit<DayFlowLog, "notes">, val: DayFlowLog["morning"]) => {
+    setDayFlow((prev) => ({ ...prev, [time]: val }));
   };
 
-  // Calculators Logic
-  const runCalculator = (type: "period" | "ovulation" | "due_date" | "fertile") => {
-    const lmp = new Date(calcLmpDate);
-    const cycle = Number(calcCycleLen) || 28;
+  // -----------------------------------------------------------------
+  // 📅 CYCLE CALENDAR PERPETUAL GENERATOR
+  // -----------------------------------------------------------------
+  const [calendarMonthOffset, setCalendarMonthOffset] = useState<number>(0);
+  const currentCalendarDate = useMemo(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + calendarMonthOffset);
+    return d;
+  }, [calendarMonthOffset]);
 
-    if (isNaN(lmp.getTime())) {
-      showToast("Please select a valid LMP date.");
-      return;
-    }
+  const [selectedCalendarDayStr, setSelectedCalendarDayStr] = useState<string>(
+    new Date().toISOString().split("T")[0]
+  );
 
-    if (type === "period") {
-      const nextP = new Date(lmp.getTime() + cycle * 86400000);
-      setCalcResult({
-        title: "Predicted Next Period",
-        value: nextP.toLocaleDateString("en-US", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric"
-        }),
-        desc: `Based on your ${cycle}-day average cycle length.`
+  const calendarDays = useMemo(() => {
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+    const firstDayIndex = new Date(year, month, 1).getDay(); // 0 is Sunday
+    const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // Adjusted for Mon-Sun (0 is Monday, 6 is Sunday)
+    const startOffset = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
+
+    const days: Array<{
+      dayNumber: number;
+      isCurrentMonth: boolean;
+      status: "period" | "fertile" | "ovulation" | "predicted" | "normal";
+      dateStr: string;
+    }> = [];
+
+    // Prev month padding
+    const prevMonthDays = new Date(year, month, 0).getDate();
+    for (let i = startOffset - 1; i >= 0; i--) {
+      days.push({
+        dayNumber: prevMonthDays - i,
+        isCurrentMonth: false,
+        status: "normal",
+        dateStr: ""
       });
-    } else if (type === "ovulation") {
-      const ovDate = new Date(lmp.getTime() + (cycle - 14) * 86400000);
-      setCalcResult({
-        title: "Estimated Ovulation Day",
-        value: ovDate.toLocaleDateString("en-US", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric"
-        }),
-        desc: "Peak egg release day (14 days before your next predicted period)."
-      });
-    } else if (type === "due_date") {
-      // Naegele's rule: LMP + 280 days
-      const dueDate = new Date(lmp.getTime() + 280 * 86400000);
-      setCalcResult({
-        title: "Estimated Pregnancy Due Date",
-        value: dueDate.toLocaleDateString("en-US", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric"
-        }),
-        desc: "Estimated 40-week delivery date calculated from Last Menstrual Period."
-      });
-    } else if (type === "fertile") {
-      const ovDate = new Date(lmp.getTime() + (cycle - 14) * 86400000);
-      const fertStart = new Date(ovDate.getTime() - 5 * 86400000);
-      const fertEnd = new Date(ovDate.getTime() + 1 * 86400000);
-      setCalcResult({
-        title: "Estimated Fertile Window",
-        value: `${fertStart.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric"
-        })} - ${fertEnd.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric"
-        })}`,
-        desc: "The 6-day fertile window with highest probability of conception."
-      });
-    }
-  };
-
-  // Render Calendar Grid Days
-  const getDaysInMonth = (year: number, month: number) => {
-    return new Date(year, month + 1, 0).getDate();
-  };
-
-  const renderCalendar = () => {
-    const year = calendarDate.getFullYear();
-    const month = calendarDate.getMonth();
-    const daysCount = getDaysInMonth(year, month);
-    const firstDayIndex = new Date(year, month, 1).getDay();
-
-    const days = [];
-    for (let i = 0; i < firstDayIndex; i++) {
-      days.push(<div key={`empty-${i}`} className="h-10 sm:h-12 border border-slate-100 rounded-xl bg-slate-50/50" />);
     }
 
-    for (let d = 1; d <= daysCount; d++) {
-      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-      const isToday = new Date().toISOString().split("T")[0] === dateStr;
+    // Current month days
+    for (let day = 1; day <= totalDaysInMonth; day++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      let status: "period" | "fertile" | "ovulation" | "predicted" | "normal" = "normal";
 
-      // Check if period day
-      const isPeriod = records.some(
-        (r) => dateStr >= r.startDate && dateStr <= r.endDate
-      );
-      const isPredictedPeriod =
-        dateStr >= prediction.nextPeriodStart &&
-        dateStr <= prediction.nextPeriodEnd;
-      const isOvulation = dateStr === prediction.ovulationDate;
-      const isFertile =
-        dateStr >= prediction.fertileWindowStart &&
-        dateStr <= prediction.fertileWindowEnd &&
-        !isOvulation;
-
-      let bgClass = "bg-white text-slate-700 hover:bg-slate-50";
-      let borderClass = "border-slate-200";
-
-      if (isPeriod) {
-        bgClass = "bg-rose-500 text-white font-black shadow-xs";
-        borderClass = "border-rose-600";
-      } else if (isOvulation) {
-        bgClass = "bg-emerald-500 text-white font-black shadow-xs";
-        borderClass = "border-emerald-600";
-      } else if (isFertile) {
-        bgClass = "bg-amber-100 text-amber-900 font-bold";
-        borderClass = "border-amber-300";
-      } else if (isPredictedPeriod) {
-        bgClass = "bg-rose-100 text-rose-900 border-dashed border-rose-400 font-bold";
+      // Period days (e.g. 1st - 5th)
+      if (day >= 1 && day <= 5) {
+        status = "period";
+      } else if (day >= 8 && day <= 13) {
+        status = "fertile";
+      } else if (day === 14) {
+        status = "ovulation";
+      } else if (day >= 28 && day <= 30) {
+        status = "predicted";
       }
 
-      days.push(
-        <button
-          key={d}
-          onClick={() => setSelectedCalendarDay(dateStr)}
-          className={`h-10 sm:h-12 border rounded-xl flex flex-col items-center justify-between p-1 transition-all cursor-pointer text-xs relative ${bgClass} ${borderClass} ${
-            isToday ? "ring-2 ring-indigo-600 font-black" : ""
-          }`}
-        >
-          <span className="text-[11px] font-bold">{d}</span>
-          <div className="flex gap-0.5">
-            {isPeriod && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
-            {isOvulation && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
-            {isFertile && <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />}
-          </div>
-        </button>
-      );
+      days.push({
+        dayNumber: day,
+        isCurrentMonth: true,
+        status,
+        dateStr
+      });
     }
 
     return days;
+  }, [currentCalendarDate]);
+
+  // -----------------------------------------------------------------
+  // 🔔 REMINDERS CONFIGURATION
+  // -----------------------------------------------------------------
+  const [masterRemindersEnabled, setMasterRemindersEnabled] = useState<boolean>(true);
+  const [reminderList, setReminderList] = useState([
+    { id: "rem_1", title: "Period Start Reminder", frequency: "1 day before", enabled: true, icon: "🩸" },
+    { id: "rem_2", title: "Painkiller Reminder", frequency: "Every 6 hours during period", enabled: true, icon: "💊" },
+    { id: "rem_3", title: "Mood Check-in", frequency: "Daily", enabled: true, icon: "😊" },
+    { id: "rem_4", title: "Hydration Reminder", frequency: "Every 2 hours", enabled: true, icon: "💧" },
+    { id: "rem_5", title: "Fertile Window Alert", frequency: "On fertile window days", enabled: true, icon: "🌸" }
+  ]);
+
+  const toggleReminder = (id: string) => {
+    setReminderList((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r))
+    );
   };
 
+  // -----------------------------------------------------------------
+  // 🛍️ PRODUCTS & CARE ITEMS
+  // -----------------------------------------------------------------
+  const [selectedProductModal, setSelectedProductModal] = useState<MenstrualProduct | null>(null);
+
+  const PRODUCTS_DATA: MenstrualProduct[] = [
+    {
+      id: "prod_pads",
+      title: "Sanitary Pads",
+      subtitle: "Soft & Comfortable Organic Cotton",
+      category: "Sanitary Protection",
+      icon: "🩸",
+      description: "100% GOTS certified organic cotton top-sheet with breathable plant-based core. Free of chlorine, fragrances, and toxic dyes.",
+      benefits: ["Gentle on sensitive skin", "Leak-proof side barriers", "Ultra-absorbent natural fibers"],
+      usageTip: "Change every 4 to 6 hours to maintain freshness and prevent bacterial growth."
+    },
+    {
+      id: "prod_cup",
+      title: "Menstrual Cup",
+      subtitle: "Eco-Friendly & 12hr Protection",
+      category: "Sustainable Care",
+      icon: "🌙",
+      description: "Medical-grade platinum silicone cup providing up to 12 hours of zero-leak protection. Reusable for up to 5-10 years.",
+      benefits: ["Zero waste footprint", "Maintains natural vaginal pH", "Ideal for swimming, sports, and sleep"],
+      usageTip: "Sterilize in boiling water for 3-5 minutes before each cycle."
+    },
+    {
+      id: "prod_tea",
+      title: "Period Pain Relief Tea",
+      subtitle: "Natural & Safe Herbal Formula",
+      category: "Cramp Relief",
+      icon: "🌿",
+      description: "Carefully formulated blend of Chamomile, Ginger root, Raspberry leaf, and Peppermint to soothe uterine smooth muscle contractions.",
+      benefits: ["Relieves menstrual cramps naturally", "Reduces gastrointestinal bloating", "Promotes calm relaxation"],
+      usageTip: "Drink 1-2 warm cups daily starting 2 days before your expected period."
+    },
+    {
+      id: "prod_heating",
+      title: "Heating Pad",
+      subtitle: "Soothes Cramps & Lower Back Pain",
+      category: "Thermotherapy",
+      icon: "🔥",
+      description: "Cordless ergonomic heating belt with 3 rapid thermal levels (45°C, 55°C, 65°C) and gentle pulsating acupressure vibrations.",
+      benefits: ["Increases pelvic micro-circulation", "Fast cramp relaxation in 5 seconds", "Soft velvet skin-friendly lining"],
+      usageTip: "Use 20-30 minutes on abdomen or lower lumbar area for instant soothing."
+    },
+    {
+      id: "prod_wash",
+      title: "Intimate Wash",
+      subtitle: "pH Balanced & Prebiotic Care",
+      category: "Intimate Hygiene",
+      icon: "🧴",
+      description: "Gynaecologist-tested gentle cleanser calibrated to optimal feminine pH 3.8. Infused with lactic acid, tea tree, and aloe vera.",
+      benefits: ["Supports protective lactobacilli flora", "Prevents odor and irritation", "100% soap-free formula"],
+      usageTip: "Use externally during daily shower, especially during menstruation."
+    }
+  ];
+
+  // -----------------------------------------------------------------
+  // 📚 GUIDED CARE PROGRAMS
+  // -----------------------------------------------------------------
+  const [selectedProgramModal, setSelectedProgramModal] = useState<MenstrualProgram | null>(null);
+
+  const PROGRAMS_DATA: MenstrualProgram[] = [
+    {
+      id: "prog_pain",
+      title: "Period Pain Relief",
+      subtitle: "7 Days Holistic Cramp Ease",
+      totalDays: 7,
+      completedDays: 4,
+      category: "Pain Management",
+      icon: "🌸",
+      description: "A gentle 7-day routine combining pelvic restorative yoga, magnesium nutrition, and acupressure points to diminish menstrual spasms.",
+      tips: [
+        "Day 4: Perform 10 min Cat-Cow & Child's Pose in the evening.",
+        "Drink warm ginger-cinnamon infusion.",
+        "Apply heat to lower abdomen for 15 minutes."
+      ]
+    },
+    {
+      id: "prog_hormone",
+      title: "Hormonal Balance",
+      subtitle: "14 Days Cycle Synchronization",
+      totalDays: 14,
+      completedDays: 7,
+      category: "Endocrine Health",
+      icon: "⚖️",
+      description: "Align your diet, sleep, and workouts with the 4 distinct hormonal phases of your menstrual rhythm for stable mood and stamina.",
+      tips: [
+        "Day 7: Follicular focus on sprouted seeds and leafy greens.",
+        "Engage in strength-building resistance exercises.",
+        "Prioritize 8 hours of uninterrupted sleep."
+      ]
+    },
+    {
+      id: "prog_mood",
+      title: "Mood & Energy Boost",
+      subtitle: "10 Days Premenstrual Vitality",
+      totalDays: 10,
+      completedDays: 3,
+      category: "Mental Wellness",
+      icon: "⚡",
+      description: "Overcome PMS lethargy and emotional swings through targeted breathwork, sunlight exposure, and B-complex superfoods.",
+      tips: [
+        "Day 3: 15 minutes of morning sunlight walk.",
+        "Practice 4-7-8 parasympathetic breathwork.",
+        "Snack on dark chocolate (85%) and pumpkin seeds."
+      ]
+    },
+    {
+      id: "prog_pcos",
+      title: "PCOS Support",
+      subtitle: "21 Days Insulin & Ovarian Health",
+      totalDays: 21,
+      completedDays: 10,
+      category: "Specialized Care",
+      icon: "🩺",
+      description: "Evidence-backed protocol targeting insulin sensitivity, stress hormone reduction, and regular ovarian ovulation support.",
+      tips: [
+        "Day 10: Low glycemic index balanced lunch with high fiber.",
+        "Daily inositol and vitamin D supplementation.",
+        "20 minutes steady-state low-impact cardio."
+      ]
+    },
+    {
+      id: "prog_healthy",
+      title: "Healthy Cycle",
+      subtitle: "30 Days Complete Lifestyle Flow",
+      totalDays: 30,
+      completedDays: 12,
+      category: "Comprehensive Care",
+      icon: "🌿",
+      description: "The ultimate 360-degree menstrual wellness journey covering hydration, stress optimization, sleep architecture, and symptom tracking.",
+      tips: [
+        "Day 12: Maintain daily 2.5L structured water intake.",
+        "Log cervical fluid texture and energy rating.",
+        "Evening digital detox 1 hour before bedtime."
+      ]
+    }
+  ];
+
+  // -----------------------------------------------------------------
+  // 📊 ANALYTICS DATA (LAST 6 CYCLES)
+  // -----------------------------------------------------------------
+  const [analyticsSubTab, setAnalyticsSubTab] = useState<"Overview" | "Symptoms" | "Flow" | "Moods">("Overview");
+
+  const cycleLengthChartData = [
+    { month: "Dec", days: 27 },
+    { month: "Jan", days: 28 },
+    { month: "Feb", days: 28 },
+    { month: "Mar", days: 29 },
+    { month: "Apr", days: 27 },
+    { month: "May", days: 28 }
+  ];
+
+  const periodLengthChartData = [
+    { month: "Dec", days: 5 },
+    { month: "Jan", days: 5 },
+    { month: "Feb", days: 4 },
+    { month: "Mar", days: 5 },
+    { month: "Apr", days: 4 },
+    { month: "May", days: 5 }
+  ];
+
+  // Horizontal Scrolling Navigation Menu List
+  const navMenuItems: Array<{ id: MenstrualTab; label: string; icon: any }> = [
+    { id: "dashboard", label: "Dashboard", icon: LayoutGrid },
+    { id: "log", label: "Log Period", icon: Droplet },
+    { id: "calendar", label: "Cycle Calendar", icon: CalendarIcon },
+    { id: "symptoms", label: "Symptoms", icon: Activity },
+    { id: "flow", label: "Flow Tracking", icon: Flame },
+    { id: "insights", label: "Insights", icon: TrendingUp },
+    { id: "analytics", label: "Analytics", icon: BarChart3 },
+    { id: "fertility", label: "Fertility Tracker", icon: Sparkles },
+    { id: "reminders", label: "Reminders", icon: Bell },
+    { id: "products", label: "Products & Care", icon: ShoppingBag },
+    { id: "programs", label: "Programs", icon: Award },
+    { id: "settings", label: "Settings", icon: SettingsIcon }
+  ];
+
   return (
-    <div className="max-w-6xl mx-auto p-3 sm:p-5 space-y-5 font-sans pb-16">
-      {/* TOAST NOTIFICATION */}
+    <div className="space-y-4 max-w-4xl mx-auto pb-24 text-slate-800 animate-in fade-in duration-200">
+      {/* Toast Feedback Notification */}
       {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-extrabold animate-bounce">
-          <Sparkles className="w-4 h-4 text-rose-400" />
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-[#FF5A36] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 text-xs font-black animate-in slide-in-from-top duration-300 border border-orange-300">
+          <CheckCircle2 className="w-4 h-4" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* HEADER BAR */}
-      <div className="bg-white p-4 sm:p-5 rounded-3xl text-slate-900 shadow-sm border border-[#2E7D32]/20 space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#2E7D32] rounded-2xl flex items-center justify-center font-black text-xl text-white shadow-md">
-              🌸
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-black tracking-tight text-slate-900">
-                  Menstrual Care & Cycle Tracker
-                </h1>
-                <span className="bg-emerald-100 text-[#2E7D32] text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
-                  Care2Care Suite
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-500 font-bold">
-                Period logging, fertility predictions, symptom tracking & health analytics
-              </p>
-            </div>
+      {/* ============================================================ */}
+      {/* 🌟 TOP HEADER (CARE2CARE CORAL / PEACH BRANDING) */}
+      {/* ============================================================ */}
+      <div className="bg-[#FFF9F5] border border-orange-200/80 rounded-3xl p-4 sm:p-5 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#FF5A36] to-[#FF8B6B] flex items-center justify-center text-white shadow-xs text-xl">
+            🩸
           </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                setActiveTab("log");
-                setEditingRecordId(null);
-              }}
-              className="px-3.5 py-2 bg-[#2E7D32] hover:bg-[#1b5e20] text-white rounded-xl font-bold text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
-            >
-              <Plus className="w-4 h-4" /> Log Period
-            </button>
-
-            <button
-              onClick={() => setActiveTab("settings")}
-              className="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-700 transition-all cursor-pointer"
-              title="Settings & Privacy"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-black uppercase tracking-wider text-[#FF5A36] bg-orange-100 px-2.5 py-0.5 rounded-full border border-orange-200">
+                Menstruation Service
+              </span>
+              <span className="text-[11px] font-bold text-slate-500">
+                {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              </span>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              Menstrual & Cycle Tracker
+            </h1>
           </div>
         </div>
 
-        {/* NAVIGATION TABS */}
-        <div className="flex bg-slate-100 p-1 rounded-2xl overflow-x-auto scrollbar-none text-xs font-bold gap-1">
-          {[
-            { id: "dashboard", label: "Dashboard", icon: Activity },
-            { id: "log", label: "Period Log", icon: Heart },
-            { id: "calendar", label: "Calendar", icon: CalendarIcon },
-            { id: "analytics", label: "Analytics", icon: TrendingUp },
-            { id: "calculators", label: "Calculators", icon: Calculator },
-            { id: "reminders", label: "Reminders", icon: Bell },
-            { id: "pregnancy", label: "Pregnancy", icon: Baby },
-            { id: "settings", label: "Settings", icon: Settings }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 min-w-[80px] py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 shrink-0 ${
-                activeTab === tab.id
-                  ? "bg-[#2E7D32] text-white shadow-xs font-black"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <button
+          onClick={() => setActiveTab("log")}
+          className="px-4 py-2 bg-[#FF5A36] hover:bg-[#E04826] text-white text-xs font-black rounded-2xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+        >
+          <Droplet className="w-3.5 h-3.5 fill-white" />
+          <span>+ Log Period</span>
+        </button>
       </div>
 
       {/* ============================================================ */}
-      {/* TAB 1: DASHBOARD */}
+      {/* 🧭 HORIZONTAL SCROLLING MENU (AS PER WATER & YOGA PATTERN) */}
+      {/* ============================================================ */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 px-0.5">
+        {navMenuItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all duration-150 cursor-pointer shrink-0 ${
+                isActive
+                  ? "bg-[#FF5A36] text-white shadow-xs font-black scale-[1.02]"
+                  : "bg-white text-slate-600 hover:bg-orange-50 hover:text-[#FF5A36] border border-slate-200/80"
+              }`}
+            >
+              <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-slate-500"}`} />
+              <span>{item.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ============================================================ */}
+      {/* 1. SCREEN: DASHBOARD */}
       {/* ============================================================ */}
       {activeTab === "dashboard" && (
-        <div className="space-y-5">
-          {/* LOCAL NOTIFICATION ALERT BANNER */}
-          {!isAlertDismissed && nextTwoCycles.cycle1.daysRemaining <= 3 && (
-            <div className="bg-gradient-to-r from-amber-500 via-rose-500 to-pink-600 p-4 sm:p-5 rounded-3xl text-white shadow-md flex flex-wrap items-center justify-between gap-3 border border-rose-400/50 animate-fade-in">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl shrink-0">
-                  <Bell className="w-6 h-6 text-amber-200 animate-pulse" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="bg-white/20 text-white font-black text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">
-                      ⏰ Log Reminder Alert
-                    </span>
-                    <span className="text-amber-100 text-xs font-bold">
-                      Predicted Start: {nextTwoCycles.cycle1.startDate}
-                    </span>
-                  </div>
-                  <p className="text-xs font-extrabold text-white mt-0.5">
-                    {nextTwoCycles.cycle1.daysRemaining <= 0
-                      ? "Your predicted cycle start date is TODAY or overdue! Please log your period flow, pain level & symptoms."
-                      : `Your predicted cycle start date is approaching in ${nextTwoCycles.cycle1.daysRemaining} day(s)! Don't forget to log daily flow & symptoms.`}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={() => {
-                    setActiveTab("log");
-                    setEditingRecordId(null);
-                  }}
-                  className="px-3.5 py-2 bg-white text-rose-700 hover:bg-rose-50 font-black text-xs rounded-2xl shadow-sm cursor-pointer transition-all flex items-center gap-1.5"
-                >
-                  <Plus className="w-4 h-4" /> Log Today's Data
-                </button>
-                <button
-                  onClick={() => {
-                    setIsAlertDismissed(true);
-                    showToast("Log reminder alert dismissed.");
-                  }}
-                  className="px-3 py-2 bg-white/20 hover:bg-white/30 text-white font-extrabold text-xs rounded-2xl cursor-pointer transition-all"
-                >
-                  Dismiss
-                </button>
-              </div>
+        <div className="space-y-4 animate-in fade-in duration-200">
+          {/* Greeting Banner */}
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs flex items-center justify-between">
+            <div>
+              <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-1.5">
+                Good Morning, {userName} 🌸
+              </h2>
+              <p className="text-xs text-slate-500 font-medium">
+                Let's understand your cycle better.
+              </p>
             </div>
-          )}
-
-          {/* Top Status & Predictions Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Cycle Day Status Dial Card */}
-            <div className="md:col-span-2 bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs relative overflow-hidden flex flex-col justify-between space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                    Current Cycle Status
-                  </span>
-                  <h2 className="text-2xl font-black text-slate-800">
-                    Cycle Day {currentCycleDay}
-                  </h2>
-                </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-black border ${currentPhase.color}`}>
-                  {currentPhase.badge}
-                </span>
-              </div>
-
-              {/* Cycle Day Progress Bar */}
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-extrabold text-slate-600">
-                  <span>Day 1 (Period)</span>
-                  <span>Day {prediction.ovulationDate.split("-")[2]} (Ovulation)</span>
-                  <span>Day {settings.averageCycleLength} (Next Cycle)</span>
-                </div>
-                <div className="w-full h-3.5 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200">
-                  <div
-                    className="h-full bg-gradient-to-r from-rose-500 via-amber-400 to-purple-500 rounded-full transition-all duration-500"
-                    style={{
-                      width: `${Math.min(
-                        100,
-                        (currentCycleDay / settings.averageCycleLength) * 100
-                      )}%`
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-purple-600 shrink-0" />
-                  <span className="font-bold text-slate-700">{currentPhase.desc}</span>
-                </div>
-                <button
-                  onClick={() => setActiveTab("log")}
-                  className="px-3 py-1 bg-rose-600 text-white font-extrabold rounded-xl text-[11px] hover:bg-rose-700 transition-all cursor-pointer shrink-0"
-                >
-                  Quick Symptoms Log
-                </button>
-              </div>
-            </div>
-
-            {/* Next Period & Ovulation Countdown Card */}
-            <div className="bg-gradient-to-br from-rose-50 to-pink-50 p-6 rounded-3xl border border-rose-200 shadow-2xs space-y-4 flex flex-col justify-between">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-rose-800">
-                  Next Cycle Forecast
-                </span>
-                <h3 className="text-xl font-black text-rose-900 mt-1">
-                  {prediction.nextPeriodStart}
-                </h3>
-                <p className="text-xs text-rose-700 font-bold mt-0.5">
-                  Predicted Next Period Start
-                </p>
-              </div>
-
-              <div className="space-y-2 pt-2 border-t border-rose-200/60 text-xs font-bold text-rose-900">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Droplet className="w-3.5 h-3.5 text-rose-600" /> Expected Duration:
-                  </span>
-                  <span className="font-black">{settings.periodLength} Days</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Sun className="w-3.5 h-3.5 text-amber-600" /> Peak Ovulation:
-                  </span>
-                  <span className="font-black">{prediction.ovulationDate}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Accuracy:
-                  </span>
-                  <span className="font-black">{prediction.confidence}% Confidence</span>
-                </div>
-              </div>
+            <div className="w-10 h-10 rounded-2xl bg-orange-50 text-[#FF5A36] flex items-center justify-center font-bold text-lg">
+              ✨
             </div>
           </div>
 
-          {/* NEXT TWO CYCLES PREDICTIONS */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
-                  <Sparkles className="w-4.5 h-4.5 text-rose-500" /> Next 2 Cycles Forecast (History-Based Predictions)
-                </h3>
-                <p className="text-[11px] text-slate-500 font-medium">
-                  Calculated based on your logged history & {settings.averageCycleLength}-day average cycle length
-                </p>
-              </div>
-              <span className="text-[10px] bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-1 rounded-full font-black">
-                {records.length >= 3 ? "High Confidence (95%)" : "Calculated Model"}
+          {/* Today's Phase Card */}
+          <div className="bg-gradient-to-r from-orange-50 via-amber-50 to-[#FFF9F5] border border-orange-200/80 rounded-3xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-5 relative overflow-hidden">
+            <div className="space-y-3 max-w-sm">
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#FF5A36] bg-white px-2.5 py-1 rounded-full border border-orange-200">
+                Today's Phase
               </span>
+              <div>
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900">{currentPhaseInfo.name}</h3>
+                <p className="text-xs text-slate-600 font-bold mt-0.5">
+                  Day {cycleDayNumber} of {cycleLength}
+                </p>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                {currentPhaseInfo.description}
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Cycle +1 Card */}
-              <div className="bg-gradient-to-br from-rose-50/80 to-pink-50/80 border border-rose-200 rounded-2xl p-4 space-y-3 relative">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase text-rose-700 tracking-wider bg-rose-100 px-2 py-0.5 rounded-md">
-                    Cycle +1 (Next Period)
-                  </span>
-                  <span className="text-xs font-black text-rose-800 bg-white px-2.5 py-1 rounded-full border border-rose-200 shadow-2xs">
-                    {nextTwoCycles.cycle1.daysRemaining <= 0
-                      ? "Due Today / Overdue"
-                      : `In ${nextTwoCycles.cycle1.daysRemaining} Days`}
-                  </span>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-xs text-slate-500 font-bold block">Predicted Start - End Dates</span>
-                  <div className="text-base font-black text-slate-800 flex items-center gap-2">
-                    <CalendarIcon className="w-4 h-4 text-rose-600" />
-                    <span>{nextTwoCycles.cycle1.startDate}</span>
-                    <span className="text-slate-400">→</span>
-                    <span>{nextTwoCycles.cycle1.endDate}</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-[11px] pt-1 font-bold border-t border-rose-200/60">
-                  <div className="bg-white p-2 rounded-xl border border-rose-100">
-                    <span className="text-slate-400 block text-[10px]">Peak Ovulation</span>
-                    <span className="text-rose-900 font-extrabold">{nextTwoCycles.cycle1.ovulationDate}</span>
-                  </div>
-                  <div className="bg-white p-2 rounded-xl border border-rose-100">
-                    <span className="text-slate-400 block text-[10px]">Fertile Window</span>
-                    <span className="text-amber-800 font-extrabold">
-                      {nextTwoCycles.cycle1.fertileWindowStart} - {nextTwoCycles.cycle1.fertileWindowEnd}
-                    </span>
-                  </div>
-                </div>
+            <div className="flex items-center gap-4 shrink-0">
+              {/* Circular Day Ring */}
+              <div className="w-24 h-24 rounded-full bg-white border-4 border-[#FF5A36] flex flex-col items-center justify-center shadow-md">
+                <span className="text-2xl font-black text-slate-900">{cycleDayNumber}</span>
+                <span className="text-[10px] font-bold text-slate-500">Days</span>
               </div>
-
-              {/* Cycle +2 Card */}
-              <div className="bg-gradient-to-br from-purple-50/80 to-indigo-50/80 border border-purple-200 rounded-2xl p-4 space-y-3 relative">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase text-purple-700 tracking-wider bg-purple-100 px-2 py-0.5 rounded-md">
-                    Cycle +2 (Following Period)
-                  </span>
-                  <span className="text-xs font-black text-purple-800 bg-white px-2.5 py-1 rounded-full border border-purple-200 shadow-2xs">
-                    In {nextTwoCycles.cycle2.daysRemaining} Days
-                  </span>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-xs text-slate-500 font-bold block">Predicted Start - End Dates</span>
-                  <div className="text-base font-black text-slate-800 flex items-center gap-2">
-                    <CalendarIcon className="w-4 h-4 text-purple-600" />
-                    <span>{nextTwoCycles.cycle2.startDate}</span>
-                    <span className="text-slate-400">→</span>
-                    <span>{nextTwoCycles.cycle2.endDate}</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-[11px] pt-1 font-bold border-t border-purple-200/60">
-                  <div className="bg-white p-2 rounded-xl border border-purple-100">
-                    <span className="text-slate-400 block text-[10px]">Peak Ovulation</span>
-                    <span className="text-purple-900 font-extrabold">{nextTwoCycles.cycle2.ovulationDate}</span>
-                  </div>
-                  <div className="bg-white p-2 rounded-xl border border-purple-100">
-                    <span className="text-slate-400 block text-[10px]">Fertile Window</span>
-                    <span className="text-amber-800 font-extrabold">
-                      {nextTwoCycles.cycle2.fertileWindowStart} - {nextTwoCycles.cycle2.fertileWindowEnd}
-                    </span>
-                  </div>
-                </div>
+              {/* Female Illustration Graphic */}
+              <div className="w-24 h-24 bg-white/80 rounded-2xl border border-orange-200/60 flex items-center justify-center text-4xl shadow-inner">
+                🧘‍♀️
               </div>
             </div>
           </div>
 
-          {/* Quick Logged Symptoms Grid */}
-          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <Heart className="w-4 h-4 text-rose-500" /> Recent Period History & Logs
-              </h3>
-              <button
-                onClick={() => setActiveTab("log")}
-                className="text-xs font-extrabold text-rose-600 hover:underline cursor-pointer"
-              >
-                View All Logs →
-              </button>
+          {/* Next Period & Next Fertile Window Prediction Boxes */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 text-2xl shrink-0">
+                🩸
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-slate-500">Next Period</p>
+                <p className="text-xs text-slate-500 font-medium">
+                  Expected in <span className="font-black text-slate-900">{currentPhaseInfo.daysToNextPeriod} Days</span>
+                </p>
+                <h4 className="text-sm font-black text-slate-900 mt-0.5">{nextPeriodDateStr}</h4>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {records.slice(0, 3).map((rec) => (
-                <div
-                  key={rec.id}
-                  className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 relative group"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-slate-800">
-                      {rec.startDate} to {rec.endDate}
-                    </span>
-                    <span className="text-[10px] bg-rose-100 text-rose-800 font-extrabold px-2 py-0.5 rounded-full">
-                      {rec.flowIntensity} Flow
-                    </span>
-                  </div>
-
-                  <div className="text-xs text-slate-600 space-y-1 font-medium">
-                    <p>
-                      <strong>Pain Level:</strong> {rec.painLevel}/10
-                    </p>
-                    {rec.symptoms && rec.symptoms.length > 0 && (
-                      <div className="flex flex-wrap gap-1 pt-1">
-                        {rec.symptoms.map((s) => (
-                          <span
-                            key={s}
-                            className="bg-white text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-md border border-slate-200"
-                          >
-                            {s}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200/60 text-xs font-bold">
-                    <button
-                      onClick={() => {
-                        setEditingRecordId(rec.id);
-                        setFormStartDate(rec.startDate);
-                        setFormEndDate(rec.endDate);
-                        setFormFlow(rec.flowIntensity);
-                        setFormPain(rec.painLevel);
-                        setFormSelectedSymptoms(rec.symptoms || []);
-                        setFormSelectedMoods(rec.mood || []);
-                        setFormNotes(rec.notes || "");
-                        setActiveTab("log");
-                      }}
-                      className="text-indigo-600 hover:underline flex items-center gap-1"
-                    >
-                      <Edit2 className="w-3 h-3" /> Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteRecord(rec.id)}
-                      className="text-rose-600 hover:underline flex items-center gap-1"
-                    >
-                      <Trash2 className="w-3 h-3" /> Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 text-2xl shrink-0">
+                🌱
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-slate-500">Next Fertile Window</p>
+                <h4 className="text-sm font-black text-slate-900">{fertileWindowStr}</h4>
+                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 inline-block mt-0.5">
+                  High chance
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Health & Lifestyle Tips Section */}
-          <div className="bg-gradient-to-r from-purple-900 to-indigo-900 text-white p-6 rounded-3xl shadow-md space-y-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-amber-400" />
-              <h3 className="text-sm font-black uppercase tracking-wider text-purple-200">
-                Personalized Phase Wellness Tips
-              </h3>
+          {/* Quick Metrics (3 Columns: Cycle Length, Period Length, Avg Flow) */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-white p-4 rounded-3xl border border-slate-200/90 shadow-xs text-center">
+              <p className="text-[10px] font-bold text-slate-500">Cycle Length</p>
+              <h4 className="text-sm sm:text-base font-black text-slate-900 mt-0.5">{cycleLength} Days</h4>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-              <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/10 space-y-1">
-                <span className="font-extrabold text-amber-300 block">🥗 Nutrition & Iron</span>
-                <p className="text-purple-100">
-                  Incorporate spinach, dark chocolate, and iron-rich foods to replenish energy.
-                </p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/10 space-y-1">
-                <span className="font-extrabold text-pink-300 block">🧘 Yoga & Movement</span>
-                <p className="text-purple-100">
-                  Gentle stretching and light pelvic tilt yoga poses ease lower back cramps.
-                </p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/10 space-y-1">
-                <span className="font-extrabold text-sky-300 block">💧 Hydration & Sleep</span>
-                <p className="text-purple-100">
-                  Aim for 2.5L water daily to minimize bloating and promote restful sleep.
-                </p>
-              </div>
+
+            <div className="bg-white p-4 rounded-3xl border border-slate-200/90 shadow-xs text-center">
+              <p className="text-[10px] font-bold text-slate-500">Period Length</p>
+              <h4 className="text-sm sm:text-base font-black text-slate-900 mt-0.5">{periodLength} Days</h4>
             </div>
+
+            <div className="bg-white p-4 rounded-3xl border border-slate-200/90 shadow-xs text-center">
+              <p className="text-[10px] font-bold text-slate-500">Avg. Flow</p>
+              <h4 className="text-sm sm:text-base font-black text-slate-900 mt-0.5">Moderate</h4>
+            </div>
+          </div>
+
+          {/* Today's Log Card */}
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs flex items-center justify-between">
+            <div>
+              <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Today's Log</h4>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                {selectedPhysicalSymptoms.length > 0
+                  ? `${selectedPhysicalSymptoms.join(", ")} • ${dayFlow.morning} flow`
+                  : "No data logged yet"}
+              </p>
+            </div>
+            <button
+              onClick={() => setActiveTab("log")}
+              className="w-10 h-10 rounded-2xl bg-orange-50 hover:bg-[#FF5A36] text-[#FF5A36] hover:text-white border border-orange-200 flex items-center justify-center transition-all cursor-pointer shadow-xs"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
           </div>
         </div>
       )}
 
       {/* ============================================================ */}
-      {/* TAB 2: LOG PERIOD FORM */}
+      {/* 2. SCREEN: LOG PERIOD */}
       {/* ============================================================ */}
       {activeTab === "log" && (
-        <div className="space-y-5">
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-5">
-            <div className="flex items-center justify-between border-b pb-3">
-              <div>
-                <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
-                  <Heart className="w-5 h-5 text-rose-500" />
-                  {editingRecordId ? "Edit Period Log Entry" : "Log New Menstrual Cycle / Period"}
-                </h2>
-                <p className="text-xs text-slate-500">Record flow, pain severity, symptoms, and vitals</p>
-              </div>
+        <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
+          <div className="text-center space-y-1">
+            <h2 className="text-lg font-black text-slate-900">Are you on your period?</h2>
+            <p className="text-xs text-slate-500 font-bold">
+              Today, {new Date().toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}
+            </p>
+          </div>
 
-              {editingRecordId && (
-                <button
-                  onClick={() => {
-                    setEditingRecordId(null);
-                    setFormNotes("");
-                  }}
-                  className="text-xs font-bold text-slate-500 hover:underline cursor-pointer"
-                >
-                  Cancel Edit
-                </button>
-              )}
-            </div>
+          {/* Yes / No Toggle Buttons */}
+          <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto">
+            <button
+              onClick={() => setIsOnPeriod(true)}
+              className={`p-4 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center gap-2 ${
+                isOnPeriod
+                  ? "bg-rose-50 border-[#FF5A36] text-[#FF5A36] shadow-sm font-black"
+                  : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 font-bold"
+              }`}
+            >
+              <Droplet className={`w-6 h-6 ${isOnPeriod ? "fill-[#FF5A36] text-[#FF5A36]" : "text-slate-400"}`} />
+              <span className="text-sm">Yes</span>
+            </button>
 
-            <form onSubmit={handleSaveRecord} className="space-y-4 text-xs">
-              {/* Dates Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="font-extrabold text-slate-700 block mb-1">
-                    Period Start Date <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={formStartDate}
-                    onChange={(e) => setFormStartDate(e.target.value)}
-                    className="w-full font-bold p-3 bg-slate-50 border border-slate-200 rounded-2xl"
-                    required
-                  />
-                </div>
+            <button
+              onClick={() => setIsOnPeriod(false)}
+              className={`p-4 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center gap-2 ${
+                !isOnPeriod
+                  ? "bg-slate-100 border-slate-400 text-slate-900 shadow-sm font-black"
+                  : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 font-bold"
+              }`}
+            >
+              <Moon className={`w-6 h-6 ${!isOnPeriod ? "text-slate-800" : "text-slate-400"}`} />
+              <span className="text-sm">No</span>
+            </button>
+          </div>
 
-                <div>
-                  <label className="font-extrabold text-slate-700 block mb-1">
-                    Period End Date (Estimated or Actual)
-                  </label>
-                  <input
-                    type="date"
-                    value={formEndDate}
-                    onChange={(e) => setFormEndDate(e.target.value)}
-                    className="w-full font-bold p-3 bg-slate-50 border border-slate-200 rounded-2xl"
-                  />
-                </div>
-              </div>
-
-              {/* Flow Intensity Buttons */}
-              <div>
-                <label className="font-extrabold text-slate-700 block mb-1.5">
+          {isOnPeriod && (
+            <div className="space-y-5 pt-2 border-t border-slate-100">
+              {/* Flow Intensity Selector */}
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-800 uppercase tracking-wider block">
                   Flow Intensity
                 </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(["Light", "Medium", "Heavy"] as const).map((f) => (
+                <p className="text-[11px] text-slate-500">How is your flow today?</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {[
+                    { label: "Light", count: 1 },
+                    { label: "Moderate", count: 2 },
+                    { label: "Heavy", count: 3 },
+                    { label: "Very Heavy", count: 4 }
+                  ].map((f) => (
                     <button
-                      key={f}
-                      type="button"
-                      onClick={() => setFormFlow(f)}
-                      className={`p-3 rounded-2xl font-black text-xs transition-all cursor-pointer border ${
-                        formFlow === f
-                          ? "bg-rose-600 text-white border-rose-600 shadow-xs"
-                          : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                      key={f.label}
+                      onClick={() => setLogFlowIntensity(f.label as any)}
+                      className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
+                        logFlowIntensity === f.label
+                          ? "bg-rose-50 border-[#FF5A36] text-[#FF5A36] font-black shadow-xs"
+                          : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 font-bold"
                       }`}
                     >
-                      {f === "Light" ? "💧 Light" : f === "Medium" ? "🩸 Medium" : "🌊 Heavy"}
+                      <div className="flex items-center gap-0.5">
+                        {Array.from({ length: f.count }).map((_, i) => (
+                          <Droplet key={i} className="w-3.5 h-3.5 fill-[#FF5A36] text-[#FF5A36]" />
+                        ))}
+                      </div>
+                      <span className="text-xs">{f.label}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Pain Level Slider */}
-              <div className="p-4 bg-rose-50/50 rounded-2xl border border-rose-100 space-y-2">
-                <div className="flex justify-between items-center font-extrabold text-slate-800">
-                  <label>Cramps & Pain Severity Level (1 - 10)</label>
-                  <span className="text-sm font-black text-rose-600 bg-white px-2.5 py-1 rounded-xl border border-rose-200">
-                    {formPain} / 10
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min="1"
-                  max="10"
-                  value={formPain}
-                  onChange={(e) => setFormPain(Number(e.target.value))}
-                  className="w-full accent-rose-600 cursor-pointer"
-                />
-                <div className="flex justify-between text-[10px] text-slate-400 font-bold">
-                  <span>1 (Mild / Barely noticeable)</span>
-                  <span>5 (Moderate cramping)</span>
-                  <span>10 (Severe pain)</span>
-                </div>
-              </div>
-
-              {/* Symptoms Picker */}
-              <div>
-                <label className="font-extrabold text-slate-700 block mb-1.5">
-                  Physical Symptoms
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {SYMPTOM_OPTIONS.map((sym) => {
-                    const active = formSelectedSymptoms.includes(sym);
-                    return (
-                      <button
-                        key={sym}
-                        type="button"
-                        onClick={() => toggleSymptom(sym)}
-                        className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer border ${
-                          active
-                            ? "bg-purple-600 text-white border-purple-600 shadow-xs"
-                            : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
-                        }`}
-                      >
-                        {active ? "✓ " : "+ "}{sym}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Moods Picker */}
-              <div>
-                <label className="font-extrabold text-slate-700 block mb-1.5">
-                  Mood & Emotional State
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {MOOD_OPTIONS.map((m) => {
-                    const active = formSelectedMoods.includes(m);
-                    return (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => toggleMood(m)}
-                        className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer border ${
-                          active
-                            ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
-                            : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
-                        }`}
-                      >
-                        {active ? "✓ " : "+ "}{m}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Vitals (Basal Body Temp & Weight) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="font-extrabold text-slate-700 block mb-1">
-                    Basal Body Temperature (°C)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    placeholder="e.g. 36.6"
-                    value={formBasalTemp}
-                    onChange={(e) => setFormBasalTemp(e.target.value)}
-                    className="w-full font-bold p-3 bg-slate-50 border border-slate-200 rounded-2xl"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-extrabold text-slate-700 block mb-1">
-                    Body Weight (kg)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    placeholder="e.g. 58.0"
-                    value={formWeight}
-                    onChange={(e) => setFormWeight(e.target.value)}
-                    className="w-full font-bold p-3 bg-slate-50 border border-slate-200 rounded-2xl"
-                  />
-                </div>
-              </div>
-
-              {/* Personal Notes */}
-              <div>
-                <label className="font-extrabold text-slate-700 block mb-1">
-                  Notes / Observations
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="e.g. Took 200mg Ibuprofen at 2pm. Felt better after warm compress."
-                  value={formNotes}
-                  onChange={(e) => setFormNotes(e.target.value)}
-                  className="w-full font-bold p-3 bg-slate-50 border border-slate-200 rounded-2xl"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-4 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-2xl text-sm shadow-md transition-all cursor-pointer"
-              >
-                {editingRecordId ? "Save & Update Period Log" : "Confirm & Save Period Log"}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================ */}
-      {/* TAB 3: CALENDAR VIEW */}
-      {/* ============================================================ */}
-      {activeTab === "calendar" && (
-        <div className="space-y-5">
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
-            {/* Calendar Controls Header */}
-            <div className="flex items-center justify-between border-b pb-3">
-              <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
-                <CalendarIcon className="w-5 h-5 text-rose-500" />
-                {calendarDate.toLocaleDateString("en-US", {
-                  month: "long",
-                  year: "numeric"
-                })}
-              </h2>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() =>
-                    setCalendarDate(
-                      new Date(
-                        calendarDate.getFullYear(),
-                        calendarDate.getMonth() - 1,
-                        1
-                      )
-                    )
-                  }
-                  className="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl cursor-pointer"
-                >
-                  <ChevronLeft className="w-4 h-4 text-slate-700" />
-                </button>
-                <button
-                  onClick={() => setCalendarDate(new Date())}
-                  className="px-3 py-1 bg-slate-900 text-white font-bold text-xs rounded-xl cursor-pointer"
-                >
-                  Today
-                </button>
-                <button
-                  onClick={() =>
-                    setCalendarDate(
-                      new Date(
-                        calendarDate.getFullYear(),
-                        calendarDate.getMonth() + 1,
-                        1
-                      )
-                    )
-                  }
-                  className="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl cursor-pointer"
-                >
-                  <ChevronRight className="w-4 h-4 text-slate-700" />
-                </button>
-              </div>
-            </div>
-
-            {/* Legend Bar */}
-            <div className="flex flex-wrap items-center gap-3 text-xs font-bold text-slate-600 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-rose-500" /> Period Day (Logged)
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-rose-200 border border-rose-400" /> Predicted Period
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-emerald-500" /> Ovulation Day
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-amber-300" /> Fertile Window
-              </span>
-            </div>
-
-            {/* Weekday Headers */}
-            <div className="grid grid-cols-7 text-center font-extrabold text-xs text-slate-400 py-1">
-              <span>Sun</span>
-              <span>Mon</span>
-              <span>Tue</span>
-              <span>Wed</span>
-              <span>Thu</span>
-              <span>Fri</span>
-              <span>Sat</span>
-            </div>
-
-            {/* Calendar Grid */}
-            <div className="grid grid-cols-7 gap-1.5">{renderCalendar()}</div>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================ */}
-      {/* TAB 4: ANALYTICS & INSIGHTS */}
-      {/* ============================================================ */}
-      {activeTab === "analytics" && (
-        <div className="space-y-5">
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-5">
-            <h2 className="text-base font-black text-slate-800 flex items-center gap-2 border-b pb-3">
-              <TrendingUp className="w-5 h-5 text-indigo-600" />
-              Cycle Analytics & Health History
-            </h2>
-
-            {/* Chart 1: Cycle Length Trends (Last 6 Months) */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xs font-black uppercase text-slate-700 flex items-center gap-1.5">
-                    📈 Cycle Length Trends (Last 6 Months)
-                  </h3>
-                  <p className="text-[11px] text-slate-500">
-                    Visualizing cycle durations & period lengths over the last 6 months against your {settings.averageCycleLength}-day baseline
-                  </p>
-                </div>
-                <span className="text-[10px] font-black bg-purple-50 text-purple-700 border border-purple-200 px-2.5 py-0.5 rounded-full">
-                  6 Months Data
-                </span>
-              </div>
-
-              <div className="h-64 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={sixMonthChartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fontWeight: "bold" }} />
-                    <YAxis domain={[0, 40]} tick={{ fontSize: 11 }} />
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: "12px",
-                        border: "1px solid #cbd5e1",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-                        fontSize: "12px",
-                        fontWeight: "bold"
-                      }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: "11px", fontWeight: "bold", paddingTop: "8px" }} />
-                    <ReferenceLine
-                      y={settings.averageCycleLength}
-                      label={{
-                        value: `Baseline Avg (${settings.averageCycleLength}d)`,
-                        fill: "#64748b",
-                        fontSize: 10,
-                        fontWeight: "bold",
-                        position: "insideTopRight"
-                      }}
-                      stroke="#94a3b8"
-                      strokeDasharray="4 4"
-                      strokeWidth={2}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="cycleLength"
-                      name="Cycle Duration (Days)"
-                      stroke="#8b5cf6"
-                      strokeWidth={3}
-                      dot={{ r: 5, fill: "#8b5cf6", strokeWidth: 2, stroke: "#ffffff" }}
-                      activeDot={{ r: 7 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="periodLength"
-                      name="Period Duration (Days)"
-                      stroke="#f43f5e"
-                      strokeWidth={3}
-                      dot={{ r: 4, fill: "#f43f5e", strokeWidth: 2, stroke: "#ffffff" }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* 6-Month Summary Statistics Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
-                <div className="bg-purple-50/80 border border-purple-100 p-3 rounded-2xl">
-                  <span className="text-[10px] font-bold text-purple-700 block uppercase">6-Mo Avg Cycle</span>
-                  <span className="text-lg font-black text-purple-900">
-                    {(
-                      sixMonthChartData.reduce((acc, c) => acc + c.cycleLength, 0) /
-                      (sixMonthChartData.length || 1)
-                    ).toFixed(1)}{" "}
-                    Days
-                  </span>
-                </div>
-                <div className="bg-rose-50/80 border border-rose-100 p-3 rounded-2xl">
-                  <span className="text-[10px] font-bold text-rose-700 block uppercase">Avg Period Length</span>
-                  <span className="text-lg font-black text-rose-900">
-                    {(
-                      sixMonthChartData.reduce((acc, c) => acc + c.periodLength, 0) /
-                      (sixMonthChartData.length || 1)
-                    ).toFixed(1)}{" "}
-                    Days
-                  </span>
-                </div>
-                <div className="bg-amber-50/80 border border-amber-100 p-3 rounded-2xl">
-                  <span className="text-[10px] font-bold text-amber-700 block uppercase">Shortest / Longest</span>
-                  <span className="text-lg font-black text-amber-900">
-                    {Math.min(...sixMonthChartData.map((c) => c.cycleLength))}d /{" "}
-                    {Math.max(...sixMonthChartData.map((c) => c.cycleLength))}d
-                  </span>
-                </div>
-                <div className="bg-emerald-50/80 border border-emerald-100 p-3 rounded-2xl">
-                  <span className="text-[10px] font-bold text-emerald-700 block uppercase">Cycle Regularity</span>
-                  <span className="text-lg font-black text-emerald-900">
-                    {records.length >= 3 ? "Regular (±1d)" : "Sufficient Data"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Chart 2: Cramps Severity History */}
-            <div className="space-y-2">
-              <h3 className="text-xs font-black uppercase text-slate-500">
-                Pain Level Severity Log
-              </h3>
-              <div className="h-48 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={records.map((r) => ({
-                      date: r.startDate,
-                      painLevel: r.painLevel
-                    }))}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                    <YAxis domain={[0, 10]} tick={{ fontSize: 10 }} />
-                    <Tooltip />
-                    <Bar dataKey="painLevel" name="Pain Level (1-10)" fill="#e11d48" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================ */}
-      {/* TAB 5: CALCULATORS */}
-      {/* ============================================================ */}
-      {activeTab === "calculators" && (
-        <div className="space-y-5">
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-5">
-            <h2 className="text-base font-black text-slate-800 flex items-center gap-2 border-b pb-3">
-              <Calculator className="w-5 h-5 text-purple-600" />
-              Menstrual & Fertility Health Calculators
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div>
-                <label className="font-extrabold text-slate-700 block mb-1">
-                  Last Menstrual Period (LMP) Date
-                </label>
-                <input
-                  type="date"
-                  value={calcLmpDate}
-                  onChange={(e) => setCalcLmpDate(e.target.value)}
-                  className="w-full font-bold p-3 bg-slate-50 border border-slate-200 rounded-2xl"
-                />
-              </div>
-
-              <div>
-                <label className="font-extrabold text-slate-700 block mb-1">
-                  Average Cycle Length (Days)
-                </label>
-                <input
-                  type="number"
-                  value={calcCycleLen}
-                  onChange={(e) => setCalcCycleLen(Number(e.target.value))}
-                  className="w-full font-bold p-3 bg-slate-50 border border-slate-200 rounded-2xl"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <button
-                onClick={() => runCalculator("period")}
-                className="p-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-900 rounded-2xl font-black text-xs cursor-pointer text-center"
-              >
-                🩸 Period Predictor
-              </button>
-              <button
-                onClick={() => runCalculator("ovulation")}
-                className="p-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 rounded-2xl font-black text-xs cursor-pointer text-center"
-              >
-                🟢 Ovulation Calc
-              </button>
-              <button
-                onClick={() => runCalculator("fertile")}
-                className="p-3 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 rounded-2xl font-black text-xs cursor-pointer text-center"
-              >
-                🟡 Fertile Window
-              </button>
-              <button
-                onClick={() => runCalculator("due_date")}
-                className="p-3 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-900 rounded-2xl font-black text-xs cursor-pointer text-center"
-              >
-                🤰 Pregnancy Due Date
-              </button>
-            </div>
-
-            {calcResult && (
-              <div className="p-5 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border border-purple-200 text-purple-900 space-y-1">
-                <span className="text-[10px] font-black uppercase text-purple-600">
-                  {calcResult.title}
-                </span>
-                <p className="text-xl font-black">{calcResult.value}</p>
-                <p className="text-xs text-purple-700 font-medium">{calcResult.desc}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================ */}
-      {/* TAB 6: REMINDERS */}
-      {/* ============================================================ */}
-      {activeTab === "reminders" && (
-        <div className="space-y-5">
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between border-b pb-3">
-              <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
-                <Bell className="w-5 h-5 text-amber-500" />
-                Notification & Pill Reminders
-              </h2>
-              <button
-                onClick={() => {
-                  const newRem: MenstrualReminder = {
-                    id: `rem_${Date.now()}`,
-                    userId: settings.userId,
-                    type: "Log",
-                    title: "Daily Symptom Check-in",
-                    description: "Log today's mood & physical symptoms",
-                    daysBefore: 0,
-                    time: "20:00",
-                    isEnabled: true,
-                    isRecurring: true,
-                    recurrencePattern: "Daily",
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                  };
-                  setReminders([...reminders, newRem]);
-                  showToast("New reminder created!");
-                }}
-                className="px-3 py-1.5 bg-amber-500 text-white font-bold rounded-xl text-xs flex items-center gap-1 cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" /> Add Reminder
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {reminders.map((rem) => (
-                <div
-                  key={rem.id}
-                  className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between text-xs"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-black text-slate-800">{rem.title}</h4>
-                      <span className="text-[10px] bg-slate-200 text-slate-700 font-extrabold px-2 py-0.5 rounded-full">
-                        {rem.time}
-                      </span>
-                    </div>
-                    <p className="text-slate-500">{rem.description}</p>
-                  </div>
-
+              {/* Period Day Stepper */}
+              <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                <span className="text-xs font-bold text-slate-700">Period Day</span>
+                <div className="flex items-center gap-3">
                   <button
-                    onClick={() => {
-                      setReminders(
-                        reminders.map((r) =>
-                          r.id === rem.id ? { ...r, isEnabled: !r.isEnabled } : r
-                        )
-                      );
-                      showToast(`Reminder ${rem.isEnabled ? "disabled" : "enabled"}`);
-                    }}
-                    className={`px-3 py-1.5 rounded-xl font-bold cursor-pointer transition-all ${
-                      rem.isEnabled
-                        ? "bg-emerald-600 text-white"
-                        : "bg-slate-200 text-slate-600"
-                    }`}
+                    onClick={() => setLogPeriodDay((d) => Math.max(1, d - 1))}
+                    className="w-8 h-8 rounded-xl bg-white border border-slate-300 text-slate-700 font-black flex items-center justify-center hover:bg-slate-100 cursor-pointer"
                   >
-                    {rem.isEnabled ? "Active ✓" : "Off"}
+                    -
+                  </button>
+                  <span className="text-base font-black text-slate-900 w-6 text-center">{logPeriodDay}</span>
+                  <button
+                    onClick={() => setLogPeriodDay((d) => Math.min(10, d + 1))}
+                    className="w-8 h-8 rounded-xl bg-white border border-slate-300 text-slate-700 font-black flex items-center justify-center hover:bg-slate-100 cursor-pointer"
+                  >
+                    +
                   </button>
                 </div>
-              ))}
+              </div>
+            </div>
+          )}
+
+          {/* Notes Input */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-black text-slate-800 uppercase tracking-wider block">
+              Notes (Optional)
+            </label>
+            <input
+              type="text"
+              placeholder="Add any notes, cramps level, or medication..."
+              value={logNotes}
+              onChange={(e) => setLogNotes(e.target.value)}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+          </div>
+
+          <button
+            onClick={handleSavePeriodLog}
+            className="w-full py-3.5 bg-[#FF5A36] hover:bg-[#E04826] text-white font-black rounded-2xl text-xs shadow-md transition-all cursor-pointer"
+          >
+            Save Period Log
+          </button>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* 3. SCREEN: CYCLE CALENDAR */}
+      {/* ============================================================ */}
+      {activeTab === "calendar" && (
+        <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-5 animate-in fade-in duration-200">
+          {/* Month Header Navigation */}
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+            <button
+              onClick={() => setCalendarMonthOffset((m) => m - 1)}
+              className="p-2 rounded-xl bg-slate-100 hover:bg-orange-100 text-slate-700 hover:text-[#FF5A36] transition-colors cursor-pointer"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <h2 className="text-base font-black text-slate-900">
+              {currentCalendarDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+            </h2>
+            <button
+              onClick={() => setCalendarMonthOffset((m) => m + 1)}
+              className="p-2 rounded-xl bg-slate-100 hover:bg-orange-100 text-slate-700 hover:text-[#FF5A36] transition-colors cursor-pointer"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Weekday Labels */}
+          <div className="grid grid-cols-7 gap-1 text-center">
+            {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
+              <span key={d} className="text-[11px] font-black text-slate-400 uppercase">
+                {d}
+              </span>
+            ))}
+          </div>
+
+          {/* Calendar Grid */}
+          <div className="grid grid-cols-7 gap-1.5">
+            {calendarDays.map((item, idx) => {
+              if (!item.isCurrentMonth) {
+                return (
+                  <div key={idx} className="h-10 sm:h-12 rounded-xl flex items-center justify-center text-slate-300 text-xs font-bold">
+                    {item.dayNumber}
+                  </div>
+                );
+              }
+
+              let bgClass = "bg-slate-50 text-slate-700 hover:bg-slate-100";
+              let badgeDot = null;
+
+              if (item.status === "period") {
+                bgClass = "bg-rose-100 text-rose-700 font-black border border-rose-300";
+                badgeDot = <div className="w-1.5 h-1.5 rounded-full bg-rose-600 mt-0.5" />;
+              } else if (item.status === "fertile") {
+                bgClass = "bg-emerald-100 text-emerald-800 font-black border border-emerald-300";
+                badgeDot = <div className="w-1.5 h-1.5 rounded-full bg-emerald-600 mt-0.5" />;
+              } else if (item.status === "ovulation") {
+                bgClass = "bg-amber-100 text-amber-800 font-black border border-amber-300";
+                badgeDot = <div className="w-1.5 h-1.5 rounded-full bg-amber-600 mt-0.5" />;
+              } else if (item.status === "predicted") {
+                bgClass = "bg-orange-50 text-orange-700 font-bold border border-dashed border-orange-300";
+                badgeDot = <div className="w-1.5 h-1.5 rounded-full bg-orange-400 mt-0.5" />;
+              }
+
+              const isSelected = selectedCalendarDayStr === item.dateStr;
+
+              return (
+                <button
+                  key={idx}
+                  onClick={() => setSelectedCalendarDayStr(item.dateStr)}
+                  className={`h-10 sm:h-12 rounded-2xl flex flex-col items-center justify-center text-xs transition-all cursor-pointer ${bgClass} ${
+                    isSelected ? "ring-2 ring-[#FF5A36] shadow-sm scale-105" : ""
+                  }`}
+                >
+                  <span>{item.dayNumber}</span>
+                  {badgeDot}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Calendar Status Legend */}
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-3 border-t border-slate-100 text-[11px] font-bold text-slate-600">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Period
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Fertile Window
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> Ovulation
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-orange-300" /> Predicted
+            </span>
+          </div>
+
+          {/* Selected Date Details Box */}
+          <div className="bg-[#FFF9F5] border border-orange-200 rounded-2xl p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#FF5A36] flex items-center justify-center text-lg font-bold">
+                🩸
+              </div>
+              <div>
+                <p className="text-xs font-black text-slate-900">
+                  {new Date(selectedCalendarDayStr).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })}
+                </p>
+                <p className="text-[11px] text-slate-600 font-bold">
+                  {currentPhaseInfo.name} • Day {cycleDayNumber} of {cycleLength}
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-slate-400" />
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* 4. SCREEN: SYMPTOMS */}
+      {/* ============================================================ */}
+      {activeTab === "symptoms" && (
+        <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
+          <div className="text-center space-y-0.5">
+            <h2 className="text-lg font-black text-slate-900">How are you feeling today?</h2>
+            <p className="text-xs text-slate-500 font-bold">Select all that apply</p>
+          </div>
+
+          {/* Physical Symptoms Grid */}
+          <div className="space-y-2.5">
+            <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">Physical Symptoms</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              {PHYSICAL_SYMPTOMS_LIST.map((sym) => {
+                const isSelected = selectedPhysicalSymptoms.includes(sym.label);
+                return (
+                  <button
+                    key={sym.id}
+                    onClick={() => togglePhysicalSymptom(sym.label)}
+                    className={`p-3 rounded-2xl border text-xs font-bold flex items-center gap-2.5 transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-rose-50 border-[#FF5A36] text-[#FF5A36] font-black shadow-xs"
+                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    <span className="text-base">{sym.icon}</span>
+                    <span>{sym.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Emotional Symptoms Grid */}
+          <div className="space-y-2.5">
+            <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">Emotional Symptoms</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              {EMOTIONAL_SYMPTOMS_LIST.map((emo) => {
+                const isSelected = selectedEmotionalSymptoms.includes(emo.label);
+                return (
+                  <button
+                    key={emo.id}
+                    onClick={() => toggleEmotionalSymptom(emo.label)}
+                    className={`p-3 rounded-2xl border text-xs font-bold flex items-center gap-2.5 transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-orange-50 border-[#FF5A36] text-[#FF5A36] font-black shadow-xs"
+                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    <span className="text-base">{emo.icon}</span>
+                    <span>{emo.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Symptom Intensity Slider (1 Mild -> 10 Severe) */}
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">Symptom Intensity</h3>
+              <span className="text-xs font-black text-[#FF5A36] bg-orange-100 px-2.5 py-0.5 rounded-full border border-orange-200">
+                {symptomIntensity} / 10
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500">Overall, how intense are your symptoms today?</p>
+            <div className="space-y-1">
+              <input
+                type="range"
+                min="1"
+                max="10"
+                value={symptomIntensity}
+                onChange={(e) => setSymptomIntensity(parseInt(e.target.value, 10))}
+                className="w-full accent-[#FF5A36] cursor-pointer"
+              />
+              <div className="flex items-center justify-between text-[10px] font-bold text-slate-400">
+                <span>1 Mild</span>
+                <span>5 Moderate</span>
+                <span>10 Severe</span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={handleSaveSymptoms}
+            className="w-full py-3.5 bg-[#FF5A36] hover:bg-[#E04826] text-white font-black rounded-2xl text-xs shadow-md transition-all cursor-pointer"
+          >
+            Save Symptoms
+          </button>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* 5. SCREEN: FLOW TRACKING */}
+      {/* ============================================================ */}
+      {activeTab === "flow" && (
+        <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
+          <div className="text-center space-y-0.5">
+            <h2 className="text-lg font-black text-slate-900">Track your flow throughout the day</h2>
+            <p className="text-xs text-slate-500 font-bold">
+              {new Date().toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}
+            </p>
+          </div>
+
+          {/* Time of Day Rows */}
+          <div className="space-y-3">
+            {[
+              { key: "morning", label: "Morning", timeDesc: "06:00 AM - 12:00 PM" },
+              { key: "afternoon", label: "Afternoon", timeDesc: "12:00 PM - 05:00 PM" },
+              { key: "evening", label: "Evening", timeDesc: "05:00 PM - 09:00 PM" },
+              { key: "night", label: "Night", timeDesc: "09:00 PM - 06:00 AM" }
+            ].map((slot) => {
+              const currentVal = dayFlow[slot.key as keyof Omit<DayFlowLog, "notes">];
+              const filledCount = getDropletCount(currentVal);
+
+              return (
+                <div key={slot.key} className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xs font-black text-slate-900">{slot.label}</h3>
+                    <p className="text-[10px] text-slate-500 font-bold">{currentVal}</p>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4].map((dropIdx) => {
+                      const isFilled = dropIdx <= filledCount;
+                      const intensityLabels: DayFlowLog["morning"][] = ["Light", "Moderate", "Heavy", "Very Heavy"];
+                      return (
+                        <button
+                          key={dropIdx}
+                          onClick={() => setFlowForTime(slot.key as any, intensityLabels[dropIdx - 1])}
+                          className="p-1.5 hover:scale-110 transition-transform cursor-pointer"
+                        >
+                          <Droplet
+                            className={`w-5 h-5 ${
+                              isFilled ? "fill-[#FF5A36] text-[#FF5A36]" : "fill-slate-200 text-slate-300"
+                            }`}
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Flow Legend */}
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-bold text-slate-600">
+            <span className="flex items-center gap-1">
+              <Droplet className="w-3.5 h-3.5 fill-[#FF5A36] text-[#FF5A36]" /> Light
+            </span>
+            <span className="flex items-center gap-1">
+              <Droplet className="w-3.5 h-3.5 fill-[#FF5A36] text-[#FF5A36]" />
+              <Droplet className="w-3.5 h-3.5 fill-[#FF5A36] text-[#FF5A36]" /> Moderate
+            </span>
+            <span className="flex items-center gap-1">
+              <Droplet className="w-3.5 h-3.5 fill-[#FF5A36] text-[#FF5A36]" />
+              <Droplet className="w-3.5 h-3.5 fill-[#FF5A36] text-[#FF5A36]" />
+              <Droplet className="w-3.5 h-3.5 fill-[#FF5A36] text-[#FF5A36]" /> Heavy
+            </span>
+          </div>
+
+          <button
+            onClick={() => showToast("💧 Daily flow pattern saved successfully!")}
+            className="w-full py-3.5 bg-[#FF5A36] hover:bg-[#E04826] text-white font-black rounded-2xl text-xs shadow-md transition-all cursor-pointer"
+          >
+            Save Flow Tracking
+          </button>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* 6. SCREEN: INSIGHTS */}
+      {/* ============================================================ */}
+      {activeTab === "insights" && (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs">
+            <h2 className="text-base font-black text-slate-900">Your Menstrual Insights</h2>
+            <p className="text-xs text-slate-500 font-bold">Based on your historical logs</p>
+          </div>
+
+          {/* Cycle Overview (Last 6 Cycles) */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs text-center">
+              <span className="text-[10px] font-bold text-slate-500 uppercase">Avg. Cycle Length</span>
+              <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">28</h3>
+              <p className="text-[10px] text-slate-400 font-bold">Days</p>
+            </div>
+
+            <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs text-center">
+              <span className="text-[10px] font-bold text-slate-500 uppercase">Avg. Period Length</span>
+              <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">5</h3>
+              <p className="text-[10px] text-slate-400 font-bold">Days</p>
+            </div>
+          </div>
+
+          {/* Cycle Regularity Card with Ring */}
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs flex items-center justify-between">
+            <div className="space-y-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                Cycle Regularity
+              </span>
+              <h3 className="text-lg font-black text-slate-900">Very Regular</h3>
+              <p className="text-xs text-slate-500 font-medium">Your cycles vary by less than 1.5 days on average.</p>
+            </div>
+
+            <div className="w-16 h-16 rounded-full border-4 border-emerald-500 flex flex-col items-center justify-center font-black text-emerald-700 shrink-0">
+              <span className="text-base">92%</span>
+            </div>
+          </div>
+
+          {/* Most Common Symptom Card */}
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 text-2xl shrink-0">
+              🩸
+            </div>
+            <div>
+              <span className="text-[10px] font-black uppercase text-slate-400">Most Common Symptom</span>
+              <h4 className="text-sm font-black text-slate-900">Cramps</h4>
+              <p className="text-xs text-slate-500 font-medium">Logged in 65% of your recorded cycles.</p>
+            </div>
+          </div>
+
+          {/* Best Time of the Month */}
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 text-2xl shrink-0">
+              ☀️
+            </div>
+            <div>
+              <span className="text-[10px] font-black uppercase text-slate-400">Best Time of the Month</span>
+              <h4 className="text-sm font-black text-slate-900">Follicular Phase (Days 6–13)</h4>
+              <p className="text-xs text-slate-500 font-medium">You feel most energetic and creative during this phase.</p>
             </div>
           </div>
         </div>
       )}
 
       {/* ============================================================ */}
-      {/* TAB 7: PREGNANCY MODE */}
+      {/* 7. SCREEN: ANALYTICS */}
       {/* ============================================================ */}
-      {activeTab === "pregnancy" && (
-        <div className="space-y-5">
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between border-b pb-3">
-              <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
-                <Baby className="w-5 h-5 text-purple-600" />
-                Pregnancy Tracker Mode
-              </h2>
-
+      {activeTab === "analytics" && (
+        <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
+          {/* Sub Tab Filters */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+            {(["Overview", "Symptoms", "Flow", "Moods"] as const).map((tab) => (
               <button
-                onClick={() => {
-                  if (pregnancy) {
-                    setPregnancy(null);
-                    showToast("Pregnancy mode deactivated.");
-                  } else {
-                    const lmp = latestRecord ? latestRecord.startDate : "2026-06-01";
-                    const lmpDate = new Date(lmp);
-                    const due = new Date(lmpDate.getTime() + 280 * 86400000);
-                    setPregnancy({
-                      id: `preg_${Date.now()}`,
-                      userId: settings.userId,
-                      startDate: lmp,
-                      dueDate: due.toISOString().split("T")[0],
-                      currentWeek: 8,
-                      currentTrimester: 1,
-                      createdAt: new Date().toISOString(),
-                      updatedAt: new Date().toISOString()
-                    });
-                    showToast("Pregnancy mode activated!");
-                  }
-                }}
-                className={`px-4 py-2 rounded-2xl font-black text-xs transition-all cursor-pointer ${
-                  pregnancy
-                    ? "bg-rose-100 text-rose-800 border border-rose-300"
-                    : "bg-purple-600 text-white shadow-xs"
+                key={tab}
+                onClick={() => setAnalyticsSubTab(tab)}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
+                  analyticsSubTab === tab
+                    ? "bg-[#FF5A36] text-white font-black shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
-                {pregnancy ? "Disable Pregnancy Mode" : "Activate Pregnancy Mode"}
+                {tab}
               </button>
-            </div>
+            ))}
+          </div>
 
-            {pregnancy ? (
-              <div className="space-y-4">
-                <div className="p-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-3xl space-y-2">
-                  <span className="text-[10px] uppercase font-black tracking-wider text-purple-100">
-                    Week {pregnancy.currentWeek} of Pregnancy (Trimester {pregnancy.currentTrimester})
-                  </span>
-                  <h3 className="text-2xl font-black">
-                    Baby is size of a Raspberry 🫐
-                  </h3>
-                  <p className="text-xs text-purple-100">
-                    Estimated Due Date: <strong>{pregnancy.dueDate}</strong>
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="p-6 bg-slate-50 rounded-2xl text-center space-y-2">
-                <p className="text-xs font-bold text-slate-600">
-                  Pregnancy mode provides week-by-week baby development tracking, milestone countdowns, and trimester health guides.
-                </p>
-              </div>
-            )}
+          {/* Cycle Length Histogram */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">Cycle Length (Days)</h3>
+              <span className="text-[11px] font-bold text-slate-500">Last 6 Cycles</span>
+            </div>
+            <div className="h-48 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={cycleLengthChartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
+                  <YAxis domain={[20, 35]} tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: 12, border: "1px solid #E2E8F0", fontSize: 12 }}
+                    formatter={(val: any) => [`${val} days`, "Cycle Length"]}
+                  />
+                  <Bar dataKey="days" fill="#FF5A36" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Period Length Line Graph */}
+          <div className="space-y-2 pt-4 border-t border-slate-100">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">Period Length (Days)</h3>
+              <span className="text-[11px] font-bold text-slate-500">Last 6 Cycles</span>
+            </div>
+            <div className="h-44 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={periodLengthChartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
+                  <YAxis domain={[0, 8]} tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: 12, border: "1px solid #E2E8F0", fontSize: 12 }}
+                    formatter={(val: any) => [`${val} days`, "Period Length"]}
+                  />
+                  <Line type="monotone" dataKey="days" stroke="#FF5A36" strokeWidth={3} dot={{ r: 4, fill: "#FF5A36" }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
       )}
 
       {/* ============================================================ */}
-      {/* TAB 8: SETTINGS & PRIVACY */}
+      {/* 8. SCREEN: FERTILITY TRACKER */}
       {/* ============================================================ */}
-      {activeTab === "settings" && (
-        <div className="space-y-5">
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
-            <h2 className="text-base font-black text-slate-800 flex items-center gap-2 border-b pb-3">
-              <Shield className="w-5 h-5 text-slate-700" />
-              Cycle Preferences & Privacy Settings
-            </h2>
-
-            <div className="space-y-4 text-xs">
-              <div>
-                <label className="font-extrabold text-slate-700 block mb-1">
-                  Average Cycle Length (Days)
-                </label>
-                <input
-                  type="number"
-                  value={settings.averageCycleLength}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      averageCycleLength: Number(e.target.value)
-                    })
-                  }
-                  className="w-full font-bold p-3 bg-slate-50 border border-slate-200 rounded-2xl"
-                />
+      {activeTab === "fertility" && (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          {/* Fertile Window Card */}
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs flex items-center justify-between">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center text-2xl shrink-0">
+                🌸
               </div>
-
               <div>
-                <label className="font-extrabold text-slate-700 block mb-1">
-                  Default Period Duration (Days)
-                </label>
-                <input
-                  type="number"
-                  value={settings.periodLength}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      periodLength: Number(e.target.value)
-                    })
-                  }
-                  className="w-full font-bold p-3 bg-slate-50 border border-slate-200 rounded-2xl"
-                />
+                <span className="text-[10px] font-black uppercase text-emerald-600">Fertile Window</span>
+                <h3 className="text-base font-black text-slate-900">{fertileWindowStr}</h3>
+                <p className="text-xs text-slate-500 font-bold">High chance of pregnancy</p>
               </div>
+            </div>
+          </div>
 
-              <div className="p-4 bg-slate-50 rounded-2xl space-y-2 border border-slate-200">
-                <span className="font-black text-slate-800 block">Export Health Summary Report</span>
-                <p className="text-[11px] text-slate-500">
-                  Generate a confidential summary for your gynecologist or healthcare provider.
-                </p>
+          {/* Ovulation Card */}
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs flex items-center justify-between">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center text-2xl shrink-0">
+                ☀️
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase text-amber-600">Ovulation Date</span>
+                <h3 className="text-base font-black text-slate-900">
+                  {new Date(Date.now() + 6 * 86400000).toLocaleDateString("en-US", { day: "numeric", month: "short" })} (Predicted)
+                </h3>
+                <p className="text-xs text-slate-500 font-bold">Peak probability</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Chance of Pregnancy Gauge */}
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs flex items-center justify-between">
+            <div>
+              <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Chance of Pregnancy</h4>
+              <p className="text-xs text-slate-500 font-bold mt-0.5">Today: <span className="text-emerald-600 font-black">Low</span></p>
+            </div>
+            <div className="w-14 h-14 rounded-full border-4 border-emerald-500 flex items-center justify-center font-black text-emerald-700 text-sm shadow-xs">
+              18%
+            </div>
+          </div>
+
+          {/* Fertility Tips Card */}
+          <div className="bg-gradient-to-r from-orange-50 to-[#FFF9F5] border border-orange-200 p-5 rounded-3xl space-y-2">
+            <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+              💡 Fertility & Ovulation Tips
+            </h4>
+            <ul className="space-y-1.5 text-xs text-slate-600">
+              <li className="flex items-start gap-2">
+                <span className="text-[#FF5A36] font-bold">•</span>
+                <span>You are in your follicular / fertile phase. Keep hydrated and maintain balanced nutrition.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#FF5A36] font-bold">•</span>
+                <span>Track basal body temperature (BBT) each morning before getting out of bed for ovulation verification.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* 9. SCREEN: REMINDERS */}
+      {/* ============================================================ */}
+      {activeTab === "reminders" && (
+        <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div>
+              <h2 className="text-base font-black text-slate-900">Menstruation Reminders</h2>
+              <p className="text-xs text-slate-500 font-bold">Personalized alerts for your cycle</p>
+            </div>
+            <button
+              onClick={() => setMasterRemindersEnabled(!masterRemindersEnabled)}
+              className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                masterRemindersEnabled ? "bg-[#FF5A36]" : "bg-slate-300"
+              }`}
+            >
+              <div
+                className={`w-4 h-4 rounded-full bg-white transition-transform absolute top-1 ${
+                  masterRemindersEnabled ? "left-7" : "left-1"
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {reminderList.map((rem) => (
+              <div key={rem.id} className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">{rem.icon}</span>
+                  <div>
+                    <h4 className="text-xs font-black text-slate-900">{rem.title}</h4>
+                    <p className="text-[11px] text-slate-500 font-bold">{rem.frequency}</p>
+                  </div>
+                </div>
+
                 <button
-                  onClick={() => {
-                    window.print();
-                  }}
-                  className="px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-xs cursor-pointer flex items-center gap-1.5"
+                  onClick={() => toggleReminder(rem.id)}
+                  className={`w-10 h-5 rounded-full transition-colors relative cursor-pointer ${
+                    rem.enabled && masterRemindersEnabled ? "bg-emerald-500" : "bg-slate-300"
+                  }`}
                 >
-                  <Download className="w-4 h-4" /> Export / Print Doctor Report
+                  <div
+                    className={`w-3.5 h-3.5 rounded-full bg-white transition-transform absolute top-0.5 ${
+                      rem.enabled && masterRemindersEnabled ? "left-6" : "left-0.5"
+                    }`}
+                  />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={() => showToast("🔔 Reminder settings saved successfully!")}
+            className="w-full py-3.5 bg-[#FF5A36] hover:bg-[#E04826] text-white font-black rounded-2xl text-xs shadow-md transition-all cursor-pointer"
+          >
+            Save Reminder Settings
+          </button>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* 10. SCREEN: PRODUCTS & CARE */}
+      {/* ============================================================ */}
+      {activeTab === "products" && (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-black text-slate-900">Recommended for You</h2>
+            <span className="text-xs text-slate-500 font-bold">Curated Wellness Items</span>
+          </div>
+
+          <div className="space-y-3">
+            {PRODUCTS_DATA.map((prod) => (
+              <div
+                key={prod.id}
+                onClick={() => setSelectedProductModal(prod)}
+                className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/90 hover:border-orange-300 transition-all flex items-center justify-between cursor-pointer shadow-xs"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center text-2xl shrink-0">
+                    {prod.icon}
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900">{prod.title}</h3>
+                    <p className="text-xs text-slate-500 font-bold">{prod.subtitle}</p>
+                    <span className="text-[10px] font-bold text-[#FF5A36] bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200 mt-1 inline-block">
+                      {prod.category}
+                    </span>
+                  </div>
+                </div>
+
+                <ChevronRight className="w-5 h-5 text-slate-400" />
+              </div>
+            ))}
+          </div>
+
+          {/* Product Detail Modal */}
+          {selectedProductModal && (
+            <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 border border-slate-200 shadow-2xl animate-in zoom-in-95 duration-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-2xl">{selectedProductModal.icon}</span>
+                    <h3 className="text-base font-black text-slate-900">{selectedProductModal.title}</h3>
+                  </div>
+                  <button
+                    onClick={() => setSelectedProductModal(null)}
+                    className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed">{selectedProductModal.description}</p>
+
+                <div className="space-y-1.5">
+                  <h4 className="text-xs font-black text-slate-900 uppercase">Key Benefits</h4>
+                  <ul className="space-y-1 text-xs text-slate-600">
+                    {selectedProductModal.benefits.map((b, i) => (
+                      <li key={i} className="flex items-center gap-2">
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>{b}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="bg-orange-50 border border-orange-200 p-3 rounded-2xl">
+                  <p className="text-[11px] text-orange-800 font-medium">
+                    <span className="font-black">Usage Tip:</span> {selectedProductModal.usageTip}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setSelectedProductModal(null)}
+                  className="w-full py-2.5 bg-[#FF5A36] text-white rounded-2xl text-xs font-black cursor-pointer hover:bg-[#E04826]"
+                >
+                  Close
                 </button>
               </div>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* 11. SCREEN: PROGRAMS */}
+      {/* ============================================================ */}
+      {activeTab === "programs" && (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-black text-slate-900">Programs for You</h2>
+            <span className="text-xs text-slate-500 font-bold">Guided Cycles</span>
           </div>
+
+          <div className="space-y-3">
+            {PROGRAMS_DATA.map((prog) => (
+              <div
+                key={prog.id}
+                onClick={() => setSelectedProgramModal(prog)}
+                className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/90 hover:border-orange-300 transition-all flex items-center justify-between cursor-pointer shadow-xs"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center text-2xl shrink-0">
+                    {prog.icon}
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900">{prog.title}</h3>
+                    <p className="text-xs text-slate-500 font-bold">{prog.subtitle}</p>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <div className="w-24 bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div
+                          className="bg-[#FF5A36] h-full rounded-full"
+                          style={{ width: `${(prog.completedDays / prog.totalDays) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-500">
+                        {prog.completedDays}/{prog.totalDays}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <ChevronRight className="w-5 h-5 text-slate-400" />
+              </div>
+            ))}
+          </div>
+
+          {/* Program Detail Modal */}
+          {selectedProgramModal && (
+            <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 border border-slate-200 shadow-2xl animate-in zoom-in-95 duration-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-2xl">{selectedProgramModal.icon}</span>
+                    <h3 className="text-base font-black text-slate-900">{selectedProgramModal.title}</h3>
+                  </div>
+                  <button
+                    onClick={() => setSelectedProgramModal(null)}
+                    className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed">{selectedProgramModal.description}</p>
+
+                <div className="space-y-1.5">
+                  <h4 className="text-xs font-black text-slate-900 uppercase">Today's Protocol</h4>
+                  <ul className="space-y-1 text-xs text-slate-600">
+                    {selectedProgramModal.tips.map((t, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="text-[#FF5A36] font-bold">•</span>
+                        <span>{t}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <button
+                  onClick={() => {
+                    showToast(`✨ Continued day in ${selectedProgramModal.title}!`);
+                    setSelectedProgramModal(null);
+                  }}
+                  className="w-full py-2.5 bg-[#FF5A36] text-white rounded-2xl text-xs font-black cursor-pointer hover:bg-[#E04826]"
+                >
+                  Mark Today Completed
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* 12. SCREEN: SETTINGS */}
+      {/* ============================================================ */}
+      {activeTab === "settings" && (
+        <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
+          <div className="space-y-1">
+            <h2 className="text-base font-black text-slate-900">Cycle & Period Settings</h2>
+            <p className="text-xs text-slate-500 font-bold">Customize your cycle calculations</p>
+          </div>
+
+          <div className="space-y-3">
+            {/* Cycle Length Setting */}
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200">
+              <span className="text-xs font-bold text-slate-700">Cycle Length</span>
+              <div className="flex items-center gap-2">
+                <select
+                  value={cycleLength}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    setCycleLength(val);
+                    localStorage.setItem("care2care_menstrual_cycle_len", val.toString());
+                  }}
+                  className="bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-black text-slate-800 focus:outline-none"
+                >
+                  {[21, 24, 26, 28, 30, 32, 35, 40].map((len) => (
+                    <option key={len} value={len}>
+                      {len} Days
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Period Length Setting */}
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200">
+              <span className="text-xs font-bold text-slate-700">Period Length</span>
+              <div className="flex items-center gap-2">
+                <select
+                  value={periodLength}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    setPeriodLength(val);
+                    localStorage.setItem("care2care_menstrual_period_len", val.toString());
+                  }}
+                  className="bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-black text-slate-800 focus:outline-none"
+                >
+                  {[3, 4, 5, 6, 7, 8, 9].map((len) => (
+                    <option key={len} value={len}>
+                      {len} Days
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Flow Tracking Toggle */}
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200">
+              <span className="text-xs font-bold text-slate-700">Flow Tracking</span>
+              <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                Enabled
+              </span>
+            </div>
+
+            {/* Fertility Tracking Toggle */}
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200">
+              <span className="text-xs font-bold text-slate-700">Fertility Tracking</span>
+              <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                Enabled
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-3 border-t border-slate-100">
+            <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">Preferences</h3>
+
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200">
+              <span className="text-xs font-bold text-slate-700">Theme Color</span>
+              <span className="text-xs font-black text-[#FF5A36]">Coral / Peach</span>
+            </div>
+
+            <div
+              onClick={() => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cycleRecords, null, 2));
+                const downloadAnchor = document.createElement("a");
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `care2care_menstrual_data_${new Date().toISOString().split("T")[0]}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+                showToast("📥 Exported menstrual records JSON!");
+              }}
+              className="flex items-center justify-between p-4 bg-slate-50 hover:bg-orange-50 rounded-2xl border border-slate-200 cursor-pointer transition-colors"
+            >
+              <span className="text-xs font-bold text-slate-700">Export Cycle Data (JSON / Doctor)</span>
+              <Download className="w-4 h-4 text-slate-500" />
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              if (window.confirm("Are you sure you want to reset your logged menstrual data?")) {
+                localStorage.removeItem("care2care_menstrual_records");
+                showToast("🔄 Menstruation data reset to defaults.");
+              }
+            }}
+            className="w-full py-3 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-black rounded-2xl text-xs transition-colors cursor-pointer"
+          >
+            Reset Menstruation Data
+          </button>
         </div>
       )}
     </div>
   );
 };
-
-export default MenstrualCycleTracker;

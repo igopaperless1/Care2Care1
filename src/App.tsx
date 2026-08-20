@@ -36,7 +36,7 @@ import { YogaMeditationTracker } from "./components/YogaMeditationTracker";
 import { MoodHabitJournal } from "./components/MoodHabitJournal";
 import { ElderlyCareTracker } from "./components/ElderlyCareTracker";
 import { ExerciseTracker } from "./components/ExerciseTracker";
-import { MentalHealthTracker } from "./components/MentalHealthTracker";
+import { MentalHealthApp } from "./components/mental/MentalHealthApp";
 import { HabitAndRecoveryTracker } from "./components/HabitAndRecoveryTracker";
 import { HabitChallenges } from "./components/HabitChallenges";
 import { KidsCareTracker } from "./components/KidsCareTracker";
@@ -1024,7 +1024,7 @@ export default function App() {
                             </FeatureGuard>
                           )}
                           {careSubTab === "exercise" && <ExerciseTracker patient={selectedPatient} />}
-                          {careSubTab === "mental" && <MentalHealthTracker patient={selectedPatient} />}
+                          {careSubTab === "mental" && <MentalHealthApp patientName={selectedPatient?.name || "Roshan"} />}
                           {(careSubTab === "habit_challenges" || careSubTab === "challenges") && (
                             <HabitChallenges onBackToHome={handleGoBack} />
                           )}
