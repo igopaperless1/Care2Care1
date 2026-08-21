@@ -32,6 +32,7 @@ import { BottomNavigation, NavTab } from "./components/BottomNavigation";
 import { WaterTracker } from "./components/WaterTracker";
 import { StepsTracker } from "./components/StepsTracker";
 import { MedicineTracker } from "./components/MedicineTracker";
+import { MedicineManagementService } from "./components/MedicineManagementService";
 import { YogaMeditationTracker } from "./components/YogaMeditationTracker";
 import { MoodHabitJournal } from "./components/MoodHabitJournal";
 import { ElderlyCareTracker } from "./components/ElderlyCareTracker";
@@ -49,9 +50,11 @@ import { PetCareTracker } from "./components/PetCareTracker";
 import { NutritionTracker } from "./components/NutritionTracker";
 import { FinanceBudgetTracker } from "./components/FinanceBudgetTracker";
 import { InventoryManagementTracker } from "./components/InventoryManagementTracker";
+import { InventoryManagementService } from "./components/InventoryManagementService";
 import { MenstrualCycleTracker } from "./components/MenstrualCycleTracker";
-import { CustomStoreMarketplace } from "./components/CustomStoreMarketplace";
+import { CustomStoreService } from "./components/CustomStoreService";
 import { GardenFarmTracker } from "./components/GardenFarmTracker";
+import { FarmGardenService } from "./components/garden/FarmGardenService";
 import { TrackProgressView } from "./components/TrackProgressView";
 import { CaregiverDashboard } from "./components/CaregiverDashboard";
 import { PlanAndScheduleView } from "./components/PlanAndScheduleView";
@@ -666,7 +669,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `care2care_encrypted_backup_${Date.now()}.json`;
+    a.download = `blessikaa_encrypted_backup_${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -695,7 +698,7 @@ export default function App() {
           <div className="w-16 h-16 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 animate-spin" />
           <div className="absolute text-2xl font-black text-emerald-400">🛡️</div>
         </div>
-        <h2 className="text-xl font-black text-white tracking-tight">Care2Care Security & Auth Guard</h2>
+        <h2 className="text-xl font-black text-white tracking-tight">Blessikaa Security & Auth Guard</h2>
         <p className="text-xs text-slate-400 mt-2 max-w-sm font-medium">
           Verifying Supabase authentication session & role permissions...
         </p>
@@ -987,10 +990,8 @@ export default function App() {
                           {careSubTab === "calendar" && <CalendarConverterTracker />}
                           {careSubTab === "medicine" && (
                             <FeatureGuard featureId="medicine" featureName="Medicine & Refill Manager">
-                              <MedicineTracker
-                                patient={selectedPatient}
-                                onToggleMedication={handleToggleMedication}
-                                onAddMedication={handleAddMedication}
+                              <MedicineManagementService
+                                onBack={handleGoBack}
                               />
                             </FeatureGuard>
                           )}
@@ -1070,7 +1071,7 @@ export default function App() {
                               <FinanceBudgetTracker patient={selectedPatient} />
                             </FeatureGuard>
                           )}
-                          {careSubTab === "garden" && <GardenFarmTracker patient={selectedPatient} />}
+                          {careSubTab === "garden" && <FarmGardenService onBack={() => setCareSubTab(null)} />}
                           {(careSubTab === "jobs" || careSubTab === "career") && <JobSearchCareerTracker patient={selectedPatient} />}
                           {careSubTab === "ticket_queue" && (
                             <FeatureGuard featureId="ticket_queue" featureName="Digital Ticket & Queue Counter">
@@ -1085,7 +1086,7 @@ export default function App() {
                           {careSubTab === "life_dates" && <LifeDatesTracker patient={selectedPatient} />}
                           {careSubTab === "inventory" && (
                             <FeatureGuard featureId="retail_inventory_pos" featureName="Retail POS & Stock Inventory">
-                              <InventoryManagementTracker patient={selectedPatient} />
+                              <InventoryManagementService />
                             </FeatureGuard>
                           )}
                           {careSubTab === "passwords" && (
@@ -1098,7 +1099,7 @@ export default function App() {
                           {careSubTab === "hybrid_storage" && <HybridStorageManagerView />}
                           {careSubTab === "custom_store" && (
                             <FeatureGuard featureId="custom_store_marketplace" featureName="Custom E-Commerce Store & Marketplace">
-                              <CustomStoreMarketplace onBackToServices={() => handleNavigateTo("more")} />
+                              <CustomStoreService onBack={() => handleNavigateTo("more")} />
                             </FeatureGuard>
                           )}
                         </ErrorBoundary>

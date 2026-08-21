@@ -1,6 +1,6 @@
 // ============================================================
 // src/services/hybridStorageService.ts
-// Care2Care Hybrid Storage & Google Drive Integration Service
+// Blessikaa Hybrid Storage & Google Drive Integration Service
 // ============================================================
 
 import {
@@ -66,7 +66,7 @@ export class HybridStorageService {
       autoBackup: true,
       autoBackupNetwork: "wifi",
       autoBackupFrequency: "daily",
-      cloudFolderName: "Care2Care Backup",
+      cloudFolderName: "Blessikaa Backup",
       maxLocalStorage: 1024, // 1 GB
       maxCloudStorage: 5120, // 5 GB
       compressImages: true,

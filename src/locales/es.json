@@ -1,8 +1,8 @@
 {
-  "app.title": "Care2Care",
-  "app.subtitle": "Plataforma de Gestión Digital Sin Papel y Salud Familiar",
+  "app.title": "Blessikaa",
+  "app.subtitle": "Build Blessed Life – Plataforma de Gestión Digital y Salud Familiar",
   "app.welcome_back": "¡Bienvenido de nuevo, {{username}}!",
-  "app.tagline": "Atención Médica Sin Papel y Gestión de Vida",
+  "app.tagline": "Build Blessed Life",
 
   "buttons.save": "Guardar Cambios",
   "buttons.cancel": "Cancelar",
@@ -69,6 +69,6 @@
   "notifications.preference_saved": "Preferencia de idioma guardada correctamente",
   "notifications.error": "Ocurrió un error",
   "notifications.success": "Acción completada con éxito",
-  "notifications.push_title": "Recordatorio Diario Care2Care",
+  "notifications.push_title": "Recordatorio Diario Blessikaa",
   "notifications.push_body": "Es hora de tomar sus medicamentos programados y verificar la hidratación."
 }

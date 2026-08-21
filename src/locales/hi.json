@@ -1,8 +1,8 @@
 {
-  "app.title": "Care2Care",
-  "app.subtitle": "पारिवारिक स्वास्थ्य और डिजिटल प्रबंधन प्लेटफॉर्म",
+  "app.title": "Blessikaa",
+  "app.subtitle": "Build Blessed Life – पारिवारिक स्वास्थ्य और डिजिटल प्रबंधन प्लेटफॉर्म",
   "app.welcome_back": "पुनः स्वागत है, {{username}}!",
-  "app.tagline": "कागज रहित स्वास्थ्य सेवा और जीवन प्रबंधन",
+  "app.tagline": "Build Blessed Life",
 
   "buttons.save": "परिवर्तन सहेजें",
   "buttons.cancel": "रद्द करें",
@@ -69,6 +69,6 @@
   "notifications.preference_saved": "भाषा प्राथमिकता सफलतापूर्वक सहेजी गई",
   "notifications.error": "एक त्रुटि हुई",
   "notifications.success": "कार्रवाई सफलतापूर्वक पूरी हुई",
-  "notifications.push_title": "Care2Care दैनिक अनुस्मारक",
+  "notifications.push_title": "Blessikaa दैनिक अनुस्मारक",
   "notifications.push_body": "अपनी निर्धारित दवाएं लेने और पानी पीने का समय हो गया है।"
 }

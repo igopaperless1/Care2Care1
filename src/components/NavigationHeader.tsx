@@ -99,13 +99,21 @@ export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
             type="button"
             onClick={onOpenSplashAnimation}
             className="relative group cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-400 rounded-2xl p-0.5 transition-transform hover:scale-105 active:scale-95 shrink-0"
-            title="Care2Care – Habit, Health & Life Suite"
-            aria-label="Care2Care Home"
+            title="Blessikaa – Build Blessed Life"
+            aria-label="Blessikaa Home"
           >
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#FF6A45] via-[#FB923C] to-[#F59E0B] flex items-center justify-center text-white shadow-md font-bold text-lg">
-              <Heart className="w-5 h-5 fill-white animate-pulse" />
+            <div className="w-10 h-10 rounded-2xl overflow-hidden shadow-md border border-orange-200/60 dark:border-orange-500/30 flex items-center justify-center bg-gradient-to-tr from-[#FF6A45] via-[#FB923C] to-[#F59E0B]">
+              <img
+                src="/app-icon.jpg"
+                alt="Blessikaa"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
             </div>
-            <Sparkles className="w-3.5 h-3.5 text-amber-200 absolute -top-1 -right-1" />
+            <Sparkles className="w-3.5 h-3.5 text-amber-300 absolute -top-1 -right-1 drop-shadow" />
           </button>
 
           {/* App Title & Tagline */}
@@ -113,15 +121,15 @@ export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
             type="button"
             onClick={onOpenSplashAnimation}
             className="text-left group cursor-pointer focus:outline-none"
-            title="Care2Care – Everything Matters"
+            title="Blessikaa – Build Blessed Life"
           >
             <div className="flex items-center gap-1.5">
               <span className={`font-black text-base tracking-tight group-hover:text-[#FF6A45] transition-colors ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                Care2Care
+                Blessikaa
               </span>
             </div>
             <p className={`hidden sm:block text-[10px] font-bold tracking-tight ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-              Everything Matters. Track & Succeed.
+              Build Blessed Life
             </p>
           </button>
         </div>

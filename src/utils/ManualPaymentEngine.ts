@@ -51,10 +51,10 @@ const ADMIN_NOTIF_SETTINGS_KEY = "care2care_admin_notif_settings";
 const DEFAULT_PAYMENT_CONFIG: PaymentConfiguration = {
   id: "cfg-default-1",
   bankName: "Standard Chartered Bank (Nepal & Global)",
-  accountHolderName: "Care2Care Health Enterprises Pvt. Ltd.",
+  accountHolderName: "Blessikaa Health & Life Enterprises Pvt. Ltd.",
   accountNumber: "0100-9823-45001",
   ifscSwiftCode: "SCBLNPKAXXX",
-  upiId: "care2care@upi",
+  upiId: "blessikaa@upi",
   qrCodeImageUrl: null,
   isActive: true,
   updatedAt: new Date().toISOString(),
@@ -67,7 +67,7 @@ const DEFAULT_NOTIF_SETTINGS: AdminNotificationSettings = {
   inAppVibration: true,
   whatsappWebhookUrl: "https://api.whatsapp.com/send?phone=9779801234567",
   telegramBotTokenChatId: "bot123456:ABC-DEF/chat987654321",
-  emailAddress: "payments-admin@care2care.org",
+  emailAddress: "payments-admin@blessikaa.org",
   updatedAt: new Date().toISOString(),
 };
 

@@ -1,13 +1,56 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
-  <rect width="192" height="192" rx="40" fill="#047857"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
-    <linearGradient id="grad192" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#10b981"/>
-      <stop offset="100%" stop-color="#047857"/>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF3EC" />
+      <stop offset="60%" stop-color="#FED7AA" />
+      <stop offset="100%" stop-color="#FB923C" />
     </linearGradient>
+    <linearGradient id="coralGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF7A50" />
+      <stop offset="100%" stop-color="#EA580C" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047" />
+      <stop offset="50%" stop-color="#EAB308" />
+      <stop offset="100%" stop-color="#CA8A04" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.15" />
+    </filter>
   </defs>
-  <rect x="10" y="10" width="172" height="172" rx="34" fill="url(#grad192)"/>
-  <path d="M96 45 C75 22 41 34 41 64 C41 94 96 135 96 135 C96 135 151 94 151 64 C151 34 117 22 96 45 Z" fill="#ffffff" fill-opacity="0.25"/>
-  <path d="M85 71 L107 71 L107 90 L126 90 L126 112 L107 112 L107 131 L85 131 L85 112 L66 112 L66 90 L85 90 Z" fill="#ffffff"/>
-  <circle cx="135" cy="56" r="10" fill="#34d399"/>
+
+  <!-- Squircle Base with Soft Shadow -->
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#bgGrad)" filter="url(#shadow)" />
+  
+  <!-- Subtle inner wave curve -->
+  <path d="M 16 340 Q 256 420 496 340 L 496 496 L 16 496 Z" fill="#F97316" fill-opacity="0.25" />
+  <path d="M 16 380 Q 256 440 496 380 L 496 496 L 16 496 Z" fill="#EA580C" fill-opacity="0.4" />
+
+  <!-- Golden Crescent Arch & Star -->
+  <path d="M 180 80 A 150 150 0 0 1 400 240 A 135 135 0 0 0 240 100 A 135 135 0 0 0 180 80 Z" fill="url(#goldGrad)" />
+  <!-- Sparkle Star -->
+  <path d="M 170 120 Q 170 100 160 90 Q 170 80 170 60 Q 170 80 180 90 Q 170 100 170 120 Z" fill="url(#goldGrad)" />
+
+  <!-- Main 'B' Logo Emblem & Silhouette in Coral -->
+  <g transform="translate(110, 100) scale(0.6)">
+    <!-- B Monogram Body -->
+    <path d="M 60 40 L 220 40 C 310 40 370 90 370 170 C 370 230 330 270 270 290 C 350 310 400 370 400 460 C 400 560 310 620 200 620 L 60 620 Z" fill="url(#coralGrad)" />
+    <!-- Feminine Profile Cutout in White/Light Background -->
+    <path d="M 230 180 C 230 210 245 225 240 250 C 235 270 210 280 210 300 C 210 320 240 340 240 360 C 240 390 190 440 260 490 C 320 490 350 440 350 370 C 350 280 290 200 230 180 Z" fill="#FFF3EC" />
+    <!-- Botanical Leaf Motifs on Left -->
+    <path d="M 60 300 C -20 270 -60 200 -30 130 C 20 180 60 240 60 300 Z" fill="url(#coralGrad)" />
+    <path d="M 60 420 C -40 390 -80 300 -40 230 C 20 280 60 350 60 420 Z" fill="url(#coralGrad)" />
+    <path d="M 60 520 C -20 500 -50 430 -20 370 C 20 420 60 470 60 520 Z" fill="url(#coralGrad)" />
+  </g>
+
+  <!-- Typography: BLESSIKA -->
+  <text x="256" y="425" text-anchor="middle" font-family="'Cinzel', 'Playfair Display', serif, system-ui" font-size="42" font-weight="900" letter-spacing="9" fill="#9A3412">BLESSIKAA</text>
+  
+  <!-- Tiny heart divider -->
+  <path d="M 256 448 C 254 444 248 444 248 448 C 248 452 256 458 256 458 C 256 458 264 452 264 448 C 264 444 258 444 256 448 Z" fill="#C2410C" />
+  <line x1="160" y1="451" x2="242" y2="451" stroke="#EA580C" stroke-width="1.5" stroke-opacity="0.6" />
+  <line x1="270" y1="451" x2="352" y2="451" stroke="#EA580C" stroke-width="1.5" stroke-opacity="0.6" />
+
+  <!-- Tagline -->
+  <text x="256" y="475" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" letter-spacing="1.5" fill="#C2410C">Build Blessed Life</text>
 </svg>

@@ -132,18 +132,26 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             </button>
 
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-600 to-cyan-500 flex items-center justify-center font-black text-white text-lg shadow-md border border-emerald-400/30">
-                C2C
+              <div className="w-9 h-9 rounded-xl overflow-hidden bg-gradient-to-tr from-emerald-600 via-teal-600 to-cyan-500 flex items-center justify-center font-black text-white text-lg shadow-md border border-emerald-400/30">
+                <img
+                  src="/app-icon.jpg"
+                  alt="Blessikaa"
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = "none";
+                  }}
+                />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-black text-sm tracking-tight text-white">Care2Care Enterprise</span>
+                  <span className="font-black text-sm tracking-tight text-white">Blessikaa Enterprise</span>
                   <span className="hidden sm:inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                     Console v3.2
                   </span>
                 </div>
                 <p className="text-[10px] text-slate-400 font-medium hidden sm:block">
-                  Multi-Tenant Life OS Admin Console
+                  Build Blessed Life • Enterprise Console
                 </p>
               </div>
             </div>
@@ -316,7 +324,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               <div className="space-y-6">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                   <div>
-                    <span className="font-black text-sm block">Care2Care Admin</span>
+                    <span className="font-black text-sm block">Blessikaa Admin</span>
                     <span className="text-[10px] text-amber-400 font-mono flex items-center gap-1 mt-0.5">
                       <Clock className="w-3 h-3 animate-pulse text-amber-400" />
                       Auto-closes in 5s inactivity

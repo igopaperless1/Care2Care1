@@ -1,0 +1,495 @@
+import {
+  FamilyMember,
+  GuruProfile,
+  GuruMataProfile,
+  SpiritualEvent,
+  DiscipleRecord,
+  FastingRule,
+  FamilyDocumentMedia,
+  VedicLineageConfig
+} from "./types";
+
+export const INITIAL_GURU_PROFILE: GuruProfile = {
+  id: "guru-1",
+  name: "Swami Vedanand Saraswati",
+  role: "Guru",
+  alsoKnownAs: "Vedanand Ji Maharaj",
+  dateOfBirthVS: "12 Bhadrapad 1980 (Vikram Samvat 2037)",
+  dateOfBirthGregorian: "29 Aug 1980",
+  placeOfBirth: "Rishikesh, Uttarakhand, India",
+  dateOfDikshaVS: "05 Chaitra 2005 (Vikram Samvat 2062)",
+  dateOfDikshaGregorian: "18 Mar 2005",
+  gotra: "Kashyap",
+  sampradaya: "Advaita (Dashnami)",
+  currentAshram: "Vedanand Ashram, Rishikesh, Uttarakhand, India",
+  photoUrl: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&auto=format&fit=crop&q=80",
+  thumbnailPhotos: [
+    "https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400&auto=format&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=400&auto=format&fit=crop&q=80"
+  ],
+  gender: "Male",
+  bloodGroup: "O+",
+  nationality: "Indian",
+  maritalStatus: "N/A (Sanyasi)",
+  languagesKnown: ["Hindi", "Sanskrit", "English"],
+  education: "Ph.D. in Vedanta",
+  professionBeforeDiksha: "Professor",
+  biography:
+    "Swami Vedanand Saraswati is a revered spiritual teacher of the Dashnami tradition. He has dedicated his life to teaching Vedanta philosophy, conducting intense spiritual retreats, and guiding thousands of disciples on the path of self-realization and dharmic living.",
+  phone: "+91 98765 43210",
+  email: "swamivedanand@ashram.org",
+  altPhone: "+91 87654 32109",
+  permanentAddress: "Vedanand Ashram, Rishikesh, Uttarakhand - 249201",
+  temporaryAddress: "Same as Permanent",
+  discipleSince: "01 Jan 2010",
+  initiationMantra: "Om Namo Narayanaya",
+  spiritualGuidanceFor: "Daily Sadhana, Meditation, Vedanta Study",
+  totalDisciples: 450,
+  roleInLife: "Spiritual Guide & Second Parent",
+  teachingsUpdesh:
+    "Follow Dharma, Speak Truth, Serve Selflessly, Chant Daily Mantra, Practice Meditation.",
+  specialInstructions:
+    "Maintain Brahmacharya, Satvik Aahar, Seva to Ashram, Respect all beings.",
+  isMahasamadhi: true,
+  punyatithiVS: "05 Magh 2080 (Vikram Samvat 2077)",
+  punyatithiGregorian: "18 Jan 2021",
+  placeOfMahasamadhi: "Vedanand Ashram, Rishikesh, Uttarakhand",
+  tithiType: "Shukla Paksha, Dashami",
+  timeOfMahasamadhi: "07:35 AM",
+  annualShraddhaDate: "05 Magh (Every Year)",
+  shraddhaTithiType: "Shukla Paksha, Dashami",
+  shraddhaVidhi: "Hindu Vedic Vidhan",
+  shraddhaLocation: "Vedanand Ashram / Home",
+  shraddhaNotes:
+    "Observe fast on this day, perform Tarpan, Pind Daan and Brahman Bhojan.",
+  janamPatrikaFileName: "janam_patrika_swami.pdf",
+  janamPatrikaFileSize: "1.2 MB"
+};
+
+export const INITIAL_GURU_MATA_PROFILE: GuruMataProfile = {
+  id: "guru-mata-1",
+  name: "Mata Anandmayi",
+  role: "Guru Mata",
+  alsoKnownAs: "Anandmayi Mata Ji",
+  dateOfBirthVS: "08 Kartik 1982 (Vikram Samvat 2039)",
+  dateOfBirthGregorian: "24 Oct 1982",
+  dateOfDikshaVS: "05 Chaitra 2005 (Vikram Samvat 2062)",
+  dateOfDikshaGregorian: "18 Mar 2005",
+  gotra: "Kashyap",
+  photoUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80",
+  biography:
+    "Mata Anandmayi is the spiritual co-guide nurturing the ashram disciples with compassion, devotional kirtan, and motherly wisdom.",
+  currentAshram: "Vedanand Ashram, Rishikesh, Uttarakhand, India"
+};
+
+export const INITIAL_SPIRITUAL_EVENTS: SpiritualEvent[] = [
+  {
+    id: "evt-1",
+    title: "Guru Purnima",
+    type: "Guru Purnima",
+    dateFormatted: "10 July 2025",
+    tithiVS: "Ashadha Shukla Purnima",
+    daysRemainingLabel: "In 25 Days",
+    isRecurring: true,
+    recurringFrequency: "Annual (Ashadha Purnima)",
+    location: "Main Ashram Mandapam",
+    description: "Annual Guru Paduka Puja, Satsang, and Maha Prasadam distribution."
+  },
+  {
+    id: "evt-2",
+    title: "Janam Tithi (Birthday)",
+    type: "Janam Tithi",
+    dateFormatted: "12 Sep 2025",
+    tithiVS: "12 Bhadrapad 1980 (VS 2037)",
+    daysRemainingLabel: "In 89 Days",
+    isRecurring: true,
+    recurringFrequency: "Annual",
+    location: "Vedanand Ashram",
+    description: "Celebration of Swami Ji's auspicious birth tithi with Rudrabhishek."
+  },
+  {
+    id: "evt-3",
+    title: "Punyatithi (Tithi)",
+    type: "Punyatithi",
+    dateFormatted: "05 Feb 2026",
+    tithiVS: "05 Magh 2080 (VS 2077)",
+    daysRemainingLabel: "In 235 Days",
+    isRecurring: true,
+    recurringFrequency: "Annual (Magh Shukla Dashami)",
+    location: "Samadhi Sthal, Rishikesh",
+    description: "Mahasamadhi Aradhana, Vedic chants, Tarpan & Brahman Bhoj."
+  },
+  {
+    id: "evt-4",
+    title: "Shraddha (Annual)",
+    type: "Shraddha",
+    dateFormatted: "05 Feb 2026",
+    tithiVS: "Magh Shukla Dashami",
+    daysRemainingLabel: "In 235 Days",
+    isRecurring: true,
+    recurringFrequency: "Annual",
+    location: "Vedanand Ashram / Family Home",
+    description: "Pind Daan, Tila Tarpan, Gayatri Japa and Annadanam."
+  },
+  {
+    id: "evt-5",
+    title: "Diwas / Aradhana",
+    type: "Diwas / Aradhana",
+    dateFormatted: "Every Ekadashi",
+    tithiVS: "Shukla & Krishna Ekadashi",
+    daysRemainingLabel: "Recurring",
+    isRecurring: true,
+    recurringFrequency: "Bi-Monthly (Every Ekadashi)",
+    location: "Home Temple & Ashram",
+    description: "Special Guru Mantra Japa and silent meditation."
+  }
+];
+
+export const INITIAL_DISCIPLES: DiscipleRecord[] = [
+  {
+    id: "disc-1",
+    name: "Ramesh Shrestha",
+    email: "ramesh@email.com",
+    phone: "+977 9812345678",
+    initiationDate: "01 Jan 2010",
+    initiationLocation: "Rishikesh Ashram",
+    isFamilyDisciple: true,
+    status: "Active Disciple",
+    role: "Senior Ashram Volunteer",
+    avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80"
+  },
+  {
+    id: "disc-2",
+    name: "Sita Karki",
+    email: "sita@email.com",
+    phone: "+977 9841234567",
+    initiationDate: "05 Feb 2012",
+    initiationLocation: "Kathmandu Satsang Center",
+    isFamilyDisciple: true,
+    status: "Active Disciple",
+    role: "Prasadam Lead",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80"
+  },
+  {
+    id: "disc-3",
+    name: "Aman Chaudhary",
+    email: "aman@email.com",
+    phone: "+977 9860123456",
+    initiationDate: "10 Aug 2013",
+    initiationLocation: "Haridwar Camp",
+    isFamilyDisciple: false,
+    status: "Active Disciple",
+    role: "Audio/Visual Seva",
+    avatar: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80"
+  },
+  {
+    id: "disc-4",
+    name: "Priya Gurung",
+    email: "priya@email.com",
+    phone: "+977 9809876543",
+    initiationDate: "15 Sep 2014",
+    initiationLocation: "Pokhara Meditation Hall",
+    isFamilyDisciple: true,
+    status: "Active Disciple",
+    role: "Kirtan Lead",
+    avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80"
+  }
+];
+
+export const INITIAL_FASTING_RULES: FastingRule[] = [
+  {
+    id: "fast-1",
+    title: "Guru Purnima Fast",
+    type: "Full Day Fast",
+    timing: "Sunrise to Moonrise (Full Day)",
+    status: "Upcoming",
+    description: "Observed in devotion to Guru Parampara with prayers and meditation.",
+    allowedFoods: ["Fruits", "Milk", "Dry Fruits", "Water"],
+    guidelines: ["Chant Guru Gita", "Avoid grain and salt", "Perform Evening Arati"]
+  },
+  {
+    id: "fast-2",
+    title: "Janam Tithi Fast",
+    type: "Half Day Fast",
+    timing: "Sunrise to 12:00 PM Noon",
+    status: "Upcoming",
+    description: "Fasting until noon followed by Satvik Prasadam offering.",
+    allowedFoods: ["Satvik Rice Prasad", "Fruits", "Curd"],
+    guidelines: ["108 Mantras of Guru Japa", "Feed cows or birds in morning"]
+  },
+  {
+    id: "fast-3",
+    title: "Punyatithi Fast",
+    type: "Full Day Fast",
+    timing: "Full 24 Hours",
+    status: "Upcoming",
+    description: "Observance of solemn fast on Mahasamadhi anniversary with Tarpan.",
+    allowedFoods: ["Water", "Pure Fruit Juices (if needed)"],
+    guidelines: ["Maintain silence (Mouna Vrata)", "Perform Gayatri and Tarpan", "Feed Brahmins"]
+  },
+  {
+    id: "fast-4",
+    title: "Ekadashi Fast (For Guru)",
+    type: "Ekadashi Fast",
+    timing: "As Per Schedule (Bi-monthly)",
+    status: "Recurring",
+    description: "Dedicated to cleansing the mind and strengthening spiritual connection.",
+    allowedFoods: ["Sabudana", "Fruits", "Phalahari items"],
+    guidelines: ["No Rice or Beans", "Night vigil / Bhajan Kirtan"]
+  }
+];
+
+export const INITIAL_DOCUMENTS_MEDIA: FamilyDocumentMedia[] = [
+  {
+    id: "doc-1",
+    title: "Diksha Certificate",
+    fileName: "diksha_certificate.pdf",
+    fileSize: "1.5 MB",
+    fileType: "document",
+    uploadedDate: "18 Mar 2005",
+    category: "Diksha"
+  },
+  {
+    id: "doc-2",
+    title: "Janam Patrika",
+    fileName: "janam_patrika_swami.pdf",
+    fileSize: "1.2 MB",
+    fileType: "document",
+    uploadedDate: "29 Aug 1980",
+    category: "Patrika"
+  },
+  {
+    id: "doc-3",
+    title: "Guru Photo",
+    fileName: "guru_photo.jpg",
+    fileSize: "2.4 MB",
+    fileType: "photo",
+    uploadedDate: "15 Jan 2020",
+    category: "Photo"
+  },
+  {
+    id: "doc-4",
+    title: "Updesh Audio (Vedanta Essence)",
+    fileName: "updesh_01.mp3",
+    fileSize: "5.6 MB",
+    fileType: "audio",
+    uploadedDate: "05 Nov 2020",
+    category: "Audio"
+  }
+];
+
+export const INITIAL_VEDIC_LINEAGE: VedicLineageConfig = {
+  gotra: "Kashyap",
+  pravara: ["Kashyapa", "Avatsara", "Naidhruva"],
+  varna: "Brahmin",
+  vedaSakha: "Shukla Yajurveda (Madhyandina Shakha)",
+  kuldevi: "Maa Vindhyavasini",
+  kuldevta: "Lord Shiva (Someshwar Mahadev)",
+  moolGhar: "Janakpurdham, Mithila Kshetra",
+  isthadevata: "Lord Krishna & Radha"
+};
+
+export const INITIAL_FAMILY_MEMBERS: FamilyMember[] = [
+  {
+    id: "mem-self",
+    firstName: "Ramesh",
+    middleName: "Kumar",
+    lastName: "Shrestha",
+    gender: "Male",
+    isSelf: true,
+    isAlive: true,
+    dateOfBirth: "1988-06-15",
+    placeOfBirth: "Kathmandu, Nepal",
+    permanentAddress: "House 42, Lazimpat, Kathmandu",
+    city: "Kathmandu",
+    state: "Bagmati",
+    country: "Nepal",
+    pincode: "44600",
+    phone: "+977 9812345678",
+    email: "ramesh.shrestha@email.com",
+    occupation: "Senior Consultant",
+    education: "M.Sc. Information Technology",
+    bloodGroup: "O+",
+    religion: "Hinduism",
+    gotra: "Kashyap",
+    kula: "Shrestha",
+    nationality: "Nepali",
+    profilePhoto: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=80",
+    biography: "Ramesh is a devoted disciple and family historian, tracking 5 generations of heritage and spiritual lineages.",
+    fatherId: "mem-father",
+    motherId: "mem-mother",
+    spouseIds: ["mem-spouse"],
+    childrenIds: ["mem-child-1", "mem-child-2"],
+    siblingIds: ["mem-brother-1"]
+  },
+  {
+    id: "mem-spouse",
+    firstName: "Sunita",
+    middleName: "Devi",
+    lastName: "Shrestha",
+    maidenName: "Pradhan",
+    gender: "Female",
+    isSelf: false,
+    isAlive: true,
+    dateOfBirth: "1991-03-22",
+    placeOfBirth: "Patan, Lalitpur",
+    city: "Kathmandu",
+    phone: "+977 9841987654",
+    email: "sunita.shrestha@email.com",
+    occupation: "Educationist & Teacher",
+    bloodGroup: "B+",
+    gotra: "Gautam",
+    profilePhoto: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop&q=80",
+    spouseIds: ["mem-self"],
+    childrenIds: ["mem-child-1", "mem-child-2"]
+  },
+  {
+    id: "mem-father",
+    firstName: "Bikram",
+    middleName: "Bahadur",
+    lastName: "Shrestha",
+    gender: "Male",
+    isSelf: false,
+    isAlive: true,
+    dateOfBirth: "1958-04-12",
+    placeOfBirth: "Bhaktapur, Nepal",
+    occupation: "Retired Civil Administrator",
+    bloodGroup: "O+",
+    gotra: "Kashyap",
+    profilePhoto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80",
+    fatherId: "mem-gpa-p",
+    motherId: "mem-gma-p",
+    spouseIds: ["mem-mother"],
+    childrenIds: ["mem-self", "mem-brother-1"]
+  },
+  {
+    id: "mem-mother",
+    firstName: "Shanti",
+    middleName: "Maya",
+    lastName: "Shrestha",
+    maidenName: "Karki",
+    gender: "Female",
+    isSelf: false,
+    isAlive: true,
+    dateOfBirth: "1962-09-18",
+    placeOfBirth: "Pokhara, Nepal",
+    occupation: "Homemaker & Organic Herbalist",
+    bloodGroup: "A+",
+    gotra: "Kashyap",
+    profilePhoto: "https://images.unsplash.com/photo-1548142813-c348350df52b?w=400&auto=format&fit=crop&q=80",
+    fatherId: "mem-gpa-m",
+    motherId: "mem-gma-m",
+    spouseIds: ["mem-father"],
+    childrenIds: ["mem-self", "mem-brother-1"]
+  },
+  {
+    id: "mem-brother-1",
+    firstName: "Prakash",
+    lastName: "Shrestha",
+    gender: "Male",
+    isSelf: false,
+    isAlive: true,
+    dateOfBirth: "1993-11-04",
+    placeOfBirth: "Kathmandu, Nepal",
+    occupation: "Architect",
+    bloodGroup: "O+",
+    gotra: "Kashyap",
+    profilePhoto: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80",
+    fatherId: "mem-father",
+    motherId: "mem-mother",
+    siblingIds: ["mem-self"]
+  },
+  {
+    id: "mem-child-1",
+    firstName: "Aarav",
+    lastName: "Shrestha",
+    gender: "Male",
+    isSelf: false,
+    isAlive: true,
+    dateOfBirth: "2018-08-10",
+    placeOfBirth: "Kathmandu, Nepal",
+    bloodGroup: "O+",
+    gotra: "Kashyap",
+    profilePhoto: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&auto=format&fit=crop&q=80",
+    fatherId: "mem-self",
+    motherId: "mem-spouse"
+  },
+  {
+    id: "mem-child-2",
+    firstName: "Ananya",
+    lastName: "Shrestha",
+    gender: "Female",
+    isSelf: false,
+    isAlive: true,
+    dateOfBirth: "2021-02-14",
+    placeOfBirth: "Kathmandu, Nepal",
+    bloodGroup: "B+",
+    gotra: "Kashyap",
+    profilePhoto: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&auto=format&fit=crop&q=80",
+    fatherId: "mem-self",
+    motherId: "mem-spouse"
+  },
+  {
+    id: "mem-gpa-p",
+    firstName: "Gopal",
+    middleName: "Prasad",
+    lastName: "Shrestha",
+    gender: "Male",
+    isSelf: false,
+    isAlive: false,
+    dateOfBirth: "1928-02-15",
+    dateOfDeath: "2004-11-20",
+    placeOfBirth: "Bhaktapur",
+    placeOfDeath: "Kathmandu",
+    occupation: "Sanskrit Scholar & Astrologer",
+    gotra: "Kashyap",
+    profilePhoto: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&auto=format&fit=crop&q=80",
+    spouseIds: ["mem-gma-p"],
+    childrenIds: ["mem-father"]
+  },
+  {
+    id: "mem-gma-p",
+    firstName: "Radha",
+    middleName: "Devi",
+    lastName: "Shrestha",
+    gender: "Female",
+    isSelf: false,
+    isAlive: false,
+    dateOfBirth: "1932-07-10",
+    dateOfDeath: "2012-05-14",
+    placeOfBirth: "Kathmandu",
+    placeOfDeath: "Kathmandu",
+    gotra: "Kashyap",
+    profilePhoto: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop&q=80",
+    spouseIds: ["mem-gpa-p"],
+    childrenIds: ["mem-father"]
+  },
+  {
+    id: "mem-gpa-m",
+    firstName: "Narayan",
+    lastName: "Karki",
+    gender: "Male",
+    isSelf: false,
+    isAlive: false,
+    dateOfBirth: "1930-05-19",
+    dateOfDeath: "1998-08-12",
+    placeOfBirth: "Pokhara",
+    gotra: "Kashyap",
+    spouseIds: ["mem-gma-m"],
+    childrenIds: ["mem-mother"]
+  },
+  {
+    id: "mem-gma-m",
+    firstName: "Janaki",
+    lastName: "Karki",
+    gender: "Female",
+    isSelf: false,
+    isAlive: false,
+    dateOfBirth: "1935-10-02",
+    dateOfDeath: "2015-01-30",
+    placeOfBirth: "Pokhara",
+    spouseIds: ["mem-gpa-m"],
+    childrenIds: ["mem-mother"]
+  }
+];

@@ -1,0 +1,773 @@
+import {
+  FarmGardenItem,
+  FarmTask,
+  CropItem,
+  IrrigationZone,
+  FertilizerRecord,
+  SoilTestRecord,
+  PestObservation,
+  HarvestRecord,
+  TimeActivityLog,
+  InventoryItem,
+  WeatherDayForecast,
+  FarmSettingReminder
+} from "./types";
+
+export const INITIAL_FARMS: FarmGardenItem[] = [
+  {
+    id: "farm-1",
+    name: "Green Valley Farm",
+    type: "Farm",
+    categoryDesc: "Vegetable Farm • Pokhara, Nepal",
+    location: "Pokhara, Nepal",
+    area: 12.5,
+    areaUnit: "acres",
+    status: "Active",
+    healthScore: 92,
+    healthLabel: "Excellent",
+    activeCropsCount: 6,
+    totalTasksCount: 28,
+    completedTasksCount: 16,
+    inProgressTasksCount: 6,
+    pendingTasksCount: 6,
+    nextTaskText: "Tomorrow: Watering",
+    soilType: "Rich Loamy Alluvial",
+    phLevel: 6.6,
+    waterSource: "Drip System & Mountain Spring Canal",
+    sunlight: "Full Sun (7.5 hrs/day)",
+    photoUrl: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=600&auto=format&fit=crop&q=80",
+    createdAt: "2024-03-15",
+    notes: "Primary commercial organic vegetable produce farm supplying local restaurants and markets in Gandaki Province."
+  },
+  {
+    id: "farm-2",
+    name: "Home Garden",
+    type: "Garden",
+    categoryDesc: "Kitchen Garden • Kathmandu, Nepal",
+    location: "Kathmandu, Nepal",
+    area: 0.15,
+    areaUnit: "acres",
+    status: "Active",
+    healthScore: 95,
+    healthLabel: "Excellent",
+    activeCropsCount: 4,
+    totalTasksCount: 12,
+    completedTasksCount: 9,
+    inProgressTasksCount: 2,
+    pendingTasksCount: 1,
+    nextTaskText: "Today: Herb Trimming",
+    soilType: "Compost Enriched Loam",
+    phLevel: 6.4,
+    waterSource: "Rainwater Harvesting Tank",
+    sunlight: "Direct Sun & Partial Shade",
+    photoUrl: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=600&auto=format&fit=crop&q=80",
+    createdAt: "2024-05-10",
+    notes: "Rooftop and backyard organic raised beds for family fresh daily culinary use."
+  },
+  {
+    id: "farm-3",
+    name: "Orchard Field",
+    type: "Orchard",
+    categoryDesc: "Fruit Orchard • Bandipur, Nepal",
+    location: "Bandipur, Nepal",
+    area: 5.2,
+    areaUnit: "acres",
+    status: "Active",
+    healthScore: 88,
+    healthLabel: "Good",
+    activeCropsCount: 3,
+    totalTasksCount: 18,
+    completedTasksCount: 10,
+    inProgressTasksCount: 4,
+    pendingTasksCount: 4,
+    nextTaskText: "16 May: Fruit Fly Scouting",
+    soilType: "Well-Drained Sandy Clay Loam",
+    phLevel: 6.2,
+    waterSource: "Deep Borewell & Micro-Sprinklers",
+    sunlight: "Full Hillside Exposure",
+    photoUrl: "https://images.unsplash.com/photo-1592417817098-8f3d6eb231fc?w=600&auto=format&fit=crop&q=80",
+    createdAt: "2023-11-20",
+    notes: "Terraced fruit orchard specializing in Mandarin Oranges, Guava, and Avocado."
+  },
+  {
+    id: "farm-4",
+    name: "Greenhouse 1",
+    type: "Greenhouse",
+    categoryDesc: "Polyhouse • Lalitpur, Nepal",
+    location: "Lalitpur, Nepal",
+    area: 0.8,
+    areaUnit: "acres",
+    status: "Active",
+    healthScore: 94,
+    healthLabel: "Excellent",
+    activeCropsCount: 2,
+    totalTasksCount: 15,
+    completedTasksCount: 11,
+    inProgressTasksCount: 2,
+    pendingTasksCount: 2,
+    nextTaskText: "Today: Trellis Adjustments",
+    soilType: "Coco Peat & Perlite Hydro-Substrate",
+    phLevel: 6.0,
+    waterSource: "Automated Precision Drip Fertigation",
+    sunlight: "Climate Controlled Diffused Light",
+    photoUrl: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=600&auto=format&fit=crop&q=80",
+    createdAt: "2024-01-05",
+    notes: "High-tech polyhouse for year-round indeterminate sweet bell peppers and heirloom cherry tomatoes."
+  }
+];
+
+export const INITIAL_TASKS: FarmTask[] = [
+  {
+    id: "t-1",
+    farmId: "farm-1",
+    title: "Irrigation - Drip System",
+    category: "irrigation",
+    fieldLocation: "Vegetable Field - Block A",
+    scheduledTime: "07:00 AM",
+    date: "2026-05-15",
+    dueBadge: "Today",
+    status: "done",
+    notes: "Zone A morning deep cycle completed."
+  },
+  {
+    id: "t-2",
+    farmId: "farm-1",
+    title: "Fertilizer Application",
+    category: "fertilizer",
+    fieldLocation: "Tomato - Greenhouse 1",
+    scheduledTime: "09:30 AM",
+    date: "2026-05-15",
+    dueBadge: "Today",
+    status: "done",
+    notes: "Applied organic micronutrient liquid solution."
+  },
+  {
+    id: "t-3",
+    farmId: "farm-1",
+    title: "Weeding",
+    category: "weeding",
+    fieldLocation: "Cabbage Field - Block B",
+    scheduledTime: "11:00 AM",
+    date: "2026-05-15",
+    dueBadge: "Today",
+    status: "in_progress",
+    notes: "Manual inter-row cultivation."
+  },
+  {
+    id: "t-4",
+    farmId: "farm-1",
+    title: "Pest Inspection",
+    category: "pest",
+    fieldLocation: "Chili Field",
+    scheduledTime: "02:00 PM",
+    date: "2026-05-15",
+    dueBadge: "Today",
+    status: "pending",
+    notes: "Inspect underside of leaves for thrips and mites."
+  },
+  {
+    id: "t-5",
+    farmId: "farm-1",
+    title: "Plant Support & Tying",
+    category: "support",
+    fieldLocation: "Tomato - Greenhouse 1",
+    scheduledTime: "04:00 PM",
+    date: "2026-05-15",
+    dueBadge: "Today",
+    status: "pending",
+    notes: "Tie up top vine growth to upper support cables."
+  },
+  {
+    id: "t-6",
+    farmId: "farm-1",
+    title: "Sowing",
+    category: "sowing",
+    fieldLocation: "Lettuce - Nursery Bed",
+    scheduledTime: "08:00 AM",
+    date: "2026-05-16",
+    dueBadge: "Tomorrow",
+    status: "pending",
+    notes: "Seed trays preparation with vermiculite mix."
+  },
+  {
+    id: "t-7",
+    farmId: "farm-1",
+    title: "Harvest Salad Greens",
+    category: "harvest",
+    fieldLocation: "Spinach & Kale Bed 3",
+    scheduledTime: "06:30 AM",
+    date: "2026-05-17",
+    dueBadge: "In 2 Days",
+    status: "pending",
+    notes: "Morning crisp harvest before direct noon heat."
+  }
+];
+
+export const INITIAL_CROPS: CropItem[] = [
+  {
+    id: "crop-1",
+    farmId: "farm-1",
+    name: "Tomato",
+    variety: "Manisha Special F1 / Sweet Cherry",
+    type: "Vegetable",
+    sowingDate: "10 Mar 2025",
+    transplantDate: "25 Apr 2025",
+    expectedHarvestDate: "20 Jun 2025",
+    status: "Growing",
+    healthStatus: "Excellent",
+    quantity: 450,
+    unit: "plants",
+    photoUrl: "https://images.unsplash.com/photo-1592841200221-a6898f307baa?w=400&auto=format&fit=crop&q=80",
+    wateringFrequency: "Daily 30 mins drip",
+    fertilizerPlan: "Bi-weekly organic calcium & potassium",
+    notes: "High vigor, trellis installed."
+  },
+  {
+    id: "crop-2",
+    farmId: "farm-1",
+    name: "Cabbage",
+    variety: "Green Coronet Ballhead",
+    type: "Vegetable",
+    sowingDate: "05 Mar 2025",
+    transplantDate: "20 Apr 2025",
+    expectedHarvestDate: "10 Jun 2025",
+    status: "Growing",
+    healthStatus: "Good",
+    quantity: 600,
+    unit: "plants",
+    photoUrl: "https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=400&auto=format&fit=crop&q=80",
+    wateringFrequency: "Every 2 days",
+    fertilizerPlan: "Compost & vermicompost mix",
+    notes: "Heads starting to firm up well."
+  },
+  {
+    id: "crop-3",
+    farmId: "farm-1",
+    name: "Chili",
+    variety: "Kathmandu Jwala Hot",
+    type: "Vegetable",
+    sowingDate: "15 Feb 2025",
+    transplantDate: "05 Apr 2025",
+    expectedHarvestDate: "30 May 2025",
+    status: "Growing",
+    healthStatus: "Good",
+    quantity: 350,
+    unit: "plants",
+    photoUrl: "https://images.unsplash.com/photo-1588252303782-cb80119abd6d?w=400&auto=format&fit=crop&q=80",
+    wateringFrequency: "Twice a week",
+    fertilizerPlan: "Organic neem cake & ash",
+    notes: "First flower buds setting."
+  },
+  {
+    id: "crop-4",
+    farmId: "farm-1",
+    name: "Lettuce",
+    variety: "Butterhead & Romaine Grand Rapids",
+    type: "Leafy Greens",
+    sowingDate: "01 Mar 2025",
+    transplantDate: "15 Apr 2025",
+    expectedHarvestDate: "25 May 2025",
+    status: "Nursery",
+    healthStatus: "Excellent",
+    quantity: 500,
+    unit: "plants",
+    photoUrl: "https://images.unsplash.com/photo-1556801712-76c8eb07bbc9?w=400&auto=format&fit=crop&q=80",
+    wateringFrequency: "Daily light mist",
+    fertilizerPlan: "Mild worm tea foliar spray",
+    notes: "Nursery plug trays ready for transplanting."
+  },
+  {
+    id: "crop-5",
+    farmId: "farm-1",
+    name: "Spinach",
+    variety: "All Green Broadleaf",
+    type: "Leafy Greens",
+    sowingDate: "20 Mar 2025",
+    transplantDate: "25 Apr 2025",
+    expectedHarvestDate: "10 May 2025",
+    actualHarvestDate: "12 May 2025",
+    status: "Completed",
+    healthStatus: "Excellent",
+    quantity: 400,
+    unit: "plants",
+    photoUrl: "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=400&auto=format&fit=crop&q=80",
+    wateringFrequency: "Daily",
+    fertilizerPlan: "Organic nitrogen rich compost",
+    notes: "Successfully harvested 38 kg total yield."
+  },
+  {
+    id: "crop-6",
+    farmId: "farm-1",
+    name: "Carrot",
+    variety: "Nantes Early Coreless",
+    type: "Root",
+    sowingDate: "12 Mar 2025",
+    transplantDate: "22 Apr 2025",
+    expectedHarvestDate: "15 Jun 2025",
+    status: "Growing",
+    healthStatus: "Good",
+    quantity: 800,
+    unit: "plants",
+    photoUrl: "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400&auto=format&fit=crop&q=80",
+    wateringFrequency: "Every 2 days deep soak",
+    fertilizerPlan: "Potash and wood ash blend",
+    notes: "Foliage looks vigorous and emerald green."
+  }
+];
+
+export const INITIAL_IRRIGATION_ZONES: IrrigationZone[] = [
+  {
+    id: "zone-1",
+    farmId: "farm-1",
+    zoneName: "Zone A - Vegetables",
+    cropGroup: "Tomatoes & Capsicum",
+    method: "Drip Irrigation",
+    scheduledTime: "Today, 07:00 AM",
+    durationMinutes: 45,
+    volumeLiters: 450,
+    status: "Done",
+    lastWatered: "Today at 07:45 AM",
+    waterSource: "Storage Reservoir Tank 1"
+  },
+  {
+    id: "zone-2",
+    farmId: "farm-1",
+    zoneName: "Zone B - Leafy Greens",
+    cropGroup: "Spinach, Kale & Lettuce",
+    method: "Sprinkler",
+    scheduledTime: "Tomorrow, 07:00 AM",
+    durationMinutes: 30,
+    volumeLiters: 300,
+    status: "Scheduled",
+    lastWatered: "Yesterday at 07:30 AM",
+    waterSource: "Main Canal Line"
+  },
+  {
+    id: "zone-3",
+    farmId: "farm-1",
+    zoneName: "Zone C - Orchard",
+    cropGroup: "Mandarin, Orange & Guava",
+    method: "Drip Irrigation",
+    scheduledTime: "16 May, 06:00 AM",
+    durationMinutes: 60,
+    volumeLiters: 800,
+    status: "Upcoming",
+    lastWatered: "12 May at 06:00 AM",
+    waterSource: "Deep Borewell"
+  },
+  {
+    id: "zone-4",
+    farmId: "farm-1",
+    zoneName: "Zone D - Greenhouse",
+    cropGroup: "Seedlings & Nursery Beds",
+    method: "Drip Irrigation",
+    scheduledTime: "Today, 06:30 AM",
+    durationMinutes: 20,
+    volumeLiters: 150,
+    status: "Done",
+    lastWatered: "Today at 06:50 AM",
+    waterSource: "Filtered Rainwater Tank"
+  }
+];
+
+export const INITIAL_FERTILIZERS: FertilizerRecord[] = [
+  {
+    id: "fert-1",
+    farmId: "farm-1",
+    cropTarget: "Vegetable Field - Block A",
+    fertilizerName: "Organic Compost",
+    type: "Organic",
+    scheduledDate: "16 May 2025",
+    dueBadge: "Tomorrow",
+    status: "Upcoming",
+    quantity: 250,
+    unit: "kg",
+    costNpr: 2500,
+    applicationMethod: "Soil Dressing",
+    notes: "Well-aged farmyard manure and bio-waste."
+  },
+  {
+    id: "fert-2",
+    farmId: "farm-1",
+    cropTarget: "Tomato - Greenhouse 1",
+    fertilizerName: "NPK 19:19:19",
+    type: "Chemical",
+    scheduledDate: "18 May 2025",
+    dueBadge: "In 3 Days",
+    status: "Upcoming",
+    quantity: 15,
+    unit: "kg",
+    costNpr: 1800,
+    applicationMethod: "Drip Fertigation",
+    notes: "Balanced vegetative & fruit set booster."
+  },
+  {
+    id: "fert-3",
+    farmId: "farm-1",
+    cropTarget: "Cabbage Field - Block B",
+    fertilizerName: "Vermicompost",
+    type: "Organic",
+    scheduledDate: "20 May 2025",
+    dueBadge: "In 5 Days",
+    status: "Upcoming",
+    quantity: 120,
+    unit: "kg",
+    costNpr: 1950,
+    applicationMethod: "Broadcasting",
+    notes: "Earthworm castings rich in beneficial microbes."
+  },
+  {
+    id: "fert-4",
+    farmId: "farm-1",
+    cropTarget: "Chili Field",
+    fertilizerName: "Liquid Seaweed Extract",
+    type: "Organic",
+    scheduledDate: "10 May 2025",
+    dueBadge: "Completed",
+    status: "Completed",
+    quantity: 5,
+    unit: "L",
+    costNpr: 2200,
+    applicationMethod: "Foliar Spray",
+    notes: "Promoted heavy root establishment."
+  }
+];
+
+export const INITIAL_PESTS: PestObservation[] = [
+  {
+    id: "pest-1",
+    farmId: "farm-1",
+    cropTarget: "Tomato - Greenhouse 1",
+    pestName: "Aphids",
+    pestCategory: "Insect",
+    fieldLocation: "Greenhouse Rows 1-3",
+    date: "15 May 2025",
+    riskLevel: "Low",
+    status: "Active",
+    treatment: "Neem Oil 5ml/L + Potassium Soap Spray",
+    treatmentStatus: "Applied",
+    notes: "Early detection on young leaf undersides. Controlled promptly.",
+    photoUrl: "https://images.unsplash.com/photo-1588252303782-cb80119abd6d?w=300&auto=format&fit=crop&q=80"
+  },
+  {
+    id: "pest-2",
+    farmId: "farm-1",
+    cropTarget: "Chili Field",
+    pestName: "Whiteflies",
+    pestCategory: "Insect",
+    fieldLocation: "Outdoor Plot C",
+    date: "14 May 2025",
+    riskLevel: "Medium",
+    status: "Monitoring",
+    treatment: "Yellow Sticky Traps + Bio-Pesticide Spray",
+    treatmentStatus: "Pending",
+    notes: "20 yellow cards placed across field boundaries.",
+    photoUrl: "https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=300&auto=format&fit=crop&q=80"
+  },
+  {
+    id: "pest-3",
+    farmId: "farm-1",
+    cropTarget: "Cabbage Field - Block B",
+    pestName: "Leaf Spot",
+    pestCategory: "Fungus",
+    fieldLocation: "Block B Outer Rows",
+    date: "12 May 2025",
+    riskLevel: "Resolved",
+    status: "Resolved",
+    treatment: "Trichoderma Viride Bio-Fungicide + Copper Drench",
+    treatmentStatus: "Effective",
+    notes: "Infected foliage pruned and burned; new flush completely clean.",
+    photoUrl: "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=300&auto=format&fit=crop&q=80"
+  }
+];
+
+export const INITIAL_HARVESTS: HarvestRecord[] = [
+  {
+    id: "harv-1",
+    farmId: "farm-1",
+    cropName: "Lettuce",
+    date: "10 May 2025",
+    quantityKg: 45,
+    quality: "Good",
+    fieldLocation: "Hydro Beds & Raised Plot 2",
+    unitPriceNpr: 120,
+    totalValueNpr: 5400,
+    buyerOrStorage: "Fresh Roots Supermarket, Pokhara",
+    photoUrl: "https://images.unsplash.com/photo-1556801712-76c8eb07bbc9?w=400&auto=format&fit=crop&q=80",
+    notes: "Crisp and tender leaves, 0 pest markings."
+  },
+  {
+    id: "harv-2",
+    farmId: "farm-1",
+    cropName: "Spinach",
+    date: "08 May 2025",
+    quantityKg: 38,
+    quality: "Good",
+    fieldLocation: "Vegetable Block A",
+    unitPriceNpr: 80,
+    totalValueNpr: 3040,
+    buyerOrStorage: "Lakeside Organic Market",
+    photoUrl: "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=400&auto=format&fit=crop&q=80",
+    notes: "Bundled into 500g biodegradable fresh packs."
+  },
+  {
+    id: "harv-3",
+    farmId: "farm-1",
+    cropName: "Cabbage",
+    date: "07 May 2025",
+    quantityKg: 120,
+    quality: "Good",
+    fieldLocation: "Block B Center",
+    unitPriceNpr: 55,
+    totalValueNpr: 6600,
+    buyerOrStorage: "Wholesale Veg Market Mandi",
+    photoUrl: "https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=400&auto=format&fit=crop&q=80",
+    notes: "Tight heads averaging 1.8 kg each."
+  },
+  {
+    id: "harv-4",
+    farmId: "farm-1",
+    cropName: "Radish",
+    date: "05 May 2025",
+    quantityKg: 55,
+    quality: "Good",
+    fieldLocation: "East Raised Bed 4",
+    unitPriceNpr: 45,
+    totalValueNpr: 2475,
+    buyerOrStorage: "Direct Consumer Farm Gate",
+    photoUrl: "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400&auto=format&fit=crop&q=80",
+    notes: "Crisp white roots with mild sweet flavor."
+  }
+];
+
+export const INITIAL_TIME_LOGS: TimeActivityLog[] = [
+  {
+    id: "time-1",
+    farmId: "farm-1",
+    activityName: "Irrigation - Drip System",
+    category: "irrigation",
+    date: "Today, 15 May 2025",
+    startTime: "07:00 AM",
+    endTime: "07:45 AM",
+    durationMinutes: 45,
+    durationFormatted: "00h 45m",
+    workerName: "Roshan Gurung",
+    notes: "Checked line pressure and cleared zone 2 filters."
+  },
+  {
+    id: "time-2",
+    farmId: "farm-1",
+    activityName: "Fertilizer Application",
+    category: "fertilizer",
+    date: "Today, 15 May 2025",
+    startTime: "09:30 AM",
+    endTime: "10:30 AM",
+    durationMinutes: 60,
+    durationFormatted: "01h 00m",
+    workerName: "Bikash Shrestha",
+    notes: "Prepared foliar spray mix and applied to greenhouse."
+  },
+  {
+    id: "time-3",
+    farmId: "farm-1",
+    activityName: "Weeding",
+    category: "weeding",
+    date: "Today, 15 May 2025",
+    startTime: "11:00 AM",
+    endTime: "12:15 PM",
+    durationMinutes: 75,
+    durationFormatted: "01h 15m",
+    workerName: "Maya Tamang",
+    notes: "Cabbage rows 1 to 8 weeded and mulched."
+  },
+  {
+    id: "time-4",
+    farmId: "farm-1",
+    activityName: "Plant Support & Tying",
+    category: "support",
+    date: "Today, 15 May 2025",
+    startTime: "04:00 PM",
+    endTime: "04:25 PM",
+    durationMinutes: 25,
+    durationFormatted: "00h 25m",
+    workerName: "Roshan Gurung",
+    notes: "Supported lateral tomato shoots with jute twine."
+  }
+];
+
+export const INITIAL_INVENTORY: InventoryItem[] = [
+  {
+    id: "inv-1",
+    farmId: "farm-1",
+    name: "Hybrid Tomato F1 Seeds (Manisha)",
+    category: "Seeds",
+    quantity: 12,
+    unit: "packets",
+    minThreshold: 3,
+    costNpr: 450,
+    storageLocation: "Cool Seed Vault Shelf A",
+    expiryDate: "2027-12-31",
+    supplier: "Nepal Agri Seeds Pokhara",
+    status: "In Stock"
+  },
+  {
+    id: "inv-2",
+    farmId: "farm-1",
+    name: "NPK 19:19:19 Water Soluble",
+    category: "Fertilizers",
+    quantity: 4,
+    unit: "bags",
+    minThreshold: 2,
+    costNpr: 1800,
+    storageLocation: "Dry Shed Warehouse B",
+    expiryDate: "2028-06-30",
+    supplier: "Krishi Samagri Sanstha",
+    status: "In Stock"
+  },
+  {
+    id: "inv-3",
+    farmId: "farm-1",
+    name: "Pure Cold-Pressed Neem Oil (10,000 ppm)",
+    category: "Pesticides",
+    quantity: 8,
+    unit: "Liters",
+    minThreshold: 5,
+    costNpr: 1200,
+    storageLocation: "Chemical Safety Cabinet",
+    expiryDate: "2027-04-15",
+    supplier: "Organic Bio-Care Nepal",
+    status: "In Stock"
+  },
+  {
+    id: "inv-4",
+    farmId: "farm-1",
+    name: "Biodegradable Vegetable Crates (20kg)",
+    category: "Packaging",
+    quantity: 45,
+    unit: "units",
+    minThreshold: 50,
+    costNpr: 280,
+    storageLocation: "Packing Bay 1",
+    supplier: "EcoPack Supplies",
+    status: "Low Stock"
+  }
+];
+
+export const FORECAST_DATA: WeatherDayForecast[] = [
+  {
+    dayName: "Fri, 16 May",
+    tempHigh: 27,
+    tempLow: 17,
+    condition: "Partly Cloudy",
+    icon: "Sun",
+    rainChance: 20,
+    humidity: 65,
+    windKmH: 9
+  },
+  {
+    dayName: "Sat, 17 May",
+    tempHigh: 28,
+    tempLow: 18,
+    condition: "Sunny & Clear",
+    icon: "Sun",
+    rainChance: 10,
+    humidity: 60,
+    windKmH: 7
+  },
+  {
+    dayName: "Sun, 18 May",
+    tempHigh: 29,
+    tempLow: 18,
+    condition: "Sunny & Warm",
+    icon: "Sun",
+    rainChance: 10,
+    humidity: 58,
+    windKmH: 6
+  },
+  {
+    dayName: "Mon, 19 May",
+    tempHigh: 27,
+    tempLow: 17,
+    condition: "Scattered Showers",
+    icon: "CloudRain",
+    rainChance: 30,
+    humidity: 74,
+    windKmH: 12
+  },
+  {
+    dayName: "Tue, 20 May",
+    tempHigh: 26,
+    tempLow: 16,
+    condition: "Afternoon Thunderstorm",
+    icon: "CloudRain",
+    rainChance: 40,
+    humidity: 78,
+    windKmH: 14
+  }
+];
+
+export const INITIAL_REMINDER_SETTINGS: FarmSettingReminder[] = [
+  {
+    id: "rem-1",
+    key: "irrigation_reminders",
+    label: "Irrigation Reminders",
+    description: "Automatic alerts for scheduled morning and evening drip cycles",
+    enabled: true,
+    frequency: "Daily",
+    time: "06:30 AM",
+    iconName: "Droplets"
+  },
+  {
+    id: "rem-2",
+    key: "fertilizer_reminders",
+    label: "Fertilizer Reminders",
+    description: "Notifications for planned foliar feeding and root fertigation",
+    enabled: true,
+    frequency: "Weekly",
+    time: "09:00 AM",
+    iconName: "Sparkles"
+  },
+  {
+    id: "rem-3",
+    key: "pest_inspection_reminders",
+    label: "Pest Inspection Reminders",
+    description: "Bi-weekly field scouting reminders to catch insect emergence early",
+    enabled: true,
+    frequency: "Weekly",
+    time: "02:00 PM",
+    iconName: "Bug"
+  },
+  {
+    id: "rem-4",
+    key: "sowing_planting_reminders",
+    label: "Sowing/Planting Reminders",
+    description: "Timely alerts for seedling transplant windows and succession sowing",
+    enabled: true,
+    frequency: "Custom",
+    time: "08:00 AM",
+    iconName: "Sprout"
+  },
+  {
+    id: "rem-5",
+    key: "harvest_reminders",
+    label: "Harvest Reminders",
+    description: "Alerts when crops reach optimal picking maturity before over-ripening",
+    enabled: true,
+    frequency: "Daily",
+    time: "06:00 AM",
+    iconName: "Award"
+  }
+];
+
+export const FINANCIAL_ANALYTICS_DATA = {
+  totalCostNpr: 48750,
+  totalYieldKg: 1250,
+  netProfitNpr: 85300,
+  monthlyData: [
+    { month: "Jan", cost: 12000, yieldKg: 200, revenue: 16000 },
+    { month: "Feb", cost: 24000, yieldKg: 420, revenue: 38000 },
+    { month: "Mar", cost: 31000, yieldKg: 680, revenue: 62000 },
+    { month: "Apr", cost: 38000, yieldKg: 950, revenue: 98000 },
+    { month: "May", cost: 48750, yieldKg: 1250, revenue: 134050 }
+  ]
+};

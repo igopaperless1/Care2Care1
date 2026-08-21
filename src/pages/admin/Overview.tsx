@@ -57,7 +57,7 @@ export const OverviewPage: React.FC<OverviewProps> = ({
               </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-white">
-              {consoleMode === "superadmin" ? "Care2Care Global Life OS Engine" : "Workspace Sub-Accounts & Operations"}
+              {consoleMode === "superadmin" ? "Blessikaa Global Life OS Engine" : "Workspace Sub-Accounts & Operations"}
             </h1>
             <p className="text-xs text-indigo-200 font-medium">
               Real-time monitoring across Health Vitals, Retail POS, HR Payroll, Family Sub-Accounts & Finance.

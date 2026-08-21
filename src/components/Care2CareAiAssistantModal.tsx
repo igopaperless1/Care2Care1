@@ -67,11 +67,11 @@ interface Care2CareAiAssistantModalProps {
 const DEFAULT_ASSISTANTS: CustomAssistantConfig[] = [
   {
     id: "c2c-master",
-    name: "Care2Care Master AI",
+    name: "Blessikaa Master AI",
     avatar: "🤖",
     role: "Universal Healthcare, Family & Emergency Advisor",
     instructions:
-      "You are the official Care2Care Master AI Assistant. You possess complete knowledge of all Care2Care features (SOS, 40+ Calendars, Family Tree, Pet Care, Vehicle Care, Farm & Garden, Contracts & Deeds, Land & Property, Staff & Payroll, Elderly Senior Care, Kids Pediatric, Inventory, Menstrual Care, Sleep & Soundscapes, Job Career, IGO Paperless). Always prioritize safety and legal compliance.",
+      "You are the official Blessikaa Master AI Assistant. You possess complete knowledge of all Blessikaa features (SOS, 40+ Calendars, Family Tree, Pet Care, Vehicle Care, Farm & Garden, Contracts & Deeds, Land & Property, Staff & Payroll, Elderly Senior Care, Kids Pediatric, Inventory, Menstrual Care, Sleep & Soundscapes, Job Career, IGO Paperless). Always prioritize safety and legal compliance.",
     allowedRules: [
       "Provide step-by-step guidance on setting up SOS emergency dispatch and regional hotlines.",
       "Assist in calculating blood pressure, blood sugar targets, and pediatric growth milestones.",
@@ -153,8 +153,8 @@ export const Care2CareAiAssistantModal: React.FC<Care2CareAiAssistantModalProps>
     {
       id: "msg-1",
       sender: "assistant",
-      assistantName: "Care2Care Master AI",
-      text: "👋 Welcome to Care2Care AI Assistant! How can I assist you today with emergency protection, health vitals, staff payroll, 40+ calendars, or creating custom family assistants?",
+      assistantName: "Blessikaa Master AI",
+      text: "👋 Welcome to Blessikaa AI Assistant! How can I assist you today with emergency protection, health vitals, staff payroll, 40+ calendars, sacred heritage, or creating custom family assistants?",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     }
   ]);
@@ -209,7 +209,7 @@ export const Care2CareAiAssistantModal: React.FC<Care2CareAiAssistantModalProps>
       const queryLower = textToSend.toLowerCase();
 
       if (queryLower.includes("sos") || queryLower.includes("emergency") || queryLower.includes("911") || queryLower.includes("helpline")) {
-        replyText = "🚨 **SOS Emergency Protocol & Geo-Dispatch**:\n• Care2Care automatically maps your live GPS coordinates to country emergency dispatch (US/CA: 911, UK: 999, IN: 100/102, EU: 112, NP: 100/102).\n• Press and hold the 🆘 SOS button for 3 seconds to send live SMS alerts with coordinates to your emergency contacts.";
+        replyText = "🚨 **SOS Emergency Protocol & Geo-Dispatch**:\n• Blessikaa automatically maps your live GPS coordinates to country emergency dispatch (US/CA: 911, UK: 999, IN: 100/102, EU: 112, NP: 100/102).\n• Press and hold the 🆘 SOS button for 3 seconds to send live SMS alerts with coordinates to your emergency contacts.";
       } else if (queryLower.includes("vitals") || queryLower.includes("blood pressure") || queryLower.includes("sugar") || queryLower.includes("vision")) {
         replyText = "🩺 **Health & Vitals Tracking**:\n• You can log Systolic/Diastolic BP (Pre-Meal, Post-Meal, Fasting).\n• Blood Sugar levels (Pre/Post PP) & Vision Diagnostics (OD/OS e.g. 6/6 or 20/20).\n• All vitals generate visual historical trend charts in Elderly & Senior Care!";
       } else if (queryLower.includes("staff") || queryLower.includes("attendance") || queryLower.includes("salary") || queryLower.includes("probation")) {
@@ -221,7 +221,7 @@ export const Care2CareAiAssistantModal: React.FC<Care2CareAiAssistantModalProps>
       } else if (queryLower.includes("sleep") || queryLower.includes("soundscape")) {
         replyText = "🌙 **Sleep & Soundscape Suite**:\n• Log sleep duration, quality rating (1-10), bedtime/wake times, and 10+ questionnaire factors.\n• Listen to soothing soundscapes (Calming Rain, Ocean Waves, Forest Birds) with built-in sleep timer.";
       } else {
-        replyText = `🤖 **${selectedAssistant.name} Response**:\nThank you for reaching out! I have processed your inquiry according to Care2Care compliance guidelines.\n\nKey Recommendations:\n1. Check your corresponding tab in Care2Care for real-time tracking.\n2. Ensure all family sub-accounts (Kids & Seniors) have updated emergency profiles.`;
+        replyText = `🤖 **${selectedAssistant.name} Response**:\nThank you for reaching out! I have processed your inquiry according to Blessikaa compliance guidelines.\n\nKey Recommendations:\n1. Check your corresponding tab in Blessikaa for real-time tracking.\n2. Ensure all family sub-accounts (Kids & Seniors) have updated emergency profiles.`;
       }
 
       const botMsg: ChatMessage = {
@@ -392,7 +392,7 @@ export const Care2CareAiAssistantModal: React.FC<Care2CareAiAssistantModalProps>
                 <div className="flex justify-start">
                   <div className="p-3 bg-white border rounded-2xl rounded-bl-none text-xs text-slate-400 font-bold flex items-center gap-2">
                     <Sparkles className="w-3.5 h-3.5 text-indigo-600 animate-spin" />
-                    Care2Care AI is evaluating rules & generating response...
+                    Blessikaa AI is evaluating rules & generating response...
                   </div>
                 </div>
               )}
@@ -403,7 +403,7 @@ export const Care2CareAiAssistantModal: React.FC<Care2CareAiAssistantModalProps>
             <div className="p-3 bg-white border-t flex items-center gap-2 shrink-0">
               <input
                 type="text"
-                placeholder={`Ask ${selectedAssistant.name} anything about Care2Care...`}
+                placeholder={`Ask ${selectedAssistant.name} anything about Blessikaa...`}
                 value={inputQuery}
                 onChange={(e) => setInputQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}

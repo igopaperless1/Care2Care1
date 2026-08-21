@@ -432,7 +432,7 @@ export const ServiceLibrary: React.FC<ServiceLibraryProps> = ({
         </div>
 
         <p className="text-xs text-slate-600 dark:text-slate-400 font-medium max-w-2xl leading-relaxed">
-          Access every specialized module in Care2Care. Filter by category or search by keywords to jump directly into your tools, health logs, or business dashboards.
+          Access every specialized module in Blessikaa. Filter by category or search by keywords to jump directly into your tools, health logs, or business dashboards.
         </p>
 
         {/* Search Bar */}

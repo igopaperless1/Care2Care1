@@ -96,12 +96,20 @@ export const SplashEntranceAnimation: React.FC<SplashEntranceAnimationProps> = (
       {/* TOP BAR HEADER */}
       <div className="w-full max-w-md mx-auto flex items-center justify-between pt-1 pb-3">
         {/* BRAND LOGO */}
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-black text-sm shadow-md">
-            <Heart className="w-4.5 h-4.5 fill-current" />
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl overflow-hidden shadow-md border border-orange-200 dark:border-orange-500/30 flex items-center justify-center bg-gradient-to-tr from-[#FF6A45] via-[#FB923C] to-[#F59E0B]">
+            <img
+              src="/app-icon.jpg"
+              alt="Blessikaa"
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = "none";
+              }}
+            />
           </div>
           <span className="font-black text-lg text-slate-900 dark:text-white tracking-tight flex items-center gap-1">
-            Care2Care
+            Blessikaa
           </span>
         </div>
 
@@ -260,7 +268,7 @@ export const SplashEntranceAnimation: React.FC<SplashEntranceAnimationProps> = (
                   <div className="w-7 h-7 rounded-xl bg-teal-500 text-white flex items-center justify-center">
                     <Sparkles className="w-4 h-4" />
                   </div>
-                  <span className="text-[9px] font-black text-slate-800 dark:text-slate-200 leading-tight">Care2Care AI</span>
+                  <span className="text-[9px] font-black text-slate-800 dark:text-slate-200 leading-tight">Blessikaa AI</span>
                 </div>
               </div>
 

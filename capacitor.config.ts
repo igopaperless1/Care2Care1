@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'org.care2care.app',
-  appName: 'Care2Care',
+  appId: 'org.blessikaa.app',
+  appName: 'Blessikaa',
   webDir: 'dist',
   server: {
     androidScheme: 'https',
@@ -11,13 +11,13 @@ const config: CapacitorConfig = {
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,
-      backgroundColor: '#047857',
+      backgroundColor: '#FF6A45',
       showSpinner: false,
       androidSplashResourceName: 'splash'
     },
     StatusBar: {
       style: 'DARK',
-      backgroundColor: '#047857'
+      backgroundColor: '#FF6A45'
     },
     Keyboard: {
       resize: 'body',
