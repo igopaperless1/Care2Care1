@@ -2,9 +2,16 @@ import React, { useState } from "react";
 import { AdminLayout, AdminTab, AdminConsoleMode, UserAccount } from "../layouts/AdminLayout";
 import { OverviewPage } from "../pages/admin/Overview";
 import { UsersPage } from "../pages/admin/Users";
+import { UserActivityPage } from "../pages/admin/UserActivityPage";
 import { WorkspacesPage } from "../pages/admin/Workspaces";
 import { PermissionTemplatesPage } from "../pages/admin/PermissionTemplates";
 import { FinancePayoutsPage } from "../pages/admin/FinancePayouts";
+import { InvoicesAndReportsPage } from "../pages/admin/InvoicesAndReportsPage";
+import { PlansAndPricingPage } from "../pages/admin/PlansAndPricingPage";
+import { AllServicesPage } from "../pages/admin/AllServicesPage";
+import { ServiceAnalyticsPage } from "../pages/admin/ServiceAnalyticsPage";
+import { EngagementPage } from "../pages/admin/EngagementPage";
+import { AdminSettingsPage } from "../pages/admin/AdminSettingsPage";
 import { SystemPage, AuditLogEntry } from "../pages/admin/System";
 import { AuditLogsPage } from "../pages/admin/AuditLogs";
 import { SyncLogsPage } from "../pages/admin/SyncLogsPage";
@@ -12,6 +19,7 @@ import { PaymentVerificationTab } from "./admin/PaymentVerificationTab";
 import { PaymentSettingsTab } from "./admin/PaymentSettingsTab";
 import { InternationalBillingTab } from "./admin/InternationalBillingTab";
 import { BillingSettingsTab } from "./admin/BillingSettingsTab";
+import { PaperlessAdminDashboardView } from "./paperless/PaperlessAdminDashboardView";
 
 export type { UserAccount };
 
@@ -19,13 +27,14 @@ interface AdminDashboardProps {
   currentUser: UserAccount;
   onLogout: () => void;
   onCloseAdmin?: () => void;
+  isDarkMode?: boolean;
 }
 
 const DEMO_USERS: UserAccount[] = [
   {
     id: "usr-1",
-    name: "Admin Superuser",
-    email: "admin@care2care.org",
+    name: "John Doe",
+    email: "johndoe@gmail.com",
     role: "admin",
     plan: "Enterprise",
     status: "Active",
@@ -87,7 +96,7 @@ const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
     timestamp: "2026-08-11 06:10",
     adminEmail: "admin@care2care.org",
     action: "SYSTEM_INITIALIZED",
-    details: "Care2Care Enterprise Multi-Tenant Console v3.2 initialized."
+    details: "Care2Care Unified Admin Console v8.5 initialized with full Water Service styling."
   },
   {
     id: "audit-2",
@@ -101,7 +110,8 @@ const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   currentUser,
   onLogout,
-  onCloseAdmin
+  onCloseAdmin,
+  isDarkMode = false
 }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
   const [consoleMode, setConsoleMode] = useState<AdminConsoleMode>("superadmin");
@@ -187,19 +197,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       onConsoleModeChange={setConsoleMode}
       toastMsg={toastMsg}
     >
-      {activeTab === "overview" && (
+      {/* 1. OVERVIEW / DASHBOARD */}
+      {(activeTab === "overview" || activeTab === "dashboard") && (
         <OverviewPage
-          consoleMode={consoleMode}
           onNavigateTab={setActiveTab}
-          totalUsersCount={users.length}
-          totalWorkspacesCount={4}
-          pendingPayoutsCount={2}
-          pendingPayrollCount={12}
-          supabaseConnected={false}
-          paddleConfigured={true}
+          showToast={showToast}
+          users={users}
+          isDarkMode={isDarkMode}
         />
       )}
 
+      {/* 2. USER MANAGEMENT */}
       {activeTab === "users" && (
         <UsersPage
           users={users}
@@ -211,50 +219,117 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         />
       )}
 
+      {/* 3. USER ACTIVITY & TELEMETRY */}
+      {activeTab === "user_activity" && (
+        <UserActivityPage users={users} showToast={showToast} />
+      )}
+
+      {/* 4. SUB-ACCOUNTS & WORKSPACES */}
       {activeTab === "workspaces" && (
         <WorkspacesPage showToast={showToast} />
       )}
 
+      {/* 5. PERMISSION TEMPLATES */}
       {activeTab === "permissions" && (
         <PermissionTemplatesPage showToast={showToast} />
       )}
 
-      {activeTab === "synclogs" && (
-        <SyncLogsPage />
-      )}
-
-      {activeTab === "finance" && (
+      {/* 6. FINANCE & PAYOUTS & TRANSACTIONS */}
+      {(activeTab === "finance" || activeTab === "transactions" || activeTab === "payment_requests") && (
         <FinancePayoutsPage showToast={showToast} />
       )}
 
-      {activeTab === "payment_verification" && (
+      {/* 7. INVOICES & TAX REPORTS */}
+      {activeTab === "invoices_reports" && (
+        <InvoicesAndReportsPage showToast={showToast} />
+      )}
+
+      {/* 8. PLANS & PRICING */}
+      {activeTab === "plans_pricing" && (
+        <PlansAndPricingPage showToast={showToast} />
+      )}
+
+      {/* 9. VERIFICATION QUEUE */}
+      {activeTab === "verification_queue" && (
         <PaymentVerificationTab showToast={showToast} />
       )}
 
+      {/* 10. ALL SERVICES & FEATURE FLAGS */}
+      {activeTab === "services" && (
+        <AllServicesPage showToast={showToast} />
+      )}
+
+      {/* 11. SERVICE ANALYTICS */}
+      {activeTab === "service_analytics" && (
+        <ServiceAnalyticsPage showToast={showToast} />
+      )}
+
+      {/* 12. ENGAGEMENT (NOTIFICATIONS, ANNOUNCEMENTS, TICKETS, FEEDBACK) */}
+      {(activeTab === "notifications" ||
+        activeTab === "announcements" ||
+        activeTab === "support_tickets" ||
+        activeTab === "feedback") && (
+        <EngagementPage
+          initialSubTab={
+            activeTab === "notifications"
+              ? "notifications"
+              : activeTab === "announcements"
+              ? "announcements"
+              : activeTab === "support_tickets"
+              ? "support_tickets"
+              : "feedback"
+          }
+          showToast={showToast}
+        />
+      )}
+
+      {/* 13. ADMIN SETTINGS (PAYMENT, INTERNATIONAL, BILLING TAX, GENERAL) */}
+      {activeTab === "admin_settings" && (
+        <AdminSettingsPage
+          showToast={showToast}
+          onSendGlobalBroadcast={handleSendGlobalBroadcast}
+        />
+      )}
+
+      {/* 14. DEDICATED PAYMENT SETTINGS TAB */}
       {activeTab === "payment_settings" && (
         <PaymentSettingsTab showToast={showToast} />
       )}
 
+      {/* 15. DEDICATED INTERNATIONAL BILLING */}
       {activeTab === "international_billing" && (
         <InternationalBillingTab showToast={showToast} />
       )}
 
+      {/* 16. DEDICATED BILLING TAX SETTINGS */}
       {activeTab === "billing_settings" && (
         <BillingSettingsTab showToast={showToast} />
       )}
 
-      {activeTab === "system" && (
+      {/* 17. SYSTEM & DEVELOPER API */}
+      {(activeTab === "system" || activeTab === "system_health" || activeTab === "developer_api") && (
         <SystemPage
           showToast={showToast}
           onSendGlobalBroadcast={handleSendGlobalBroadcast}
         />
       )}
 
+      {/* 18. AUDIT LOGS */}
       {activeTab === "audit" && (
         <AuditLogsPage
           auditLogs={auditLogs}
           showToast={showToast}
         />
+      )}
+
+      {/* 19. CLOUD SYNC LOGS */}
+      {activeTab === "synclogs" && (
+        <SyncLogsPage />
+      )}
+
+      {/* 20. PAPERLESS OPERATIONS & ASSET SERVICES */}
+      {activeTab === "paperless" && (
+        <PaperlessAdminDashboardView showToast={showToast} />
       )}
     </AdminLayout>
   );

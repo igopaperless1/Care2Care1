@@ -28,21 +28,16 @@ import {
   Globe
 } from "lucide-react";
 
-export interface UserAccount {
-  id: string;
-  name: string;
-  email: string;
-  role: "user" | "admin";
-  plan: "Free" | "Premium" | "Family" | "Enterprise";
-  status: "Active" | "Suspended" | "Banned";
-  createdAt: string;
-  lastLogin: string;
-  businessName?: string;
-  subAccountsCount?: number;
-}
+import {
+  AdminTab,
+  AdminConsoleMode,
+  UserAccount,
+  PaymentRequestItem,
+  ServiceUsageItem,
+  PlatformHealthStats
+} from "../types/adminTypes";
 
-export type AdminTab = "overview" | "users" | "workspaces" | "permissions" | "finance" | "payment_verification" | "payment_settings" | "international_billing" | "billing_settings" | "system" | "audit" | "synclogs";
-export type AdminConsoleMode = "superadmin" | "workspace";
+export type { UserAccount, AdminTab, AdminConsoleMode };
 
 interface AdminLayoutProps {
   currentUser: UserAccount;
@@ -103,6 +98,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     { id: "international_billing", label: "International Billing", icon: Globe, badge: "Khalti/Stripe" },
     { id: "billing_settings", label: "Receipt & Tax Settings", icon: FileText, badge: "IRD Custom" },
     { id: "permissions", label: "Permission Templates", icon: ShieldCheck, badge: "Rules" },
+    { id: "paperless", label: "Paperless Operations", icon: Layers, badge: "Enterprise" },
     { id: "synclogs", label: "Sync Logs", icon: RefreshCw, badge: "Engine" },
     { id: "finance", label: "Finance & Payouts", icon: Wallet, badge: "Wallet" },
     { id: "system", label: "System & Compliance", icon: Settings, badge: "APIs" },
@@ -132,26 +128,24 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             </button>
 
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl overflow-hidden bg-gradient-to-tr from-emerald-600 via-teal-600 to-cyan-500 flex items-center justify-center font-black text-white text-lg shadow-md border border-emerald-400/30">
-                <img
-                  src="/app-icon.jpg"
-                  alt="Blessikaa"
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    (e.target as HTMLElement).style.display = "none";
-                  }}
-                />
-              </div>
+              <img
+                src="/app-icon.jpg"
+                alt="Blessika"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-cover"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-black text-sm tracking-tight text-white">Blessikaa Enterprise</span>
-                  <span className="hidden sm:inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                    Console v3.2
+                  <span className="font-black text-sm tracking-tight text-white">Blessika Enterprise</span>
+                  <span className="hidden sm:inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                    Console
                   </span>
                 </div>
                 <p className="text-[10px] text-slate-400 font-medium hidden sm:block">
-                  Build Blessed Life • Enterprise Console
+                  Build a Blessed Life...! • Admin Console
                 </p>
               </div>
             </div>
@@ -324,7 +318,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               <div className="space-y-6">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                   <div>
-                    <span className="font-black text-sm block">Blessikaa Admin</span>
+                    <span className="font-black text-sm block">Care2Care Admin</span>
                     <span className="text-[10px] text-amber-400 font-mono flex items-center gap-1 mt-0.5">
                       <Clock className="w-3 h-3 animate-pulse text-amber-400" />
                       Auto-closes in 5s inactivity

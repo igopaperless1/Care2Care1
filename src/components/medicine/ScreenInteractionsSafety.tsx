@@ -1,12 +1,11 @@
 import React, { useState } from "react";
 import {
   ShieldAlert,
+  ShieldCheck,
   AlertTriangle,
-  CheckCircle2,
-  Phone,
-  Pill,
-  Sparkles,
   Info,
+  CheckCircle2,
+  Sparkles,
   Search,
   ExternalLink,
   ChevronRight
@@ -16,7 +15,7 @@ import { DrugInteractionModel, MedicineItemModel, MedicineTab } from "./types";
 interface ScreenInteractionsSafetyProps {
   interactions: DrugInteractionModel[];
   medicines: MedicineItemModel[];
-  onNavigate: (tab: MedicineTab) => void;
+  onNavigate: (tab: MedicineTab, params?: any) => void;
 }
 
 export const ScreenInteractionsSafety: React.FC<ScreenInteractionsSafetyProps> = ({
@@ -24,207 +23,168 @@ export const ScreenInteractionsSafety: React.FC<ScreenInteractionsSafetyProps> =
   medicines,
   onNavigate
 }) => {
-  const [selectedDrugA, setSelectedDrugA] = useState<string>(medicines[0]?.name || "Atorvastatin");
-  const [selectedDrugB, setSelectedDrugB] = useState<string>("Clarithromycin 500mg");
-  const [customCheckResult, setCustomCheckResult] = useState<DrugInteractionModel | null>(null);
-  const [isChecking, setIsChecking] = useState<boolean>(false);
+  const [selectedTab, setSelectedTab] = useState<"interactions" | "food_conflicts">("interactions");
 
-  const handleRunCheck = () => {
-    setIsChecking(true);
-    setTimeout(() => {
-      setIsChecking(false);
-      // Check if matches known interaction or safe
-      const found = interactions.find(
-        (i) =>
-          (i.drugA.toLowerCase().includes(selectedDrugA.toLowerCase()) &&
-            i.drugB.toLowerCase().includes(selectedDrugB.toLowerCase())) ||
-          (i.drugB.toLowerCase().includes(selectedDrugA.toLowerCase()) &&
-            i.drugA.toLowerCase().includes(selectedDrugB.toLowerCase()))
-      );
+  const highRiskCount = interactions.filter((i) => i.riskLevel === "High Risk").length;
+  const moderateCount = interactions.filter((i) => i.riskLevel === "Moderate Risk").length;
 
-      if (found) {
-        setCustomCheckResult(found);
-      } else {
-        setCustomCheckResult({
-          id: "custom-res",
-          drugA: selectedDrugA,
-          drugB: selectedDrugB,
-          riskLevel: "Safe",
-          title: `No Major Interaction Found between ${selectedDrugA} & ${selectedDrugB}`,
-          details: "No severe or contraindicated clinical interaction detected in pharmacopeia database. Maintain recommended timing and take with prescribed liquid.",
-          recommendation: "Safe to take as instructed by your medical practitioner."
-        });
-      }
-    }, 600);
-  };
+  const foodConflicts = [
+    {
+      medicine: "Atorvastatin (10mg)",
+      substance: "Grapefruit & Grapefruit Juice",
+      effect: "Inhibits CYP3A4 metabolism, drastically increasing statin plasma levels and risk of muscle toxicity (rhabdomyolysis).",
+      advice: "Avoid grapefruit products completely while on statin therapy.",
+      severity: "High"
+    },
+    {
+      medicine: "Levothyroxine (50mcg)",
+      substance: "Calcium, Iron & Dairy",
+      effect: "Binds to thyroid hormone in the GI tract, severely reducing absorption.",
+      advice: "Take Levothyroxine on empty stomach; separate from dairy/supplements by at least 4 hours.",
+      severity: "High"
+    },
+    {
+      medicine: "Amoxicillin (500mg)",
+      substance: "Acidic juices & Alcohol",
+      effect: "May irritate stomach lining or decrease therapeutic response.",
+      advice: "Take with plain water after light meals.",
+      severity: "Moderate"
+    }
+  ];
 
   return (
-    <div className="max-w-xl mx-auto space-y-4">
-      {/* 1. Header Banner */}
-      <div className="bg-red-50/80 border border-red-200/80 rounded-3xl p-4 sm:p-5 shadow-2xs space-y-2">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-red-500 text-white flex items-center justify-center shadow-xs">
-            <ShieldAlert className="w-4 h-4" />
-          </div>
-          <div>
-            <h3 className="text-sm sm:text-base font-bold text-red-950">
-              Drug Interaction & Safety Cross-Check
-            </h3>
-            <p className="text-xs text-red-700">
-              Automated safety scan across all active prescriptions & food interactions
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Detected Interactions Alerts */}
-      <div className="space-y-3">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 px-1">
-          Identified Clinical Alerts
-        </h4>
-
-        {interactions.map((int) => {
-          const isHigh = int.riskLevel === "High Risk";
-          const isModerate = int.riskLevel === "Moderate Risk";
-
-          return (
-            <div
-              key={int.id}
-              className={`rounded-3xl p-4 sm:p-5 border transition-all shadow-2xs space-y-3 ${
-                isHigh
-                  ? "bg-red-50/70 border-red-200"
-                  : isModerate
-                  ? "bg-amber-50/70 border-amber-200"
-                  : "bg-emerald-50/70 border-emerald-200"
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                    isHigh
-                      ? "bg-red-500 text-white animate-pulse"
-                      : isModerate
-                      ? "bg-amber-500 text-white"
-                      : "bg-emerald-500 text-white"
-                  }`}
-                >
-                  {int.riskLevel}
-                </span>
-
-                <span className="text-xs font-bold text-slate-500">
-                  {int.drugA} + {int.drugB}
-                </span>
-              </div>
-
-              <div>
-                <h4
-                  className={`text-sm sm:text-base font-bold ${
-                    isHigh ? "text-red-950" : isModerate ? "text-amber-950" : "text-emerald-950"
-                  }`}
-                >
-                  {int.title}
-                </h4>
-                <p className="text-xs text-slate-700 mt-1 leading-relaxed">{int.details}</p>
-              </div>
-
-              <div className="p-3 bg-white/80 rounded-2xl border border-orange-100/80 space-y-1">
-                <div className="text-[11px] font-bold text-slate-600 uppercase">Recommended Action:</div>
-                <div className="text-xs text-slate-800 font-medium">{int.recommendation}</div>
-              </div>
-
-              {isHigh && (
-                <div className="pt-1 flex items-center justify-between">
-                  <a
-                    href="tel:+9779801234567"
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-all"
-                  >
-                    <Phone className="w-3.5 h-3.5" />
-                    <span>Call Prescribing Doctor</span>
-                  </a>
-                  <button
-                    onClick={() => alert("Doctor query message drafted and sent to clinic portal.")}
-                    className="text-xs font-bold text-red-700 hover:underline"
-                  >
-                    Message Clinic
-                  </button>
-                </div>
-              )}
+    <div className="space-y-4 pb-20">
+      {/* 1. Header Overview Card */}
+      <div className="bg-white rounded-2xl p-5 border border-[#D1D5DB]/80 shadow-[0px_2px_8px_rgba(108,60,225,0.06)] space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-[#F3F0FF] text-[#6C3CE1] flex items-center justify-center font-black">
+              <ShieldCheck className="w-6 h-6" />
             </div>
-          );
-        })}
+            <div>
+              <h3 className="text-base font-black text-[#1A1A1A]">
+                FDA Drug Safety & Interactions
+              </h3>
+              <p className="text-xs text-[#4A4A4A]">
+                Analyzing your {medicines.length} active prescriptions
+              </p>
+            </div>
+          </div>
+          <span className="px-3 py-1 rounded-full bg-[#F3F0FF] text-[#6C3CE1] text-xs font-black">
+            AI Monitored
+          </span>
+        </div>
+
+        {/* Risk Breakdown Chips */}
+        <div className="grid grid-cols-2 gap-2.5 pt-1">
+          <div className="p-3 rounded-xl bg-red-50 border border-red-200 flex items-center justify-between">
+            <span className="text-xs font-bold text-red-900">High Risk Alerts</span>
+            <span className="text-sm font-black text-[#E74C3C]">{highRiskCount}</span>
+          </div>
+          <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between">
+            <span className="text-xs font-bold text-amber-900">Moderate Alerts</span>
+            <span className="text-sm font-black text-[#F39C12]">{moderateCount}</span>
+          </div>
+        </div>
       </div>
 
-      {/* 3. Interactive Multi-Drug Cross-Checker */}
-      <div className="bg-white rounded-3xl p-4 sm:p-6 border border-orange-100/90 shadow-2xs space-y-3.5">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-[#FF5A36]" />
-          <h4 className="text-sm font-bold text-slate-900">Check New Medicine or Food Item</h4>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Medication 1</label>
-            <select
-              value={selectedDrugA}
-              onChange={(e) => setSelectedDrugA(e.target.value)}
-              className="w-full px-3 py-2 bg-orange-50/40 border border-orange-200/80 rounded-2xl text-xs font-bold text-slate-900 focus:outline-none"
-            >
-              {medicines.map((m) => (
-                <option key={m.id} value={m.name}>
-                  {m.name} ({m.strength})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
-              Medication 2 / Food / Substance
-            </label>
-            <input
-              type="text"
-              value={selectedDrugB}
-              onChange={(e) => setSelectedDrugB(e.target.value)}
-              placeholder="e.g. Clarithromycin, Grapefruit, Alcohol"
-              className="w-full px-3.5 py-2 bg-orange-50/40 border border-orange-200/80 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none"
-            />
-          </div>
-        </div>
-
+      {/* 2. Switcher Tabs */}
+      <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={handleRunCheck}
-          disabled={isChecking}
-          className="w-full py-2.5 bg-[#FF5A36] hover:bg-[#E04826] text-white font-bold text-xs rounded-2xl shadow-sm shadow-orange-500/25 flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+          onClick={() => setSelectedTab("interactions")}
+          className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer text-center ${
+            selectedTab === "interactions"
+              ? "bg-[#6C3CE1] text-white shadow-xs"
+              : "bg-white text-[#4A4A4A] border border-[#D1D5DB] hover:bg-[#F3F0FF]"
+          }`}
         >
-          {isChecking ? "Checking Pharmacopeia Database..." : "Run Safety Cross-Check"}
+          Drug-to-Drug Interactions ({interactions.length})
         </button>
-
-        {customCheckResult && (
-          <div
-            className={`p-3.5 rounded-2xl border ${
-              customCheckResult.riskLevel === "High Risk"
-                ? "bg-red-50 border-red-200 text-red-950"
-                : customCheckResult.riskLevel === "Moderate Risk"
-                ? "bg-amber-50 border-amber-200 text-amber-950"
-                : "bg-emerald-50 border-emerald-200 text-emerald-950"
-            } space-y-1.5`}
-          >
-            <div className="flex items-center gap-1.5">
-              {customCheckResult.riskLevel === "Safe" ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              ) : (
-                <AlertTriangle className="w-4 h-4 text-red-600" />
-              )}
-              <span className="text-xs font-bold">{customCheckResult.title}</span>
-            </div>
-            <p className="text-xs text-slate-700">{customCheckResult.details}</p>
-            <p className="text-[11px] font-semibold text-slate-600 italic">
-              {customCheckResult.recommendation}
-            </p>
-          </div>
-        )}
+        <button
+          type="button"
+          onClick={() => setSelectedTab("food_conflicts")}
+          className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer text-center ${
+            selectedTab === "food_conflicts"
+              ? "bg-[#6C3CE1] text-white shadow-xs"
+              : "bg-white text-[#4A4A4A] border border-[#D1D5DB] hover:bg-[#F3F0FF]"
+          }`}
+        >
+          Food & Beverage Conflicts ({foodConflicts.length})
+        </button>
       </div>
+
+      {/* 3. Drug-to-Drug Interactions */}
+      {selectedTab === "interactions" && (
+        <div className="space-y-3">
+          {interactions.map((item) => {
+            const isHigh = item.riskLevel === "High Risk";
+            return (
+              <div
+                key={item.id}
+                className="bg-white rounded-2xl p-4 sm:p-5 border border-[#D1D5DB]/80 shadow-[0px_2px_8px_rgba(108,60,225,0.06)] space-y-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <span
+                      className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${
+                        isHigh
+                          ? "bg-red-100 text-[#E74C3C]"
+                          : "bg-amber-100 text-[#F39C12]"
+                      }`}
+                    >
+                      {item.riskLevel}
+                    </span>
+                    <h4 className="text-sm sm:text-base font-black text-[#1A1A1A] mt-1">
+                      {item.drugA} + {item.drugB}
+                    </h4>
+                  </div>
+                </div>
+
+                <p className="text-xs text-[#4A4A4A] leading-relaxed">
+                  {item.description}
+                </p>
+
+                <div className="p-3 bg-[#F3F0FF] rounded-xl border border-[#8B6CE6]/30 flex items-start gap-2">
+                  <Info className="w-4 h-4 text-[#6C3CE1] shrink-0 mt-0.5" />
+                  <p className="text-xs font-semibold text-[#4A1FAD]">
+                    <strong>Action Required:</strong> {item.actionRequired}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 4. Food Conflicts */}
+      {selectedTab === "food_conflicts" && (
+        <div className="space-y-3">
+          {foodConflicts.map((fc, idx) => (
+            <div
+              key={idx}
+              className="bg-white rounded-2xl p-4 sm:p-5 border border-[#D1D5DB]/80 shadow-[0px_2px_8px_rgba(108,60,225,0.06)] space-y-3"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-sm sm:text-base font-black text-[#1A1A1A]">
+                  {fc.medicine} ✕ {fc.substance}
+                </h4>
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-red-100 text-[#E74C3C] uppercase">
+                  {fc.severity} Conflict
+                </span>
+              </div>
+              <p className="text-xs text-[#4A4A4A] leading-relaxed">
+                {fc.effect}
+              </p>
+              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
+                <p className="text-xs font-bold text-amber-900">
+                  💡 <strong>Advice:</strong> {fc.advice}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

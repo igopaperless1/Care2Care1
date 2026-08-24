@@ -66,7 +66,7 @@ export class HybridStorageService {
       autoBackup: true,
       autoBackupNetwork: "wifi",
       autoBackupFrequency: "daily",
-      cloudFolderName: "Blessikaa Backup",
+      cloudFolderName: "Care2Care Backup",
       maxLocalStorage: 1024, // 1 GB
       maxCloudStorage: 5120, // 5 GB
       compressImages: true,

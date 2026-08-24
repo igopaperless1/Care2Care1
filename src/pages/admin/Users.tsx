@@ -81,7 +81,7 @@ export const UsersPage: React.FC<UsersPageProps> = ({
 
   const handleConfirmNotify = () => {
     if (!selectedUserForNotify || !notifyMsg.trim()) return;
-    onSendUserNotification(selectedUserForNotify.id, notifyTitle || "Notice from Blessikaa Admin", notifyMsg);
+    onSendUserNotification(selectedUserForNotify.id, notifyTitle || "Notice from System Admin", notifyMsg);
     showToast(`Notification sent to ${selectedUserForNotify.name}!`);
     setSelectedUserForNotify(null);
     setNotifyTitle("");

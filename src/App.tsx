@@ -55,6 +55,7 @@ import { MenstrualCycleTracker } from "./components/MenstrualCycleTracker";
 import { CustomStoreService } from "./components/CustomStoreService";
 import { GardenFarmTracker } from "./components/GardenFarmTracker";
 import { FarmGardenService } from "./components/garden/FarmGardenService";
+import { BillingInvoiceService } from "./components/billing/BillingInvoiceService";
 import { TrackProgressView } from "./components/TrackProgressView";
 import { CaregiverDashboard } from "./components/CaregiverDashboard";
 import { PlanAndScheduleView } from "./components/PlanAndScheduleView";
@@ -78,6 +79,8 @@ import { PasswordManagementTracker } from "./components/PasswordManagementTracke
 import { generatePatientPDFReport } from "./lib/pdfReportGenerator";
 import { AdminDashboard, UserAccount } from "./components/AdminDashboard";
 import { AuthModalAndWelcome } from "./components/AuthModalAndWelcome";
+import { CommunityFeedMessageView } from "./components/CommunityFeedMessageView";
+import { InsightsHubView } from "./components/InsightsHubView";
 import { UserProfileManagerModal } from "./components/UserProfileManagerModal";
 import { UserReceiptVaultModal } from "./components/UserReceiptVaultModal";
 import { SplashEntranceAnimation } from "./components/SplashEntranceAnimation";
@@ -217,7 +220,7 @@ export default function App() {
 
   const [showInterstitialAd, setShowInterstitialAd] = useState<boolean>(false);
 
-  const [activeTab, setActiveTab] = useState<NavTab>("home");
+  const [activeTab, setActiveTab] = useState<NavTab>("services");
   // Independent active subTab preferences stored in localStorage
   const [personalCareSubTab, setPersonalCareSubTab] = useState<string>(() => {
     try {
@@ -260,6 +263,8 @@ export default function App() {
     | "property"
     | "pets"
     | "nutrition"
+    | "billing"
+    | "invoices"
     | "finance"
     | "garden"
     | "jobs"
@@ -669,7 +674,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `blessikaa_encrypted_backup_${Date.now()}.json`;
+    a.download = `care2care_encrypted_backup_${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -698,7 +703,7 @@ export default function App() {
           <div className="w-16 h-16 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 animate-spin" />
           <div className="absolute text-2xl font-black text-emerald-400">🛡️</div>
         </div>
-        <h2 className="text-xl font-black text-white tracking-tight">Blessikaa Security & Auth Guard</h2>
+        <h2 className="text-xl font-black text-white tracking-tight">Care2Care Security & Auth Guard</h2>
         <p className="text-xs text-slate-400 mt-2 max-w-sm font-medium">
           Verifying Supabase authentication session & role permissions...
         </p>
@@ -749,7 +754,7 @@ export default function App() {
       )}
 
       {/* Main Container */}
-      <main className="max-w-4xl mx-auto px-4 pt-4 pb-24">
+      <main className={isAdminViewActive ? "w-full max-w-7xl mx-auto px-3 sm:px-6 pt-3 pb-24" : "max-w-4xl mx-auto px-4 pt-4 pb-24"}>
         {/* Inactivity Auto-Logout Alert Banner */}
         {isInactiveLoggedOut && (
           <div className="mb-6 bg-rose-50 border border-rose-200 text-rose-900 rounded-3xl p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -820,10 +825,11 @@ export default function App() {
                 setIsAdminViewActive(false);
               }}
               onCloseAdmin={() => setIsAdminViewActive(false)}
+              isDarkMode={isDarkMode}
             />
           ) : (
             <>
-              {activeTab === "home" && (
+              {(activeTab === "services" || activeTab === "home") && (
                 <HomeView
                   appState={appState}
                   onUpdateAppState={setAppState}
@@ -838,7 +844,7 @@ export default function App() {
                   onNavigateToCareSubTab={(sub) => {
                     handleNavigateTo("care", sub);
                   }}
-                  onNavigateToServicesLibrary={() => handleNavigateTo("services")}
+                  onNavigateToServicesLibrary={() => handleNavigateTo("library")}
                   onNavigateToChallenges={() => {
                     handleNavigateTo("care", "habit_challenges");
                   }}
@@ -856,6 +862,24 @@ export default function App() {
                     setIsUserProfileModalOpen(true);
                   }}
                   isAiToolsExpanded={isAiToolsExpanded}
+                />
+              )}
+
+              {activeTab === "community" && (
+                <CommunityFeedMessageView
+                  patient={selectedPatient}
+                  onNavigateToCareSubTab={(sub) => {
+                    handleNavigateTo("care", sub);
+                  }}
+                />
+              )}
+
+              {activeTab === "insight" && (
+                <InsightsHubView
+                  patient={selectedPatient}
+                  onNavigateToCareSubTab={(sub) => {
+                    handleNavigateTo("care", sub);
+                  }}
                 />
               )}
 
@@ -1066,6 +1090,11 @@ export default function App() {
                             </FeatureGuard>
                           )}
                           {careSubTab === "nutrition" && <NutritionTracker patient={selectedPatient} />}
+                          {careSubTab === "billing" && (
+                            <FeatureGuard featureId="billing_invoices" featureName="Billing & Invoice Suite">
+                              <BillingInvoiceService onBack={handleGoBack} />
+                            </FeatureGuard>
+                          )}
                           {careSubTab === "finance" && (
                             <FeatureGuard featureId="finance_budget" featureName="Finance & Cash Flow">
                               <FinanceBudgetTracker patient={selectedPatient} />
@@ -1134,11 +1163,42 @@ export default function App() {
                 />
               )}
 
-              {activeTab === "services" && (
+              {activeTab === "library" && (
                 <ServiceLibrary
-                  onBackToHome={handleGoBack}
-                  onSelectService={(subTab) => {
-                    handleNavigateTo("care", subTab);
+                  onBackToHome={() => handleNavigateTo("home")}
+                  onSelectService={(subTabTarget) => {
+                    if (subTabTarget === "track") {
+                      handleNavigateTo("track");
+                    } else if (subTabTarget === "plan") {
+                      handleNavigateTo("plan");
+                    } else if (subTabTarget === "community") {
+                      handleNavigateTo("community");
+                    } else if (subTabTarget === "insight") {
+                      handleNavigateTo("insight");
+                    } else if (
+                      subTabTarget === "more" ||
+                      subTabTarget === "tools" ||
+                      subTabTarget === "credit_ledger"
+                    ) {
+                      handleNavigateTo("more");
+                    } else if (subTabTarget === "camera" || subTabTarget === "qr_scanner") {
+                      setIsCameraOpen(true);
+                    } else if (subTabTarget === "ai_assistant") {
+                      setIsAiAssistantOpen(true);
+                    } else if (subTabTarget === "sos_modal") {
+                      setIsSosOpen(true);
+                    } else if (
+                      subTabTarget === "visiting_cards" ||
+                      subTabTarget === "tickets" ||
+                      subTabTarget === "certificates" ||
+                      subTabTarget === "coupons" ||
+                      subTabTarget === "qr_generator" ||
+                      subTabTarget === "signatures"
+                    ) {
+                      handleNavigateTo("care", "paperless");
+                    } else {
+                      handleNavigateTo("care", subTabTarget as any);
+                    }
                   }}
                 />
               )}

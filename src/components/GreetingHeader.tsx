@@ -131,7 +131,7 @@ export const GreetingHeader: React.FC<GreetingHeaderProps> = ({
       }
       return { text: t("greeting.night", "Good Night 🌙"), subText: t("greeting.night_sub", "Rest well • Emergency SOS active 24/7") };
     } catch {
-      return { text: t("greeting.welcome", "Welcome to Blessikaa 💚"), subText: t("greeting.welcome_sub", "Build Blessed Life • Heritage, health & care") };
+      return { text: t("greeting.welcome", "Welcome to Blessika 💚"), subText: t("greeting.welcome_sub", "Build a Blessed Life...! • Heritage, health & care") };
     }
   };
 
@@ -379,7 +379,7 @@ export const GreetingHeader: React.FC<GreetingHeaderProps> = ({
               className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer"
             >
               <Bot className="w-3.5 h-3.5 text-emerald-400" />
-              <span>{t("buttons.ai_assistant", "Blessikaa AI")}</span>
+              <span>{t("buttons.ai_assistant", "Care2Care AI")}</span>
             </button>
           )}
         </div>

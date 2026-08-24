@@ -32,8 +32,8 @@ export const QuickAddFloatingButton: React.FC<QuickAddFloatingButtonProps> = ({
 
   return (
     <>
-      {/* Floating Action Button (FAB) Sticky Bottom-Right - Positioned ABOVE AI & Tools pill */}
-      <div className="fixed bottom-36 right-4 sm:right-8 z-40 flex flex-col items-end gap-2 group">
+      {/* Floating Action Button (FAB) Sticky Bottom-Right - Positioned ABOVE Settings & AI tools */}
+      <div className="fixed bottom-52 sm:bottom-54 right-4 sm:right-6 z-40 flex flex-col items-end gap-2 group">
         {/* Pending Review Queue Badge Alert */}
         {pendingDraftCount > 0 && (
           <button

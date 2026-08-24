@@ -644,7 +644,7 @@ export const CreateChallenge: React.FC<CreateChallengeProps> = ({ onBack, onCrea
                 When are you most likely to experience urges or friction?
               </h3>
               <p className="text-[11px] text-slate-500 font-medium">
-                Blessikaa will calibrate your daily prompts around these key trigger windows.
+                The tracker will calibrate your daily prompts around these key trigger windows.
               </p>
             </div>
 

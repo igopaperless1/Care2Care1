@@ -1,132 +1,149 @@
-import React from "react";
+import React, { useState } from "react";
 import {
-  CalendarCheck,
+  Calendar as CalendarIcon,
   Flame,
   Award,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
   TrendingUp,
-  Download,
-  Share2
+  CheckCircle2,
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { MedicineTab } from "./types";
 
 interface ScreenAdherenceCalendarProps {
-  onNavigate: (tab: MedicineTab) => void;
+  onNavigate: (tab: MedicineTab, params?: any) => void;
 }
 
-export const ScreenAdherenceCalendar: React.FC<ScreenAdherenceCalendarProps> = ({ onNavigate }) => {
-  // Generate 21 days data
-  const calendarDays = Array.from({ length: 21 }, (_, i) => {
+export const ScreenAdherenceCalendar: React.FC<ScreenAdherenceCalendarProps> = ({
+  onNavigate
+}) => {
+  const currentStreak = 14;
+  const bestStreak = 21;
+  const totalDaysTracked = 30;
+
+  // Generate 21 days for the 3-week challenge heatmap
+  const days = Array.from({ length: 21 }, (_, i) => {
     const dayNum = i + 1;
     let status: "full" | "partial" | "missed" | "future" = "full";
-    if (dayNum === 4 || dayNum === 11) status = "partial";
-    if (dayNum === 8) status = "missed";
-    if (dayNum > 15) status = "future";
+    if (dayNum > 14) status = "future";
+    else if (dayNum === 7 || dayNum === 12) status = "partial";
+    else if (dayNum === 4) status = "missed";
 
     return {
-      dayNum,
-      dateStr: `May ${dayNum}`,
+      day: dayNum,
       status,
-      takenRatio: status === "full" ? "3/3" : status === "partial" ? "2/3" : status === "missed" ? "0/3" : "-/-"
+      takenPct: status === "full" ? 100 : status === "partial" ? 66 : status === "missed" ? 0 : null
     };
   });
 
   return (
-    <div className="max-w-xl mx-auto space-y-4">
-      {/* 1. Header Streak & Trophy Card */}
-      <div className="bg-gradient-to-r from-orange-500 to-[#FF5A36] text-white rounded-3xl p-5 shadow-sm shadow-orange-500/25 relative overflow-hidden">
-        <div className="flex items-center justify-between relative z-10">
-          <div>
-            <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/20 text-white text-[11px] font-bold uppercase tracking-wider mb-1">
-              <Flame className="w-3.5 h-3.5 text-amber-300 fill-amber-300" /> Active Streak
-            </div>
-            <h3 className="text-2xl font-black">14 Consecutive Days!</h3>
-            <p className="text-xs text-orange-100 mt-0.5">
-              You are in the top 5% of consistent medication adherence.
-            </p>
-          </div>
-
-          <div className="w-14 h-14 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center text-amber-300 shadow-xs">
-            <Award className="w-8 h-8" />
-          </div>
-        </div>
-      </div>
-
-      {/* 2. 21-Day Matrix Grid */}
-      <div className="bg-white rounded-3xl p-4 sm:p-6 border border-orange-100/90 shadow-2xs space-y-4">
+    <div className="space-y-4 pb-20">
+      {/* 1. Streak Hero Card */}
+      <div className="bg-gradient-to-br from-[#6C3CE1] to-[#4A1FAD] text-white rounded-2xl p-5 shadow-md shadow-purple-950/20 space-y-4">
         <div className="flex items-center justify-between">
-          <div>
-            <h4 className="text-sm sm:text-base font-bold text-slate-900">21-Day Habit Formation Cycle</h4>
-            <p className="text-xs text-slate-500">Target: Build automatic daily medication adherence</p>
+          <div className="flex items-center gap-2">
+            <span className="p-2 rounded-xl bg-white/15 text-amber-300">
+              <Flame className="w-6 h-6 fill-amber-300" />
+            </span>
+            <div>
+              <span className="text-xs font-bold text-white/80 uppercase tracking-wider block">
+                Active Adherence Streak
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black text-white">
+                {currentStreak} Days Strong!
+              </h2>
+            </div>
           </div>
-          <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-            92% Compliance
+          <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-black">
+            Goal: 21 Days
           </span>
         </div>
 
-        {/* 7 columns x 3 rows grid */}
-        <div className="grid grid-cols-7 gap-2">
-          {calendarDays.map((d) => (
+        {/* Challenge Progress */}
+        <div className="space-y-1.5 pt-1">
+          <div className="flex justify-between text-xs text-white/90 font-bold">
+            <span>21-Day Habit Formation Challenge</span>
+            <span>{Math.round((currentStreak / 21) * 100)}%</span>
+          </div>
+          <div className="w-full h-3 bg-white/20 rounded-full overflow-hidden">
             <div
-              key={d.dayNum}
-              className={`p-2 rounded-2xl border text-center flex flex-col items-center justify-center transition-all ${
-                d.status === "full"
-                  ? "bg-emerald-50 border-emerald-300 text-emerald-950 font-bold"
-                  : d.status === "partial"
-                  ? "bg-amber-50 border-amber-300 text-amber-950 font-bold"
-                  : d.status === "missed"
-                  ? "bg-red-50 border-red-300 text-red-950 font-bold"
-                  : "bg-slate-50 border-slate-200 text-slate-400"
-              }`}
-            >
-              <span className="text-xs font-black">Day {d.dayNum}</span>
-              <div className="my-1">
-                {d.status === "full" && <div className="w-3 h-3 rounded-full bg-emerald-500 mx-auto" />}
-                {d.status === "partial" && <div className="w-3 h-3 rounded-full bg-amber-500 mx-auto" />}
-                {d.status === "missed" && <div className="w-3 h-3 rounded-full bg-red-500 mx-auto" />}
-                {d.status === "future" && <div className="w-3 h-3 rounded-full bg-slate-300 mx-auto" />}
-              </div>
-              <span className="text-[9px] font-bold opacity-80">{d.takenRatio}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Legend */}
-        <div className="flex items-center justify-center gap-4 text-xs font-bold text-slate-600 pt-2 border-t border-orange-100 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-emerald-500" />
-            <span>100% Taken</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-amber-500" />
-            <span>Partial / Snoozed</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-red-500" />
-            <span>Missed</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-slate-300" />
-            <span>Upcoming</span>
+              className="h-full bg-amber-400 rounded-full transition-all"
+              style={{ width: `${(currentStreak / 21) * 100}%` }}
+            />
           </div>
         </div>
       </div>
 
-      {/* 3. Breakdown Metrics */}
-      <div className="grid grid-cols-3 gap-2.5">
-        <div className="bg-white p-3 rounded-2xl border border-orange-100/90 text-center shadow-2xs">
-          <div className="text-xs font-bold text-slate-500">Scheduled</div>
-          <div className="text-xl font-black text-slate-900 mt-0.5">63 Doses</div>
+      {/* 2. 21-Day Heatmap Grid */}
+      <div className="bg-white rounded-2xl p-5 border border-[#D1D5DB]/80 shadow-[0px_2px_8px_rgba(108,60,225,0.06)] space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-black text-[#1A1A1A]">
+            📅 21-Day Habit Heatmap
+          </h3>
+          <div className="flex items-center gap-3 text-[11px] font-bold text-[#8A8A8A]">
+            <span className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#2ECC71]" /> 100% Taken
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#F39C12]" /> Partial
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#E74C3C]" /> Missed
+            </span>
+          </div>
         </div>
-        <div className="bg-white p-3 rounded-2xl border border-orange-100/90 text-center shadow-2xs">
-          <div className="text-xs font-bold text-slate-500">Taken on Time</div>
-          <div className="text-xl font-black text-emerald-600 mt-0.5">58 Doses</div>
+
+        {/* 3 weeks x 7 days grid */}
+        <div className="grid grid-cols-7 gap-2">
+          {["M", "T", "W", "T", "F", "S", "S"].map((w, idx) => (
+            <div key={idx} className="text-center text-[10px] font-black text-[#8A8A8A] pb-1">
+              {w}
+            </div>
+          ))}
+
+          {days.map((d) => {
+            let bgClass = "bg-[#F5F5F5] text-[#8A8A8A]";
+            if (d.status === "full") bgClass = "bg-[#2ECC71] text-white shadow-2xs";
+            else if (d.status === "partial") bgClass = "bg-[#F39C12] text-white";
+            else if (d.status === "missed") bgClass = "bg-[#E74C3C] text-white";
+
+            return (
+              <div
+                key={d.day}
+                className={`h-11 rounded-xl flex flex-col items-center justify-center font-black text-xs transition-all ${bgClass}`}
+              >
+                <span>Day {d.day}</span>
+                {d.status !== "future" && (
+                  <span className="text-[9px] font-bold opacity-90">
+                    {d.takenPct}%
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
-        <div className="bg-white p-3 rounded-2xl border border-orange-100/90 text-center shadow-2xs">
-          <div className="text-xs font-bold text-slate-500">Missed / Late</div>
-          <div className="text-xl font-black text-amber-600 mt-0.5">5 Doses</div>
+      </div>
+
+      {/* 3. Consistency Metrics */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-white p-3.5 rounded-2xl border border-[#D1D5DB]/80 shadow-2xs text-center">
+          <span className="text-[10px] font-bold text-[#8A8A8A] uppercase block">
+            Overall Rate
+          </span>
+          <span className="text-xl font-black text-[#6C3CE1]">94%</span>
+        </div>
+        <div className="bg-white p-3.5 rounded-2xl border border-[#D1D5DB]/80 shadow-2xs text-center">
+          <span className="text-[10px] font-bold text-[#8A8A8A] uppercase block">
+            Best Streak
+          </span>
+          <span className="text-xl font-black text-[#2ECC71]">21 Days</span>
+        </div>
+        <div className="bg-white p-3.5 rounded-2xl border border-[#D1D5DB]/80 shadow-2xs text-center">
+          <span className="text-[10px] font-bold text-[#8A8A8A] uppercase block">
+            Missed Doses
+          </span>
+          <span className="text-xl font-black text-[#E74C3C]">1</span>
         </div>
       </div>
     </div>

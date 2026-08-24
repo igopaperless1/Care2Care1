@@ -94,42 +94,36 @@ export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
       <div className="max-w-5xl mx-auto flex items-center justify-between gap-2">
         {/* Logo & App Title */}
         <div className="flex items-center gap-2.5">
-          {/* App Icon Button */}
+          {/* App Icon Button - Clean, visible-sized, no shadow, no background wrapper */}
           <button
             type="button"
             onClick={onOpenSplashAnimation}
-            className="relative group cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-400 rounded-2xl p-0.5 transition-transform hover:scale-105 active:scale-95 shrink-0"
-            title="Blessikaa – Build Blessed Life"
-            aria-label="Blessikaa Home"
+            className="relative cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-400 rounded-2xl transition-transform hover:scale-105 active:scale-95 shrink-0"
+            title="Blessika – Build a Blessed Life...!"
+            aria-label="Blessika Home"
           >
-            <div className="w-10 h-10 rounded-2xl overflow-hidden shadow-md border border-orange-200/60 dark:border-orange-500/30 flex items-center justify-center bg-gradient-to-tr from-[#FF6A45] via-[#FB923C] to-[#F59E0B]">
-              <img
-                src="/app-icon.jpg"
-                alt="Blessikaa"
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                referrerPolicy="no-referrer"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = "none";
-                }}
-              />
-            </div>
-            <Sparkles className="w-3.5 h-3.5 text-amber-300 absolute -top-1 -right-1 drop-shadow" />
+            <img
+              src="/app-icon.jpg"
+              alt="Blessika Logo"
+              className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl object-cover"
+              referrerPolicy="no-referrer"
+            />
           </button>
 
           {/* App Title & Tagline */}
           <button
             type="button"
             onClick={onOpenSplashAnimation}
-            className="text-left group cursor-pointer focus:outline-none"
-            title="Blessikaa – Build Blessed Life"
+            className="text-left cursor-pointer focus:outline-none"
+            title="Blessika – Build a Blessed Life...!"
           >
             <div className="flex items-center gap-1.5">
-              <span className={`font-black text-base tracking-tight group-hover:text-[#FF6A45] transition-colors ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                Blessikaa
+              <span className={`font-black text-lg tracking-tight hover:text-[#FF5A36] transition-colors ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                Blessika
               </span>
             </div>
-            <p className={`hidden sm:block text-[10px] font-bold tracking-tight ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-              Build Blessed Life
+            <p className={`text-[11px] sm:text-xs font-semibold tracking-tight ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+              Build a Blessed Life...!
             </p>
           </button>
         </div>

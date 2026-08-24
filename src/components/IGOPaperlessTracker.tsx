@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import html2canvas from "html2canvas";
 import { ProfessionalQrRenderer, QrStylePattern, QrErrorCorrectionLevel } from "./ProfessionalQrRenderer";
+import { PaperlessCardHub } from "./paperless/PaperlessCardHub";
+import { PaperlessAsset } from "./paperless/paperlessTypes";
+import { INITIAL_PAPERLESS_ASSETS } from "./paperless/paperlessCategoriesData";
+import { BillingInvoiceService } from "./billing/BillingInvoiceService";
 import {
   FileText,
   QrCode,
@@ -56,7 +60,8 @@ import {
   Image,
   Smartphone,
   Tablet,
-  Monitor
+  Monitor,
+  Receipt
 } from "lucide-react";
 import { Patient } from "../types";
 import { ContractManagementTracker } from "./ContractManagementTracker";
@@ -226,6 +231,7 @@ export const IGOPaperlessTracker: React.FC<IGOPaperlessTrackerProps> = ({ patien
   // Navigation Tabs
   const [activeTab, setActiveTab] = useState<
     | "dashboard"
+    | "invoices_billing"
     | "visiting_cards"
     | "id_cards"
     | "certificates"
@@ -249,6 +255,21 @@ export const IGOPaperlessTracker: React.FC<IGOPaperlessTrackerProps> = ({ patien
     setToastMsg(msg);
     setTimeout(() => setToastMsg(null), 3000);
   };
+
+  // REDESIGNED PAPERLESS ASSETS & CARD HUB STATE
+  const [paperlessAssets, setPaperlessAssets] = useState<PaperlessAsset[]>(() => {
+    const saved = localStorage.getItem("care2care_paperless_assets");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return INITIAL_PAPERLESS_ASSETS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("care2care_paperless_assets", JSON.stringify(paperlessAssets));
+  }, [paperlessAssets]);
 
   // 1. VISITING CARDS STATE
   const [cards, setCards] = useState<VirtualCard[]>(() => {
@@ -1771,24 +1792,24 @@ QR Verification Code: ${tkt.qrCodeData}`;
         </div>
       )}
 
-      {/* HEADER HERO BANNER & SUB-NAV */}
-      <div className="bg-white p-4 sm:p-5 rounded-3xl text-slate-900 shadow-sm border border-[#2E7D32]/20 space-y-3">
+      {/* HEADER HERO BANNER & SCROLLABLE SUB-NAV */}
+      <div className="bg-white dark:bg-[#131d38] p-4 sm:p-5 rounded-3xl text-slate-900 dark:text-white shadow-xs border border-slate-200/90 dark:border-slate-800 space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#2E7D32] flex items-center justify-center text-white font-black text-xl shadow-md">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-orange-500 to-[#FF5A36] flex items-center justify-center text-white font-black text-xl shadow-md shrink-0">
               📄
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-black tracking-tight text-slate-900">
+                <h1 className="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white">
                   IGOPaperless Studio
                 </h1>
-                <span className="text-[10px] font-black tracking-wider uppercase bg-emerald-100 text-[#2E7D32] px-2.5 py-0.5 rounded-full">
+                <span className="text-[10px] font-black tracking-wider uppercase bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300 px-2.5 py-0.5 rounded-full border border-orange-200/60 dark:border-orange-800/40">
                   Care2Care Suite
                 </span>
               </div>
-              <p className="text-[10px] text-slate-500 font-bold">
-                Replace paper with digital cards, ID passes, certificates, contracts, QR tools & e-signatures.
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                12 Categories & Sub-Services • Digital Visiting Cards • Passes • Smart OCR & Verification
               </p>
             </div>
           </div>
@@ -1796,184 +1817,66 @@ QR Verification Code: ${tkt.qrCodeData}`;
           <div className="flex items-center gap-2">
             <button
               onClick={() => setActiveTab("qr_scanner")}
-              className="px-3.5 py-2 bg-[#2E7D32] hover:bg-[#1b5e20] text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-all"
+              className="px-4 py-2 bg-gradient-to-r from-orange-500 to-[#FF5A36] hover:opacity-95 text-white font-extrabold text-xs rounded-2xl shadow-md flex items-center gap-1.5 cursor-pointer transition-all shrink-0"
             >
-              <Scan className="w-4 h-4" /> Scan QR Code
+              <Scan className="w-4 h-4" /> Scan QR / Doc
             </button>
           </div>
         </div>
 
-        {/* HORIZONTAL SUB-NAV BAR */}
-        <div className="flex bg-slate-100 p-1 rounded-2xl overflow-x-auto scrollbar-none text-xs font-bold gap-1">
+        {/* HORIZONTAL SCROLLABLE SUB-NAV BAR */}
+        <div className="flex bg-slate-100 dark:bg-slate-900/60 p-1.5 rounded-2xl overflow-x-auto scrollbar-none text-xs font-bold gap-1">
           {[
-            { id: "dashboard", label: "Dashboard", icon: <FileText className="w-3.5 h-3.5" /> },
-            { id: "visiting_cards", label: "Visiting Cards", icon: <CreditCard className="w-3.5 h-3.5" /> },
-            { id: "tickets", label: "Digital Tickets", icon: <Ticket className="w-3.5 h-3.5" /> },
-            { id: "qr_scanner", label: "Camera & Gate Scanner", icon: <Scan className="w-3.5 h-3.5" /> },
-            { id: "certificates", label: "Certificates", icon: <Award className="w-3.5 h-3.5" /> },
-            { id: "contracts", label: "Contracts", icon: <Lock className="w-3.5 h-3.5" /> },
-            { id: "qr_generator", label: "QR Generator", icon: <QrCode className="w-3.5 h-3.5" /> },
-            { id: "coupons", label: "Coupons", icon: <Tag className="w-3.5 h-3.5" /> },
-            { id: "signatures", label: "Signatures", icon: <PenTool className="w-3.5 h-3.5" /> },
-            { id: "analytics", label: "Analytics", icon: <BarChart2 className="w-3.5 h-3.5" /> }
+            { id: "dashboard", label: "Documents & Assets", icon: <FileText className="w-3.5 h-3.5" /> },
+            { id: "invoices_billing", label: "Invoices, Forms & Bills", icon: <Receipt className="w-3.5 h-3.5 text-amber-500" /> },
+            { id: "visiting_cards", label: "Visiting Cards Studio", icon: <CreditCard className="w-3.5 h-3.5" /> },
+            { id: "tickets", label: "Digital Tickets & Passes", icon: <Ticket className="w-3.5 h-3.5" /> },
+            { id: "qr_scanner", label: "Camera & OCR Scanner", icon: <Scan className="w-3.5 h-3.5" /> },
+            { id: "certificates", label: "Certificates & Degrees", icon: <Award className="w-3.5 h-3.5" /> },
+            { id: "contracts", label: "Contracts & Deeds", icon: <Lock className="w-3.5 h-3.5" /> },
+            { id: "qr_generator", label: "Pro QR Generator", icon: <QrCode className="w-3.5 h-3.5" /> },
+            { id: "coupons", label: "Coupons & Vouchers", icon: <Tag className="w-3.5 h-3.5" /> },
+            { id: "signatures", label: "Signatures & Vault", icon: <PenTool className="w-3.5 h-3.5" /> },
+            { id: "analytics", label: "Analytics & Logs", icon: <BarChart2 className="w-3.5 h-3.5" /> }
           ].map((item) => (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id as any)}
-              className={`flex-1 min-w-[85px] py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 shrink-0 ${
-                activeTab === item.id
-                  ? "bg-[#2E7D32] text-white shadow-xs font-black"
-                  : "text-slate-600 hover:text-slate-900"
+              className={`py-2 px-3.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 ${
+                activeTab === item.id || (item.id === "invoices_billing" && activeTab === "bills")
+                  ? "bg-[#FF5A36] text-white shadow-xs font-black"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-800"
               }`}
             >
-              {item.icon} {item.label}
+              {item.icon} <span>{item.label}</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* ========================================== */}
-      {/* 1. DASHBOARD OVERVIEW VIEW */}
+      {/* 1. REDESIGNED PAPERLESS CARD HUB (ASSETS & DOCUMENTS) */}
       {/* ========================================== */}
       {activeTab === "dashboard" && (
-        <div className="space-y-6">
-          {/* STATS STRIP */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-white p-4 rounded-3xl border border-slate-200/90 shadow-xs space-y-1">
-              <span className="text-[10px] font-black uppercase text-slate-400">Visiting Cards</span>
-              <p className="text-2xl font-black text-slate-900">{cards.length}</p>
-              <p className="text-[11px] font-bold text-emerald-600">Active Digital Cards</p>
-            </div>
+        <PaperlessCardHub
+          assets={paperlessAssets}
+          setAssets={setPaperlessAssets}
+          onOpenInvoicesAndBills={() => setActiveTab("invoices_billing")}
+          onOpenScanner={() => setActiveTab("qr_scanner")}
+          onOpenVirtualCards={() => setActiveTab("visiting_cards")}
+          onOpenContracts={() => setActiveTab("contracts")}
+          onOpenTickets={() => setActiveTab("tickets")}
+          onOpenQrGenerator={() => setActiveTab("qr_generator")}
+          showToast={showToast}
+        />
+      )}
 
-            <div className="bg-white p-4 rounded-3xl border border-slate-200/90 shadow-xs space-y-1">
-              <span className="text-[10px] font-black uppercase text-slate-400">Digital Tickets</span>
-              <p className="text-2xl font-black text-slate-900">{tickets.length}</p>
-              <p className="text-[11px] font-bold text-purple-600">Events & Passes</p>
-            </div>
-
-            <div className="bg-white p-4 rounded-3xl border border-slate-200/90 shadow-xs space-y-1">
-              <span className="text-[10px] font-black uppercase text-slate-400">Certificates</span>
-              <p className="text-2xl font-black text-slate-900">{certificates.length}</p>
-              <p className="text-[11px] font-bold text-amber-600">Issued & Verified</p>
-            </div>
-
-            <div className="bg-white p-4 rounded-3xl border border-slate-200/90 shadow-xs space-y-1">
-              <span className="text-[10px] font-black uppercase text-slate-400">Coupons Active</span>
-              <p className="text-2xl font-black text-slate-900">{coupons.length}</p>
-              <p className="text-[11px] font-bold text-cyan-600">Discounts & Offers</p>
-            </div>
-          </div>
-
-          {/* GRID OF DIGITAL DOCUMENT SERVICES */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {/* Visiting Cards */}
-            <div
-              onClick={() => setActiveTab("visiting_cards")}
-              className="bg-white p-5 rounded-3xl border border-slate-200 hover:border-cyan-500 shadow-2xs hover:shadow-md transition-all cursor-pointer group space-y-3"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-cyan-50 text-cyan-700 flex items-center justify-center font-bold text-xl group-hover:scale-110 transition-transform">
-                🪪
-              </div>
-              <div>
-                <h3 className="text-sm font-black text-slate-900 group-hover:text-cyan-600 transition-colors">
-                  Virtual Visiting Cards
-                </h3>
-                <p className="text-xs text-slate-500 leading-snug">
-                  5 default design themes, custom colors, profile picture & QR codes.
-                </p>
-              </div>
-            </div>
-
-            {/* Tickets */}
-            <div
-              onClick={() => setActiveTab("tickets")}
-              className="bg-white p-5 rounded-3xl border border-slate-200 hover:border-purple-500 shadow-2xs hover:shadow-md transition-all cursor-pointer group space-y-3"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold text-xl group-hover:scale-110 transition-transform">
-                🎟️
-              </div>
-              <div>
-                <h3 className="text-sm font-black text-slate-900 group-hover:text-purple-600 transition-colors">
-                  Digital Tickets & Passes
-                </h3>
-                <p className="text-xs text-slate-500 leading-snug">
-                  Concerts, seminars, webinars, seat numbers & entry scanning.
-                </p>
-              </div>
-            </div>
-
-            {/* Certificates */}
-            <div
-              onClick={() => setActiveTab("certificates")}
-              className="bg-white p-5 rounded-3xl border border-slate-200 hover:border-amber-500 shadow-2xs hover:shadow-md transition-all cursor-pointer group space-y-3"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold text-xl group-hover:scale-110 transition-transform">
-                📜
-              </div>
-              <div>
-                <h3 className="text-sm font-black text-slate-900 group-hover:text-amber-600 transition-colors">
-                  Certificates & Credentials
-                </h3>
-                <p className="text-xs text-slate-500 leading-snug">
-                  Training awards, course completion, signatures & QR authentication.
-                </p>
-              </div>
-            </div>
-
-            {/* Contracts */}
-            <div
-              onClick={() => setActiveTab("contracts")}
-              className="bg-white p-5 rounded-3xl border border-slate-200 hover:border-emerald-500 shadow-2xs hover:shadow-md transition-all cursor-pointer group space-y-3"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xl group-hover:scale-110 transition-transform">
-                📄
-              </div>
-              <div>
-                <h3 className="text-sm font-black text-slate-900 group-hover:text-emerald-600 transition-colors">
-                  Contracts & Deeds
-                </h3>
-                <p className="text-xs text-slate-500 leading-snug">
-                  Loan agreements, rental, employment, 7-generation lineage & witnesses.
-                </p>
-              </div>
-            </div>
-
-            {/* QR Code Generator */}
-            <div
-              onClick={() => setActiveTab("qr_generator")}
-              className="bg-white p-5 rounded-3xl border border-slate-200 hover:border-indigo-500 shadow-2xs hover:shadow-md transition-all cursor-pointer group space-y-3"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-xl group-hover:scale-110 transition-transform">
-                📸
-              </div>
-              <div>
-                <h3 className="text-sm font-black text-slate-900 group-hover:text-indigo-600 transition-colors">
-                  Advanced QR Generator
-                </h3>
-                <p className="text-xs text-slate-500 leading-snug">
-                  Custom foreground/background colors, logo embed, shapes & export.
-                </p>
-              </div>
-            </div>
-
-            {/* Digital Signatures */}
-            <div
-              onClick={() => setActiveTab("signatures")}
-              className="bg-white p-5 rounded-3xl border border-slate-200 hover:border-slate-800 shadow-2xs hover:shadow-md transition-all cursor-pointer group space-y-3"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-800 flex items-center justify-center font-bold text-xl group-hover:scale-110 transition-transform">
-                ✍️
-              </div>
-              <div>
-                <h3 className="text-sm font-black text-slate-900 group-hover:text-slate-700 transition-colors">
-                  Digital Signatures
-                </h3>
-                <p className="text-xs text-slate-500 leading-snug">
-                  Draw canvas signature or upload image for legal document binding.
-                </p>
-              </div>
-            </div>
-          </div>
+      {/* ========================================== */}
+      {/* 1.5 INVOICES, FORMS & BILLS STUDIO */}
+      {/* ========================================== */}
+      {(activeTab === "invoices_billing" || activeTab === "bills") && (
+        <div className="space-y-4">
+          <BillingInvoiceService onBack={() => setActiveTab("dashboard")} />
         </div>
       )}
 

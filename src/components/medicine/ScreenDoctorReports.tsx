@@ -1,23 +1,20 @@
 import React, { useState } from "react";
 import {
-  FileSpreadsheet,
+  FileText,
   Download,
   Share2,
-  Printer,
+  Calendar,
   CheckCircle2,
-  Clock,
-  User,
-  Building,
-  TrendingUp,
-  FileText,
-  Sparkles
+  Pill,
+  Sparkles,
+  Printer
 } from "lucide-react";
 import { MedicineItemModel, DoseLogModel, MedicineTab } from "./types";
 
 interface ScreenDoctorReportsProps {
   medicines: MedicineItemModel[];
   todayDoses: DoseLogModel[];
-  onNavigate: (tab: MedicineTab) => void;
+  onNavigate: (tab: MedicineTab, params?: any) => void;
 }
 
 export const ScreenDoctorReports: React.FC<ScreenDoctorReportsProps> = ({
@@ -25,156 +22,109 @@ export const ScreenDoctorReports: React.FC<ScreenDoctorReportsProps> = ({
   todayDoses,
   onNavigate
 }) => {
-  const [reportDateRange, setReportDateRange] = useState("Last 30 Days");
+  const [reportPeriod, setReportPeriod] = useState<"30_days" | "90_days" | "all">("30_days");
   const [isExporting, setIsExporting] = useState(false);
-
-  const complianceRate = 92;
 
   const handleExportPDF = () => {
     setIsExporting(true);
     setTimeout(() => {
       setIsExporting(false);
-      alert("Doctor Adherence Summary PDF exported successfully to your downloads folder!");
+      alert("Clinical Adherence Report generated and exported as PDF!");
     }, 1200);
   };
 
   return (
-    <div className="max-w-xl mx-auto space-y-4">
-      {/* 1. Top Report Header Card with Adherence Gauge */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-orange-100/90 shadow-2xs space-y-4 text-center">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-left">
-            <div className="w-8 h-8 rounded-xl bg-orange-50 text-[#FF5A36] flex items-center justify-center">
-              <FileSpreadsheet className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-slate-900">Clinical Adherence Report</h3>
-              <p className="text-xs text-slate-500">Prepared for physician consultation</p>
-            </div>
+    <div className="space-y-4 pb-20">
+      {/* 1. Header Card */}
+      <div className="bg-white rounded-2xl p-5 border border-[#D1D5DB]/80 shadow-[0px_2px_8px_rgba(108,60,225,0.06)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-[#F3F0FF] text-[#6C3CE1] flex items-center justify-center font-black">
+            <FileText className="w-6 h-6" />
           </div>
-
-          <select
-            value={reportDateRange}
-            onChange={(e) => setReportDateRange(e.target.value)}
-            className="text-xs font-bold bg-orange-50 border border-orange-200 rounded-xl px-2.5 py-1 text-slate-700 focus:outline-none"
-          >
-            <option value="Last 7 Days">Last 7 Days</option>
-            <option value="Last 30 Days">Last 30 Days</option>
-            <option value="Last 90 Days">Last 90 Days</option>
-          </select>
-        </div>
-
-        {/* Big Circular Compliance Gauge Display */}
-        <div className="py-3 flex flex-col items-center justify-center">
-          <div className="w-36 h-36 rounded-full border-8 border-emerald-500 bg-emerald-50/50 flex flex-col items-center justify-center shadow-inner relative">
-            <span className="text-3xl font-black text-emerald-700">{complianceRate}%</span>
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800">
-              Adherence
-            </span>
-          </div>
-          <p className="text-xs font-bold text-emerald-700 mt-2 flex items-center gap-1">
-            <CheckCircle2 className="w-4 h-4" /> Excellent Patient Compliance Level
-          </p>
-        </div>
-
-        {/* 4 Metric Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-orange-100">
-          <div className="p-2.5 bg-slate-50 rounded-2xl">
-            <div className="text-[10px] font-bold text-slate-500 uppercase">Active Prescriptions</div>
-            <div className="text-lg font-black text-slate-900 mt-0.5">{medicines.length}</div>
-          </div>
-          <div className="p-2.5 bg-emerald-50 rounded-2xl">
-            <div className="text-[10px] font-bold text-emerald-700 uppercase">Taken On-Time</div>
-            <div className="text-lg font-black text-emerald-700 mt-0.5">88%</div>
-          </div>
-          <div className="p-2.5 bg-amber-50 rounded-2xl">
-            <div className="text-[10px] font-bold text-amber-700 uppercase">Snoozed / Delayed</div>
-            <div className="text-lg font-black text-amber-700 mt-0.5">8%</div>
-          </div>
-          <div className="p-2.5 bg-red-50 rounded-2xl">
-            <div className="text-[10px] font-bold text-red-700 uppercase">Skipped / Missed</div>
-            <div className="text-lg font-black text-red-700 mt-0.5">4%</div>
+          <div>
+            <h3 className="text-base sm:text-lg font-black text-[#1A1A1A]">
+              Clinical Doctor & Adherence Report
+            </h3>
+            <p className="text-xs text-[#4A4A4A]">
+              Ready-to-print medical log for your next doctor consultation
+            </p>
           </div>
         </div>
-      </div>
 
-      {/* 2. Active Prescribing Doctors & Hospitals */}
-      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-orange-100/90 shadow-2xs space-y-3">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-          Prescribing Physicians & Clinics
-        </h4>
-
-        <div className="space-y-2.5">
-          <div className="p-3 bg-orange-50/40 rounded-2xl border border-orange-100 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#FF5A36] flex items-center justify-center font-bold">
-                <User className="w-5 h-5" />
-              </div>
-              <div>
-                <h5 className="text-xs sm:text-sm font-bold text-slate-900">Dr. Sandeep Shah</h5>
-                <p className="text-[11px] text-slate-500">Norvic International Hospital • Cardiology</p>
-                <div className="text-[10px] text-orange-700 font-semibold mt-0.5">
-                  Prescriptions: Atorvastatin 10mg, Amoxicillin 500mg, Paracetamol
-                </div>
-              </div>
-            </div>
-            <a
-              href="tel:+9779801234567"
-              className="text-xs font-bold text-[#FF5A36] bg-white px-3 py-1.5 rounded-xl border border-orange-200"
-            >
-              Contact
-            </a>
-          </div>
-
-          <div className="p-3 bg-orange-50/40 rounded-2xl border border-orange-100 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
-                <User className="w-5 h-5" />
-              </div>
-              <div>
-                <h5 className="text-xs sm:text-sm font-bold text-slate-900">Dr. Anita Patel</h5>
-                <p className="text-[11px] text-slate-500">Grande International Hospital • Endocrinology</p>
-                <div className="text-[10px] text-blue-700 font-semibold mt-0.5">
-                  Prescriptions: Levothyroxine 50mcg, Metformin ER 500mg
-                </div>
-              </div>
-            </div>
-            <a
-              href="tel:+9779812345678"
-              className="text-xs font-bold text-blue-600 bg-white px-3 py-1.5 rounded-xl border border-blue-200"
-            >
-              Contact
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Export & Share Actions */}
-      <div className="flex items-center gap-2">
         <button
+          type="button"
           onClick={handleExportPDF}
           disabled={isExporting}
-          className="flex-1 py-3 bg-[#FF5A36] hover:bg-[#E04826] text-white font-bold text-xs rounded-2xl shadow-sm shadow-orange-500/25 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+          className="px-4 py-2.5 bg-[#6C3CE1] hover:bg-[#4A1FAD] active:scale-95 text-white font-black text-xs rounded-xl shadow-xs flex items-center gap-2 cursor-pointer transition-all disabled:opacity-50"
         >
           <Download className="w-4 h-4" />
-          <span>{isExporting ? "Generating PDF..." : "Export Doctor PDF Report"}</span>
+          <span>{isExporting ? "Generating PDF..." : "Export PDF Report"}</span>
         </button>
+      </div>
 
-        <button
-          onClick={() => alert("Report link copied to clipboard for sharing!")}
-          className="p-3 bg-white hover:bg-orange-50 text-[#FF5A36] border border-orange-200 rounded-2xl transition-all shadow-2xs"
-          title="Share Link"
-        >
-          <Share2 className="w-4 h-4" />
-        </button>
+      {/* 2. Report Period Selector */}
+      <div className="flex items-center gap-2">
+        {[
+          { id: "30_days", label: "Last 30 Days" },
+          { id: "90_days", label: "Last 90 Days" },
+          { id: "all", label: "Full Prescription History" }
+        ].map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => setReportPeriod(p.id as any)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              reportPeriod === p.id
+                ? "bg-[#6C3CE1] text-white shadow-xs"
+                : "bg-white text-[#4A4A4A] border border-[#D1D5DB] hover:bg-[#F3F0FF]"
+            }`}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
 
-        <button
-          onClick={() => window.print()}
-          className="p-3 bg-white hover:bg-orange-50 text-slate-700 border border-slate-200 rounded-2xl transition-all shadow-2xs"
-          title="Print Report"
-        >
-          <Printer className="w-4 h-4" />
-        </button>
+      {/* 3. Clinical Summary Card Preview */}
+      <div className="bg-white rounded-2xl p-5 border border-[#D1D5DB]/80 shadow-[0px_2px_8px_rgba(108,60,225,0.08)] space-y-4 font-sans">
+        <div className="flex items-center justify-between border-b border-[#D1D5DB]/60 pb-3">
+          <div>
+            <h4 className="text-sm font-black text-[#1A1A1A] uppercase tracking-wide">
+              Patient Medication Summary Sheet
+            </h4>
+            <span className="text-[11px] text-[#8A8A8A]">
+              Generated on {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+            </span>
+          </div>
+          <span className="px-3 py-1 bg-emerald-50 text-[#2ECC71] border border-emerald-200 text-xs font-black rounded-lg">
+            94% Overall Adherence
+          </span>
+        </div>
+
+        {/* Prescription Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-[#D1D5DB] text-[#6C3CE1] font-black uppercase text-[10px]">
+                <th className="py-2">Medication</th>
+                <th className="py-2">Strength</th>
+                <th className="py-2">Frequency</th>
+                <th className="py-2">Doctor</th>
+                <th className="py-2">Adherence</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#D1D5DB]/40 font-semibold text-[#1A1A1A]">
+              {medicines.map((m) => (
+                <tr key={m.id}>
+                  <td className="py-2.5 font-bold">{m.name}</td>
+                  <td className="py-2.5 text-[#4A4A4A]">{m.strength}</td>
+                  <td className="py-2.5 text-[#4A4A4A]">{m.dosesPerDay}x daily</td>
+                  <td className="py-2.5 text-[#4A4A4A]">{m.prescribingDoctor || "Dr. Sandeep Shah"}</td>
+                  <td className="py-2.5 text-[#2ECC71] font-bold">96% (Good)</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 export type MedicineTab =
   | "overview"
   | "my_medicines"
+  | "medicine_detail"
   | "add_medicine"
   | "schedule_dosing"
   | "today_doses"
@@ -12,6 +13,18 @@ export type MedicineTab =
   | "caregiver_family"
   | "doctor_reports"
   | "settings";
+
+export interface NavigationScreen {
+  id: MedicineTab;
+  title: string;
+  subtitle?: string;
+  params?: {
+    medicineId?: string;
+    medicine?: MedicineItemModel;
+    dose?: DoseLogModel;
+    editMode?: boolean;
+  };
+}
 
 export type MedicineFormType =
   | "Tablet"
@@ -98,19 +111,8 @@ export interface DrugInteractionModel {
   drugB: string;
   riskLevel: "High Risk" | "Moderate Risk" | "Low Risk" | "Safe";
   title: string;
-  details: string;
-  recommendation: string;
-}
-
-export interface DependentActivityItem {
-  id: string;
-  medName: string;
-  dosage: string;
-  action: "took" | "skipped" | "missed";
-  time: string;
-  timestamp: string;
-  isAlert?: boolean;
-  alertReason?: string;
+  description: string;
+  actionRequired: string;
 }
 
 export interface DependentCareModel {
@@ -118,21 +120,22 @@ export interface DependentCareModel {
   name: string;
   relation: string;
   avatar?: string;
-  phone: string;
-  recentActivities: DependentActivityItem[];
-  hasMissedAlert?: boolean;
-  missedMedName?: string;
-  missedTimeAgo?: string;
+  phone?: string;
+  hasMissedAlert: boolean;
+  recentActivities: string[];
 }
 
 export interface MedicineSettingsModel {
-  reminderSound: string;
-  soundVolume: number;
-  vibration: boolean;
-  criticalAlertsDnd: boolean;
+  soundEnabled: boolean;
+  soundType: "gentle_bell" | "digital_chime" | "voice_alert" | "loud_alarm";
+  vibrationEnabled: boolean;
   defaultSnoozeMinutes: number;
-  timeFormat24h: boolean;
-  customVoiceEnabled: boolean;
-  refillAlertsEnabled: boolean;
-  themeStyle: "warm_coral" | "ocean_blue" | "emerald";
+  caregiverAlertsEnabled: boolean;
+  criticalAlertThresholdMinutes: number;
+  familySyncEnabled: boolean;
+  smartRefillThresholdDays: number;
+  pharmacyDeliveryIntegration: boolean;
+  highContrastMode: boolean;
+  elderlyModeEnabled: boolean;
+  offlineSyncEnabled: boolean;
 }

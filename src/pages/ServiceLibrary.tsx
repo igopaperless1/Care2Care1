@@ -39,7 +39,7 @@ import {
 export interface ServiceItem {
   id: string;
   title: string;
-  category: "health" | "finance" | "family" | "assets" | "productivity" | "tools";
+  category: "health" | "finance" | "family" | "assets" | "productivity" | "paperless" | "tools";
   categoryLabel: string;
   icon: string;
   description: string;
@@ -49,53 +49,53 @@ export interface ServiceItem {
 }
 
 export const ALL_SERVICES_CATALOG: ServiceItem[] = [
-  // Health & Vitals
+  // 🩺 Health & Vitals Suite
   {
     id: "vitals",
     title: "Health Vitals & SpO2",
     category: "health",
     categoryLabel: "Health & Vitals",
     icon: "🩺",
-    description: "Real-time blood pressure, pulse, SpO2 & glucose telemetry tracker.",
+    description: "Real-time blood pressure, pulse rate, SpO2 & glucose telemetry tracker.",
     subTabTarget: "vitals",
     popular: true
   },
   {
     id: "medicine",
-    title: "Medicine & Prescriptions",
+    title: "Medicine & Pillbox Refills",
     category: "health",
     categoryLabel: "Health & Vitals",
     icon: "💊",
-    description: "Daily dosage reminders, pill schedule & pharmacy refill alerts.",
+    description: "Daily dosage reminders, pill schedule & automated pharmacy refill alerts.",
     subTabTarget: "medicine",
     popular: true
   },
   {
     id: "water",
-    title: "Hydration & Water Goal",
+    title: "Hydration & Water Intake",
     category: "health",
     categoryLabel: "Health & Vitals",
     icon: "💧",
-    description: "Interactive daily hydration target with hourly drinking notifications.",
+    description: "Interactive daily hydration target with quick +250ml logging and hourly alerts.",
     subTabTarget: "water",
     popular: true
   },
   {
     id: "steps",
-    title: "Steps & Calorie Tracker",
+    title: "Step Counter & Calories",
     category: "health",
     categoryLabel: "Health & Vitals",
-    icon: "🏃",
-    description: "Pedometer step counts, active distance & daily fitness goals.",
+    icon: "🚶",
+    description: "Daily 10k step goals, active walking distance & calorie burn metrics.",
     subTabTarget: "steps"
   },
   {
     id: "yoga",
-    title: "Yoga & Mindfulness",
+    title: "Mindful Yoga & Breathwork",
     category: "health",
     categoryLabel: "Health & Vitals",
     icon: "🧘",
-    description: "Guided 4-7-8 diaphragmatic breathing, meditation timers & poses.",
+    description: "Guided 4-7-8 diaphragmatic breathing, meditation timers & restorative asanas.",
     subTabTarget: "yoga"
   },
   {
@@ -104,7 +104,7 @@ export const ALL_SERVICES_CATALOG: ServiceItem[] = [
     category: "health",
     categoryLabel: "Health & Vitals",
     icon: "😊",
-    description: "Emotional well-being log, urge interruption & gratitude diary.",
+    description: "Daily emotional check-ins, urge interruption & gratitude reflection diary.",
     subTabTarget: "mood"
   },
   {
@@ -113,7 +113,7 @@ export const ALL_SERVICES_CATALOG: ServiceItem[] = [
     category: "health",
     categoryLabel: "Health & Vitals",
     icon: "🧠",
-    description: "Stress assessments, guided reflection prompts & therapy check-ins.",
+    description: "5-4-3-2-1 anxiety grounding, therapist notes & emotional relief tools.",
     subTabTarget: "mental"
   },
   {
@@ -122,7 +122,7 @@ export const ALL_SERVICES_CATALOG: ServiceItem[] = [
     category: "health",
     categoryLabel: "Health & Vitals",
     icon: "🌙",
-    description: "Sleep duration logs, circadian rhythm analysis & ambient noise.",
+    description: "Sleep duration logs, circadian rhythm analysis & ambient wind-down audio.",
     subTabTarget: "sleep"
   },
   {
@@ -131,86 +131,115 @@ export const ALL_SERVICES_CATALOG: ServiceItem[] = [
     category: "health",
     categoryLabel: "Health & Vitals",
     icon: "🍽️",
-    description: "Macronutrient breakdown, dietary restrictions & calorie logs.",
+    description: "Macronutrient breakdown, dietary allergy guard & healthy meal scheduling.",
     subTabTarget: "nutrition"
   },
   {
     id: "menstrual",
-    title: "Menstrual Cycle Tracker",
+    title: "Menstrual & Cycle Tracker",
     category: "health",
     categoryLabel: "Health & Vitals",
     icon: "🌸",
-    description: "Period cycle forecasting, symptom trends & fertility predictions.",
+    description: "Period cycle forecasting, symptom trends & fertility ovulation predictions.",
     subTabTarget: "menstrual"
   },
   {
     id: "exercise",
-    title: "Exercise & Workout Hub",
+    title: "Fitness & Workout Hub",
     category: "health",
     categoryLabel: "Health & Vitals",
     icon: "🏋️",
-    description: "Strength workout routines, cardio logs & repetition records.",
+    description: "Strength workout routines, HIIT timers, cardio logs & repetition records.",
     subTabTarget: "exercise"
   },
+  {
+    id: "telemetry",
+    title: "Track Progress & Vitals Dashboard",
+    category: "health",
+    categoryLabel: "Health & Vitals",
+    icon: "📊",
+    description: "Comprehensive multi-vital telemetry graphs, PDF clinical reports & historical analytics.",
+    subTabTarget: "track"
+  },
 
-  // Productivity & Gamification
+  // 🏆 Habits, Productivity & Gamification
   {
     id: "habit_challenges",
     title: "21-Day Habit Challenges",
     category: "productivity",
-    categoryLabel: "Productivity & Habits",
+    categoryLabel: "Habits & Quests",
     icon: "🏆",
-    description: "Scratch daily cards, spin positive reward wheels & 21-day streaks.",
+    description: "Scratch daily cards, spin positive reward wheels & 21-day continuous streaks.",
     subTabTarget: "habit_challenges",
     badge: "Hot 🔥",
     popular: true
   },
   {
     id: "habit",
-    title: "Habit & Recovery Engine",
+    title: "Habit Streak & Relapse Prevention",
     category: "productivity",
-    categoryLabel: "Productivity & Habits",
+    categoryLabel: "Habits & Quests",
     icon: "📈",
-    description: "Daily routine building, trigger analysis & habit streak counters.",
+    description: "Daily routine building, trigger analysis & habit milestone badges.",
     subTabTarget: "habit"
   },
   {
     id: "life_dates",
     title: "Life Dates & Anniversaries",
     category: "productivity",
-    categoryLabel: "Productivity & Habits",
+    categoryLabel: "Habits & Quests",
     icon: "💝",
-    description: "Birthdays, important milestones, gift ideas & countdowns.",
+    description: "Birthdays, important milestones, celebration reminders & smart gift ideas.",
     subTabTarget: "life_dates"
   },
   {
+    id: "care_plan",
+    title: "Plan & Schedule Studio",
+    category: "productivity",
+    categoryLabel: "Habits & Quests",
+    icon: "📅",
+    description: "Unified daily care schedule, medication timetables & doctor appointment calendar.",
+    subTabTarget: "plan"
+  },
+  {
     id: "calendar",
-    title: "40+ Global Calendars",
-    category: "tools",
-    categoryLabel: "Tools & Utilities",
+    title: "40+ Global Calendars & Converter",
+    category: "productivity",
+    categoryLabel: "Habits & Quests",
     icon: "🌍",
-    description: "Instant converter between Gregorian, Nepali Bikram Sambat, Hijri & more.",
+    description: "Instant converter between Gregorian, Nepali Bikram Sambat, Hijri & Lunar dates.",
     subTabTarget: "calendar"
   },
 
-  // Finance & Business
+  // 💰 Finance, Commerce & Business
+  {
+    id: "billing",
+    title: "Billing, Invoices & Forms Studio",
+    category: "finance",
+    categoryLabel: "Finance & Business",
+    icon: "🧾",
+    description: "Create, calculate, print & customize 20+ invoices, tax bills, receipts & quotes with live zoom.",
+    subTabTarget: "billing",
+    badge: "Pro Engine 🔥",
+    popular: true
+  },
   {
     id: "finance",
-    title: "Finance & Cash Flow",
+    title: "Finance & Cash Flow Ledger",
     category: "finance",
     categoryLabel: "Finance & Business",
     icon: "💰",
-    description: "Income/expense ledgers, budget caps, receipts & savings tracker.",
+    description: "Income/expense ledgers, budget caps, savings envelopes & receipt vault.",
     subTabTarget: "finance",
     popular: true
   },
   {
     id: "staff_payroll",
-    title: "Staff HR & Payroll",
+    title: "Staff HR & Payroll Studio",
     category: "finance",
     categoryLabel: "Finance & Business",
     icon: "💼",
-    description: "Employee attendance, timesheets, salary payouts & proof of work.",
+    description: "Employee attendance, timesheets, salary slip generator & proof of work.",
     subTabTarget: "staff_payroll"
   },
   {
@@ -219,7 +248,7 @@ export const ALL_SERVICES_CATALOG: ServiceItem[] = [
     category: "finance",
     categoryLabel: "Finance & Business",
     icon: "📦",
-    description: "Product inventory, barcode lookups, low stock alerts & suppliers.",
+    description: "Product inventory, barcode lookups, warehouse stock & low-stock alerts.",
     subTabTarget: "inventory"
   },
   {
@@ -228,7 +257,7 @@ export const ALL_SERVICES_CATALOG: ServiceItem[] = [
     category: "finance",
     categoryLabel: "Finance & Business",
     icon: "📜",
-    description: "Digital legal contracts, biometric thumbprint capture & witness sign.",
+    description: "Digital agreements, biometric thumbprint capture & witness e-signatures.",
     subTabTarget: "contracts"
   },
   {
@@ -237,7 +266,7 @@ export const ALL_SERVICES_CATALOG: ServiceItem[] = [
     category: "finance",
     categoryLabel: "Finance & Business",
     icon: "👔",
-    description: "Application tracker, interview schedules, resume versions & offers.",
+    description: "Job application tracker, interview schedules, resume versions & offer records.",
     subTabTarget: "jobs"
   },
   {
@@ -246,18 +275,27 @@ export const ALL_SERVICES_CATALOG: ServiceItem[] = [
     category: "finance",
     categoryLabel: "Finance & Business",
     icon: "🛒",
-    description: "Digital product catalog, shopping cart checkout & store orders.",
+    description: "Digital product catalog, shopping cart checkout & store order fulfillments.",
     subTabTarget: "custom_store"
   },
+  {
+    id: "credit_ledger",
+    title: "Cash Collection & Credit Ledger",
+    category: "finance",
+    categoryLabel: "Finance & Business",
+    icon: "💳",
+    description: "Customer credit ledgers, daily collections & payment settlement records.",
+    subTabTarget: "more"
+  },
 
-  // Family & Senior Care
+  // 👨‍👩‍👧‍👦 Family & Senior Care
   {
     id: "elderly",
-    title: "Elderly & Senior Portal",
+    title: "Elderly & Senior Care Portal",
     category: "family",
-    categoryLabel: "Family & Senior Care",
+    categoryLabel: "Family & Care",
     icon: "👴",
-    description: "Mobility logs, caregiver notes, fall detection alerts & medications.",
+    description: "Mobility logs, caregiver notes, fall detection alerts & senior assistance.",
     subTabTarget: "elderly",
     popular: true
   },
@@ -265,113 +303,211 @@ export const ALL_SERVICES_CATALOG: ServiceItem[] = [
     id: "kids",
     title: "Kids & Pediatric Care",
     category: "family",
-    categoryLabel: "Family & Senior Care",
+    categoryLabel: "Family & Care",
     icon: "👶",
-    description: "Growth milestones, vaccination dates, school events & emergency IDs.",
+    description: "Growth milestones, vaccination dates, school events & emergency medical IDs.",
     subTabTarget: "kids"
   },
   {
     id: "family_tree",
-    title: "Family Tree & Heritage",
+    title: "Family Tree & Kinship Lineage",
     category: "family",
-    categoryLabel: "Family & Senior Care",
+    categoryLabel: "Family & Care",
     icon: "👨‍👩‍👧‍👦",
-    description: "Multi-generation visual lineage, ancestry tree & heritage archive.",
+    description: "Multi-generation visual lineage, ancestry records & shared family hub.",
     subTabTarget: "family_tree"
   },
   {
     id: "pets",
-    title: "Pet & Vet Records",
+    title: "Pet & Vet Records Hub",
     category: "family",
-    categoryLabel: "Family & Senior Care",
+    categoryLabel: "Family & Care",
     icon: "🐾",
-    description: "Vet visits, rabies vaccine certificates, diet & grooming log.",
+    description: "Vet visits, rabies vaccine certificates, diet portions & grooming logs.",
     subTabTarget: "pets"
   },
+  {
+    id: "community",
+    title: "Community Feed & Care Groups",
+    category: "family",
+    categoryLabel: "Family & Care",
+    icon: "💬",
+    description: "Caregiver support groups, challenge sharing, wellness discussions & advice.",
+    subTabTarget: "community"
+  },
 
-  // Assets & Tools
+  // 🏡 Physical Assets, Transport & Farm
   {
     id: "vehicles",
-    title: "Vehicle Care & Mileage",
+    title: "Vehicle & Fleet Care",
     category: "assets",
-    categoryLabel: "Assets & Tools",
+    categoryLabel: "Assets & Transport",
     icon: "🚗",
-    description: "Fuel efficiency logs, maintenance reminders, insurance & PUC expiry.",
+    description: "Fuel efficiency logs, maintenance reminders, insurance & RC documents.",
     subTabTarget: "vehicles"
   },
   {
     id: "property",
-    title: "Property, Land & Farm",
+    title: "Property, Land & Real Estate",
     category: "assets",
-    categoryLabel: "Assets & Tools",
+    categoryLabel: "Assets & Transport",
     icon: "🏡",
-    description: "Land plot deeds, irrigation schedule, crop harvest & tenancy records.",
+    description: "Land plot deeds, irrigation schedule, tenant leases & maintenance records.",
     subTabTarget: "property"
   },
   {
     id: "garden",
-    title: "Garden & Crop Harvest",
+    title: "Farm, Garden & Crop Harvest",
     category: "assets",
-    categoryLabel: "Assets & Tools",
+    categoryLabel: "Assets & Transport",
     icon: "🌿",
-    description: "Botanical watering logs, soil health, planting seasons & yields.",
+    description: "Botanical watering logs, soil health, planting calendars & crop yields.",
     subTabTarget: "garden"
   },
+
+  // 📄 Paperless Digital Cards & Document Vault
   {
     id: "paperless",
-    title: "Paperless Digital Vault",
-    category: "tools",
-    categoryLabel: "Tools & Utilities",
+    title: "Paperless Digital Card Vault",
+    category: "paperless",
+    categoryLabel: "Paperless & Documents",
     icon: "📄",
-    description: "OCR scanned IDs, cards, medical reports & encrypted document vault.",
-    subTabTarget: "paperless"
+    description: "All-in-one wallet for visiting cards, bills, deeds, certificates & passes.",
+    subTabTarget: "paperless",
+    badge: "Paperless",
+    popular: true
   },
+  {
+    id: "visiting_cards",
+    title: "Digital Visiting & Business Cards",
+    category: "paperless",
+    categoryLabel: "Paperless & Documents",
+    icon: "📇",
+    description: "One-tap NFC & QR shareable identity cards for professionals & businesses.",
+    subTabTarget: "visiting_cards"
+  },
+  {
+    id: "tickets",
+    title: "Digital Tickets & Boarding Passes",
+    category: "paperless",
+    categoryLabel: "Paperless & Documents",
+    icon: "🎟️",
+    description: "Concert tickets, gate passes, event wristbands & travel itineraries.",
+    subTabTarget: "tickets"
+  },
+  {
+    id: "certificates",
+    title: "Degrees & Verified Certificates",
+    category: "paperless",
+    categoryLabel: "Paperless & Documents",
+    icon: "🎓",
+    description: "Verified digital diplomas, training certificates, licenses & awards.",
+    subTabTarget: "certificates"
+  },
+  {
+    id: "coupons",
+    title: "Coupons, Vouchers & Gift Cards",
+    category: "paperless",
+    categoryLabel: "Paperless & Documents",
+    icon: "🏷️",
+    description: "Store discount vouchers, loyalty stamp cards & promotional gift coupons.",
+    subTabTarget: "coupons"
+  },
+  {
+    id: "qr_generator",
+    title: "Dynamic QR Code Generator Studio",
+    category: "paperless",
+    categoryLabel: "Paperless & Documents",
+    icon: "📱",
+    description: "Create branded color QR codes with logos for links, WiFi, UPI & contacts.",
+    subTabTarget: "qr_generator"
+  },
+  {
+    id: "signatures",
+    title: "Digital Signatures & Biometrics",
+    category: "paperless",
+    categoryLabel: "Paperless & Documents",
+    icon: "✍️",
+    description: "Biometric thumbprint capture, touch signatures & tamper-evident verification.",
+    subTabTarget: "signatures"
+  },
+
+  // 🔐 Security, AI & Tools Suite
   {
     id: "passwords",
     title: "Encrypted Password Manager",
     category: "tools",
-    categoryLabel: "Tools & Utilities",
+    categoryLabel: "Security & Tools",
     icon: "🔐",
-    description: "Zero-knowledge encrypted logins, PINs & master vault security.",
+    description: "Zero-knowledge AES-256 encrypted logins, 2FA authenticator & master vault.",
     subTabTarget: "passwords"
   },
   {
     id: "hybrid_storage",
     title: "Hybrid Cloud Storage Drive",
     category: "tools",
-    categoryLabel: "Tools & Utilities",
+    categoryLabel: "Security & Tools",
     icon: "📁",
-    description: "Cross-device encrypted file manager, backup archives & photo sync.",
+    description: "Cross-device encrypted file manager, backup archives & offline photo sync.",
     subTabTarget: "hybrid_storage"
   },
   {
     id: "ticket_queue",
     title: "Digital Queue & Token Counter",
     category: "tools",
-    categoryLabel: "Tools & Utilities",
+    categoryLabel: "Security & Tools",
     icon: "🎫",
-    description: "Token number dispenser, customer calling board & ticket desk.",
+    description: "Token number dispenser, customer calling board & ticket desk manager.",
     subTabTarget: "ticket_queue"
   },
   {
     id: "sos",
     title: "SOS Emergency Panic Hub",
     category: "tools",
-    categoryLabel: "Tools & Utilities",
+    categoryLabel: "Security & Tools",
     icon: "🆘",
-    description: "One-touch emergency siren, GPS broadcast & next-of-kin alert.",
+    description: "One-touch emergency siren, GPS location broadcast & emergency contacts alert.",
     subTabTarget: "sos"
+  },
+  {
+    id: "ai_assistant",
+    title: "Care2Care AI Health Concierge",
+    category: "tools",
+    categoryLabel: "Security & Tools",
+    icon: "✨",
+    description: "24/7 AI wellness assistant, medication guidelines & voice interactions.",
+    subTabTarget: "ai_assistant",
+    badge: "AI ⚡"
+  },
+  {
+    id: "camera_scanner",
+    title: "Camera & OCR Document Scanner",
+    category: "tools",
+    categoryLabel: "Security & Tools",
+    icon: "📷",
+    description: "Instant prescription scanner, QR code reader & paperless document capture.",
+    subTabTarget: "camera"
+  },
+  {
+    id: "insights_hub",
+    title: "Health Insights & Predictive Trends",
+    category: "tools",
+    categoryLabel: "Security & Tools",
+    icon: "📈",
+    description: "Comprehensive correlation charts between vitals, sleep, mood & hydration.",
+    subTabTarget: "insight"
   }
 ];
 
 const CATEGORIES: Array<{ id: string; label: string; icon: string }> = [
-  { id: "all", label: "All Services (30+)", icon: "✨" },
-  { id: "health", label: "Health & Vitals", icon: "🩺" },
-  { id: "productivity", label: "Habits & Quests", icon: "🏆" },
-  { id: "finance", label: "Finance & Business", icon: "💰" },
-  { id: "family", label: "Family & Senior", icon: "👨‍👩‍👧‍👦" },
-  { id: "assets", label: "Assets & Vehicles", icon: "🏡" },
-  { id: "tools", label: "Vault & Utilities", icon: "🔐" }
+  { id: "all", label: "✨ All Services (45+)", icon: "✨" },
+  { id: "health", label: "🩺 Health & Vitals", icon: "🩺" },
+  { id: "productivity", label: "🏆 Habits & Quests", icon: "🏆" },
+  { id: "finance", label: "💰 Finance & Business", icon: "💰" },
+  { id: "family", label: "👨‍👩‍👧‍👦 Family & Care", icon: "👨‍👩‍👧‍👦" },
+  { id: "assets", label: "🏡 Assets & Farm", icon: "🏡" },
+  { id: "paperless", label: "📄 Paperless & Cards", icon: "📄" },
+  { id: "tools", label: "🔐 Security & Tools", icon: "🔐" }
 ];
 
 interface ServiceLibraryProps {
@@ -432,7 +568,7 @@ export const ServiceLibrary: React.FC<ServiceLibraryProps> = ({
         </div>
 
         <p className="text-xs text-slate-600 dark:text-slate-400 font-medium max-w-2xl leading-relaxed">
-          Access every specialized module in Blessikaa. Filter by category or search by keywords to jump directly into your tools, health logs, or business dashboards.
+          Access every specialized module in the platform. Filter by category or search by keywords to jump directly into your tools, health logs, or business dashboards.
         </p>
 
         {/* Search Bar */}
@@ -442,7 +578,7 @@ export const ServiceLibrary: React.FC<ServiceLibraryProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search all 30+ services (e.g. Yoga, Medicine, Finance, Inventory, Pets, Paperless)..."
+            placeholder="Search all 45+ services (e.g. Yoga, Medicine, Billing, Finance, Inventory, Pets, Paperless, Passwords)..."
             className="w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-800 border-2 border-orange-200/80 dark:border-slate-700 rounded-2xl text-xs sm:text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-xs transition-all"
           />
           {searchQuery && (

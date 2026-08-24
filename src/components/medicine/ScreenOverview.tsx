@@ -7,20 +7,21 @@ import {
   Calendar,
   Sparkles,
   Camera,
-  Heart,
   ChevronRight,
-  TrendingUp,
   Package,
   BookOpen,
   ShieldCheck,
-  Users
+  Users,
+  FileText,
+  Plus,
+  ArrowRight
 } from "lucide-react";
 import { MedicineItemModel, DoseLogModel, MedicineTab } from "./types";
 
 interface ScreenOverviewProps {
   medicines: MedicineItemModel[];
   todayDoses: DoseLogModel[];
-  onNavigate: (tab: MedicineTab) => void;
+  onNavigate: (tab: MedicineTab, params?: any) => void;
   onOpenDoseAction: (dose: DoseLogModel) => void;
   onOpenScanner: () => void;
   onOpenAddModal: () => void;
@@ -34,254 +35,312 @@ export const ScreenOverview: React.FC<ScreenOverviewProps> = ({
   onOpenScanner,
   onOpenAddModal
 }) => {
-  const activeMeds = medicines.filter((m) => m.status === "Active");
   const takenDoses = todayDoses.filter((d) => d.status === "Taken");
-  const pendingDoses = todayDoses.filter((d) => d.status === "Pending");
-  const dueNowDose = pendingDoses[0] || null;
-  const lowStockMeds = medicines.filter((m) => m.remainingStock <= m.lowStockThreshold);
-  const adherenceRate = todayDoses.length > 0 ? Math.round((takenDoses.length / todayDoses.length) * 100) : 100;
+  const pendingDoses = todayDoses.filter((d) => d.status === "Pending" || d.status === "Snoozed");
+  const dueNowDoses = pendingDoses.slice(0, 2);
+  const remainingCount = pendingDoses.length;
+  const totalDoses = todayDoses.length || 8;
+  const progressPercent = totalDoses > 0 ? Math.round((takenDoses.length / totalDoses) * 100) : 25;
+
+  const medicineServices = [
+    {
+      id: "my_medicines" as MedicineTab,
+      icon: "📋",
+      name: "My Medicines",
+      desc: "Catalog & stock left",
+      badge: `${medicines.length} Meds`
+    },
+    {
+      id: "today_doses" as MedicineTab,
+      icon: "📅",
+      name: "Schedule & Dosing",
+      desc: "Pill timings, slots & alarms",
+      badge: `${pendingDoses.length} Due`
+    },
+    {
+      id: "refill_inventory" as MedicineTab,
+      icon: "🛒",
+      name: "Refill & Inventory",
+      desc: "Low stock alerts & auto refills",
+      badge: "Smart Refills"
+    },
+    {
+      id: "interactions_safety" as MedicineTab,
+      icon: "🔒",
+      name: "Interactions & Safety",
+      desc: "FDA warnings & food conflicts",
+      badge: "Clinical Safety"
+    },
+    {
+      id: "medicine_journal" as MedicineTab,
+      icon: "📖",
+      name: "Medicine Journal",
+      desc: "Daily symptoms, mood & dose notes",
+      badge: "Symptom Log"
+    },
+    {
+      id: "adherence_history" as MedicineTab,
+      icon: "📅",
+      name: "21-Day Calendar",
+      desc: "Adherence streak & heatmap",
+      badge: "21-Day Streak"
+    },
+    {
+      id: "caregiver_family" as MedicineTab,
+      icon: "👨‍👩‍👧",
+      name: "Caregiver & Family",
+      desc: "Sync family doses & missed alerts",
+      badge: "Family Sync"
+    },
+    {
+      id: "doctor_reports" as MedicineTab,
+      icon: "📊",
+      name: "Doctor Report",
+      desc: "Clinical PDF export & doctor notes",
+      badge: "PDF Export"
+    }
+  ];
 
   return (
-    <div className="space-y-4">
-      {/* 1. Hero Welcome & Illustration Card */}
-      <div className="bg-gradient-to-br from-[#FFF5EE] via-[#FFEBE0] to-[#FFE0D1] border border-orange-200/80 rounded-3xl p-4 sm:p-5 relative overflow-hidden shadow-2xs">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
-          <div className="max-w-md space-y-1.5">
-            <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FF5A36]/10 text-[#FF5A36] text-xs font-bold">
-              <Sparkles className="w-3.5 h-3.5" /> Care daily. Live fully.
-            </div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">
-              Stay on track with your <span className="text-[#FF5A36]">daily medication</span>
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-600">
-              You have taken <strong>{takenDoses.length}</strong> of <strong>{todayDoses.length}</strong> doses today ({adherenceRate}% adherence).
+    <div className="space-y-5 pb-20">
+      {/* ========================================================================= */}
+      {/* SECTION 1: TODAY'S PROGRESS (Card on White background) */}
+      {/* ========================================================================= */}
+      <section className="bg-white rounded-2xl p-4 sm:p-5 border border-[#D1D5DB]/80 shadow-[0px_2px_8px_rgba(108,60,225,0.08)] space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <span className="text-[11px] font-black uppercase tracking-wider text-[#6C3CE1]">
+              Today's Progress
+            </span>
+            <h3 className="text-lg font-black text-[#1A1A1A]">
+              {takenDoses.length} of {totalDoses} Doses Taken
+            </h3>
+          </div>
+          <span className="text-xl font-black text-[#6C3CE1]">{progressPercent}%</span>
+        </div>
+
+        {/* Progress Bar (Purple #6C3CE1) */}
+        <div className="w-full h-3 bg-[#F3F0FF] rounded-full overflow-hidden">
+          <div
+            className="h-full bg-[#6C3CE1] rounded-full transition-all duration-500 ease-out"
+            style={{ width: `${Math.max(5, progressPercent)}%` }}
+          />
+        </div>
+
+        {/* Status Badges */}
+        <div className="flex items-center gap-2 pt-1">
+          <span className="px-3 py-1 rounded-full bg-[#2ECC71] text-white text-xs font-bold flex items-center gap-1 shadow-2xs">
+            ✅ {takenDoses.length} taken
+          </span>
+          <span className="px-3 py-1 rounded-full bg-[#F39C12] text-white text-xs font-bold flex items-center gap-1 shadow-2xs">
+            ⏰ {remainingCount} remaining
+          </span>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* SECTION 2: DUE NOW (Section header in Purple #6C3CE1) */}
+      {/* ========================================================================= */}
+      <section className="space-y-2.5">
+        <div className="flex items-center justify-between px-1">
+          <h2 className="text-base sm:text-lg font-black text-[#6C3CE1] flex items-center gap-1.5">
+            <span>🔔 Due Now ({dueNowDoses.length})</span>
+          </h2>
+          <button
+            type="button"
+            onClick={() => onNavigate("today_doses")}
+            className="text-xs font-black text-[#6C3CE1] hover:underline cursor-pointer"
+          >
+            View All Schedule →
+          </button>
+        </div>
+
+        {dueNowDoses.length === 0 ? (
+          <div className="bg-[#F3F0FF] rounded-2xl p-4 text-center border border-[#8B6CE6]/30">
+            <p className="text-xs font-bold text-[#4A1FAD]">
+              🎉 All doses for this time window are taken! Next doses scheduled for tonight.
             </p>
           </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {dueNowDoses.map((dose) => (
+              <div
+                key={dose.id}
+                className="bg-white rounded-2xl p-4 border border-[#D1D5DB]/80 shadow-[0px_2px_8px_rgba(108,60,225,0.08)] flex items-center justify-between gap-3 hover:border-[#6C3CE1]/50 transition-all"
+              >
+                <div className="min-w-0 space-y-1">
+                  <h4 className="text-sm font-black text-[#1A1A1A] truncate">
+                    {dose.medicineName}
+                  </h4>
+                  <div className="flex items-center gap-1.5 text-xs text-[#4A4A4A]">
+                    <span className="w-2 h-2 rounded-full bg-[#6C3CE1] inline-block" />
+                    <span className="font-semibold">{dose.scheduledTime}</span>
+                    <span className="text-[#8A8A8A]">· {dose.slot}</span>
+                  </div>
+                </div>
 
-          {/* Quick Hero Actions */}
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={onOpenScanner}
-              className="px-3.5 py-2.5 bg-white hover:bg-orange-50 text-[#FF5A36] font-bold text-xs rounded-2xl border border-orange-200 shadow-2xs flex items-center gap-1.5 transition-all"
-            >
-              <Camera className="w-4 h-4 text-[#FF5A36]" />
-              <span>Scan Prescription</span>
-            </button>
-            <button
-              onClick={() => onNavigate("today_doses")}
-              className="px-4 py-2.5 bg-[#FF5A36] hover:bg-[#E04826] text-white font-bold text-xs rounded-2xl shadow-sm shadow-orange-500/25 flex items-center gap-1.5 transition-all"
-            >
-              <Clock className="w-4 h-4" />
-              <span>Today's Doses</span>
-            </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenDoseAction(dose)}
+                  className="px-3.5 py-2 bg-[#6C3CE1] hover:bg-[#4A1FAD] active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
+                >
+                  Log Dose
+                </button>
+              </div>
+            ))}
           </div>
-        </div>
+        )}
+      </section>
 
-        {/* Decorative background glow */}
-        <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-orange-400/10 rounded-full blur-2xl pointer-events-none" />
-      </div>
-
-      {/* 2. Key Metrics Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div
-          onClick={() => onNavigate("my_medicines")}
-          className="bg-white p-3.5 rounded-2xl border border-orange-100/90 shadow-2xs hover:border-orange-300 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Active Meds</span>
-            <div className="w-7 h-7 rounded-xl bg-orange-50 text-[#FF5A36] flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Pill className="w-4 h-4" />
+      {/* ========================================================================= */}
+      {/* SECTION 3: QUICK ACTIONS (2x2 Grid) */}
+      {/* ========================================================================= */}
+      <section className="space-y-2.5">
+        <h2 className="text-sm font-black uppercase tracking-wider text-[#4A4A4A] px-1">
+          ⚡ Quick Actions
+        </h2>
+        <div className="grid grid-cols-2 gap-3">
+          {/* Action 1: Scan Prescription */}
+          <button
+            type="button"
+            onClick={onOpenScanner}
+            className="bg-white hover:bg-[#F3F0FF] active:scale-98 p-4 rounded-2xl border border-[#D1D5DB]/80 shadow-[0px_2px_8px_rgba(108,60,225,0.06)] flex flex-col items-center justify-center text-center gap-2 transition-all cursor-pointer group"
+          >
+            <div className="w-11 h-11 rounded-2xl bg-[#F3F0FF] text-[#6C3CE1] flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Camera className="w-5 h-5" />
             </div>
-          </div>
-          <div className="text-2xl font-black text-slate-900">{activeMeds.length}</div>
-          <div className="text-[10px] font-medium text-slate-500 mt-0.5">Across all schedules</div>
-        </div>
-
-        <div
-          onClick={() => onNavigate("today_doses")}
-          className="bg-white p-3.5 rounded-2xl border border-orange-100/90 shadow-2xs hover:border-orange-300 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Taken Today</span>
-            <div className="w-7 h-7 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-2xl font-black text-emerald-600">
-            {takenDoses.length} <span className="text-xs font-bold text-slate-400">/ {todayDoses.length}</span>
-          </div>
-          <div className="text-[10px] font-medium text-emerald-600 mt-0.5">{adherenceRate}% completed</div>
-        </div>
-
-        <div
-          onClick={() => onNavigate("today_doses")}
-          className="bg-white p-3.5 rounded-2xl border border-orange-100/90 shadow-2xs hover:border-orange-300 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Due / Pending</span>
-            <div className="w-7 h-7 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Clock className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-2xl font-black text-amber-600">{pendingDoses.length}</div>
-          <div className="text-[10px] font-medium text-slate-500 mt-0.5">Next at 02:00 PM</div>
-        </div>
-
-        <div
-          onClick={() => onNavigate("refill_inventory")}
-          className="bg-white p-3.5 rounded-2xl border border-orange-100/90 shadow-2xs hover:border-orange-300 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Low Stock</span>
-            <div className="w-7 h-7 rounded-xl bg-red-50 text-red-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <AlertTriangle className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-2xl font-black text-red-500">{lowStockMeds.length}</div>
-          <div className="text-[10px] font-medium text-red-600 mt-0.5">Refill recommended</div>
-        </div>
-      </div>
-
-      {/* 3. Due Now / Next Scheduled Dose Card */}
-      {dueNowDose && (
-        <div className="bg-white border-2 border-[#FF5A36]/30 rounded-3xl p-4 sm:p-5 shadow-xs relative">
-          <div className="flex items-center justify-between gap-2 mb-3">
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-[#FF5A36] text-white text-[11px] font-extrabold uppercase tracking-wide flex items-center gap-1 animate-pulse">
-                <Clock className="w-3 h-3" /> Due Now
+            <div>
+              <span className="text-xs sm:text-sm font-black text-[#1A1A1A] block">
+                📸 Scan Prescription
               </span>
-              <span className="text-xs font-bold text-slate-500">{dueNowDose.scheduledTime} • {dueNowDose.slot}</span>
+              <span className="text-[11px] text-[#8A8A8A] font-medium">
+                AI camera import
+              </span>
             </div>
-            <span className="text-xs text-slate-400 font-medium">Scheduled Today</span>
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center text-[#FF5A36] flex-shrink-0">
-                <Pill className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base sm:text-lg font-bold text-slate-900">{dueNowDose.medicineName}</h3>
-                <p className="text-xs text-slate-500">
-                  {dueNowDose.dosage} • Take with water after food
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => onOpenDoseAction(dueNowDose)}
-                className="flex-1 sm:flex-none px-5 py-2.5 bg-[#FF5A36] hover:bg-[#E04826] text-white font-bold text-xs rounded-2xl shadow-sm shadow-orange-500/25 transition-all flex items-center justify-center gap-1.5 active:scale-95"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Log Dose</span>
-              </button>
-              <button
-                onClick={() => onOpenDoseAction(dueNowDose)}
-                className="px-4 py-2.5 bg-orange-50 hover:bg-orange-100 text-slate-700 font-bold text-xs rounded-2xl border border-orange-200/80 transition-all"
-              >
-                Snooze
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 4. Quick Nav Feature Grid */}
-      <div>
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2.5 px-1">
-          Explore Medicine Services
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          <button
-            onClick={() => onNavigate("my_medicines")}
-            className="p-3.5 bg-white rounded-2xl border border-orange-100/90 hover:border-orange-300 text-left transition-all shadow-2xs hover:shadow-xs group cursor-pointer"
-          >
-            <div className="w-8 h-8 rounded-xl bg-orange-50 text-[#FF5A36] flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-              <Pill className="w-4 h-4" />
-            </div>
-            <div className="text-xs font-bold text-slate-900 group-hover:text-[#FF5A36]">My Medicines</div>
-            <div className="text-[10px] text-slate-500 mt-0.5">Catalog & stock left</div>
           </button>
 
+          {/* Action 2: Log Dose */}
           <button
-            onClick={() => onNavigate("schedule_dosing")}
-            className="p-3.5 bg-white rounded-2xl border border-orange-100/90 hover:border-orange-300 text-left transition-all shadow-2xs hover:shadow-xs group cursor-pointer"
+            type="button"
+            onClick={() => {
+              if (pendingDoses[0]) {
+                onOpenDoseAction(pendingDoses[0]);
+              } else {
+                onNavigate("today_doses");
+              }
+            }}
+            className="bg-white hover:bg-[#F3F0FF] active:scale-98 p-4 rounded-2xl border border-[#D1D5DB]/80 shadow-[0px_2px_8px_rgba(108,60,225,0.06)] flex flex-col items-center justify-center text-center gap-2 transition-all cursor-pointer group"
           >
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-              <Clock className="w-4 h-4" />
+            <div className="w-11 h-11 rounded-2xl bg-[#F3F0FF] text-[#6C3CE1] flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Pill className="w-5 h-5" />
             </div>
-            <div className="text-xs font-bold text-slate-900 group-hover:text-blue-600">Schedule & Dosing</div>
-            <div className="text-[10px] text-slate-500 mt-0.5">Fixed, intervals & PRN</div>
+            <div>
+              <span className="text-xs sm:text-sm font-black text-[#1A1A1A] block">
+                💊 Log Dose
+              </span>
+              <span className="text-[11px] text-[#8A8A8A] font-medium">
+                Record today's intake
+              </span>
+            </div>
           </button>
 
+          {/* Action 3: Today's Schedule */}
           <button
+            type="button"
+            onClick={() => onNavigate("today_doses")}
+            className="bg-white hover:bg-[#F3F0FF] active:scale-98 p-4 rounded-2xl border border-[#D1D5DB]/80 shadow-[0px_2px_8px_rgba(108,60,225,0.06)] flex flex-col items-center justify-center text-center gap-2 transition-all cursor-pointer group"
+          >
+            <div className="w-11 h-11 rounded-2xl bg-[#F3F0FF] text-[#6C3CE1] flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-xs sm:text-sm font-black text-[#1A1A1A] block">
+                📋 Today's Schedule
+              </span>
+              <span className="text-[11px] text-[#8A8A8A] font-medium">
+                Hourly timetable
+              </span>
+            </div>
+          </button>
+
+          {/* Action 4: Refill Reminder */}
+          <button
+            type="button"
             onClick={() => onNavigate("refill_inventory")}
-            className="p-3.5 bg-white rounded-2xl border border-orange-100/90 hover:border-orange-300 text-left transition-all shadow-2xs hover:shadow-xs group cursor-pointer"
+            className="bg-white hover:bg-[#F3F0FF] active:scale-98 p-4 rounded-2xl border border-[#D1D5DB]/80 shadow-[0px_2px_8px_rgba(108,60,225,0.06)] flex flex-col items-center justify-center text-center gap-2 transition-all cursor-pointer group"
           >
-            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-              <Package className="w-4 h-4" />
+            <div className="w-11 h-11 rounded-2xl bg-[#F3F0FF] text-[#6C3CE1] flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Package className="w-5 h-5" />
             </div>
-            <div className="text-xs font-bold text-slate-900 group-hover:text-amber-600">Refill & Inventory</div>
-            <div className="text-[10px] text-slate-500 mt-0.5">1-Click reorder & alerts</div>
-          </button>
-
-          <button
-            onClick={() => onNavigate("interactions_safety")}
-            className="p-3.5 bg-white rounded-2xl border border-orange-100/90 hover:border-orange-300 text-left transition-all shadow-2xs hover:shadow-xs group cursor-pointer"
-          >
-            <div className="w-8 h-8 rounded-xl bg-red-50 text-red-500 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-              <ShieldCheck className="w-4 h-4" />
+            <div>
+              <span className="text-xs sm:text-sm font-black text-[#1A1A1A] block">
+                🛒 Refill Reminder
+              </span>
+              <span className="text-[11px] text-[#8A8A8A] font-medium">
+                Stock & reorders
+              </span>
             </div>
-            <div className="text-xs font-bold text-slate-900 group-hover:text-red-500">Interactions & Safety</div>
-            <div className="text-[10px] text-slate-500 mt-0.5">Drug & food cross-check</div>
-          </button>
-
-          <button
-            onClick={() => onNavigate("medicine_journal")}
-            className="p-3.5 bg-white rounded-2xl border border-orange-100/90 hover:border-orange-300 text-left transition-all shadow-2xs hover:shadow-xs group cursor-pointer"
-          >
-            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-              <BookOpen className="w-4 h-4" />
-            </div>
-            <div className="text-xs font-bold text-slate-900 group-hover:text-purple-600">Medicine Journal</div>
-            <div className="text-[10px] text-slate-500 mt-0.5">Side effects & mood log</div>
-          </button>
-
-          <button
-            onClick={() => onNavigate("adherence_history")}
-            className="p-3.5 bg-white rounded-2xl border border-orange-100/90 hover:border-orange-300 text-left transition-all shadow-2xs hover:shadow-xs group cursor-pointer"
-          >
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-              <Calendar className="w-4 h-4" />
-            </div>
-            <div className="text-xs font-bold text-slate-900 group-hover:text-emerald-600">21-Day Calendar</div>
-            <div className="text-[10px] text-slate-500 mt-0.5">Monthly adherence dots</div>
-          </button>
-
-          <button
-            onClick={() => onNavigate("caregiver_family")}
-            className="p-3.5 bg-white rounded-2xl border border-orange-100/90 hover:border-orange-300 text-left transition-all shadow-2xs hover:shadow-xs group cursor-pointer"
-          >
-            <div className="w-8 h-8 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-              <Users className="w-4 h-4" />
-            </div>
-            <div className="text-xs font-bold text-slate-900 group-hover:text-pink-600">Caregiver & Family</div>
-            <div className="text-[10px] text-slate-500 mt-0.5">Maa & Dad remote sync</div>
-          </button>
-
-          <button
-            onClick={() => onNavigate("doctor_reports")}
-            className="p-3.5 bg-white rounded-2xl border border-orange-100/90 hover:border-orange-300 text-left transition-all shadow-2xs hover:shadow-xs group cursor-pointer"
-          >
-            <div className="w-8 h-8 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-              <TrendingUp className="w-4 h-4" />
-            </div>
-            <div className="text-xs font-bold text-slate-900 group-hover:text-cyan-600">Doctor Report</div>
-            <div className="text-[10px] text-slate-500 mt-0.5">PDF export & gauge</div>
           </button>
         </div>
-      </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* SECTION 4: MEDICINE SERVICES (List - ALL OPEN NEW SCREENS) */}
+      {/* ========================================================================= */}
+      <section className="space-y-2.5">
+        <div className="flex items-center justify-between px-1">
+          <h2 className="text-base sm:text-lg font-black text-[#1A1A1A] flex items-center gap-2">
+            <span>📂 Medicine Services</span>
+          </h2>
+          <span className="text-xs font-bold text-[#8A8A8A]">
+            {medicineServices.length} Modules
+          </span>
+        </div>
+
+        <div className="space-y-2.5">
+          {medicineServices.map((service) => (
+            <div
+              key={service.id}
+              onClick={() => onNavigate(service.id)}
+              className="bg-white hover:bg-[#F3F0FF] active:scale-99 p-3.5 sm:p-4 rounded-2xl border border-[#D1D5DB]/80 shadow-[0px_2px_8px_rgba(108,60,225,0.06)] flex items-center justify-between gap-3.5 transition-all cursor-pointer group hover:border-[#6C3CE1]/50"
+            >
+              <div className="flex items-center gap-3.5 min-w-0">
+                <span className="w-11 h-11 rounded-2xl bg-[#F3F0FF] border border-[#8B6CE6]/20 flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform">
+                  {service.icon}
+                </span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-sm sm:text-base font-black text-[#1A1A1A] group-hover:text-[#6C3CE1] transition-colors truncate">
+                      {service.name}
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-md bg-[#F3F0FF] text-[#6C3CE1] text-[10px] font-extrabold uppercase tracking-wide">
+                      {service.badge}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#4A4A4A] truncate mt-0.5">
+                    {service.desc}
+                  </p>
+                </div>
+              </div>
+
+              <div className="w-8 h-8 rounded-xl bg-[#F5F5F5] group-hover:bg-[#6C3CE1] group-hover:text-white text-[#4A4A4A] flex items-center justify-center transition-all shrink-0">
+                <ChevronRight className="w-4 h-4" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Floating Action Button (FAB) */}
+      <button
+        type="button"
+        onClick={onOpenAddModal}
+        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#6C3CE1] hover:bg-[#4A1FAD] active:scale-90 text-white shadow-xl shadow-purple-900/30 flex items-center justify-center transition-all cursor-pointer z-40 border-2 border-white"
+        title="Add New Medicine"
+        aria-label="Add Medicine"
+      >
+        <Plus className="w-7 h-7 stroke-[2.5]" />
+      </button>
     </div>
   );
 };

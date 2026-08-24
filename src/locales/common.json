@@ -1,8 +1,8 @@
 {
-  "app.title": "Blessikaa",
-  "app.subtitle": "Build Blessed Life – Heritage, Health & Digital Life Suite",
+  "app.title": "Blessika",
+  "app.subtitle": "Build a Blessed Life...! – Heritage, Health & Digital Life Suite",
   "app.welcome_back": "Welcome back, {{username}}!",
-  "app.tagline": "Build Blessed Life",
+  "app.tagline": "Build a Blessed Life...!",
 
   "buttons.save": "Save Changes",
   "buttons.cancel": "Cancel",
@@ -69,6 +69,6 @@
   "notifications.preference_saved": "Language preference saved successfully",
   "notifications.error": "An error occurred",
   "notifications.success": "Action completed successfully",
-  "notifications.push_title": "Blessikaa Daily Reminder",
+  "notifications.push_title": "Care2Care Daily Reminder",
   "notifications.push_body": "Time to take your scheduled medications and check hydration."
 }

@@ -392,7 +392,7 @@ export const Care2CareAiAssistantModal: React.FC<Care2CareAiAssistantModalProps>
                 <div className="flex justify-start">
                   <div className="p-3 bg-white border rounded-2xl rounded-bl-none text-xs text-slate-400 font-bold flex items-center gap-2">
                     <Sparkles className="w-3.5 h-3.5 text-indigo-600 animate-spin" />
-                    Blessikaa AI is evaluating rules & generating response...
+                    AI Assistant is evaluating rules & generating response...
                   </div>
                 </div>
               )}
@@ -403,7 +403,7 @@ export const Care2CareAiAssistantModal: React.FC<Care2CareAiAssistantModalProps>
             <div className="p-3 bg-white border-t flex items-center gap-2 shrink-0">
               <input
                 type="text"
-                placeholder={`Ask ${selectedAssistant.name} anything about Blessikaa...`}
+                placeholder={`Ask ${selectedAssistant.name} anything...`}
                 value={inputQuery}
                 onChange={(e) => setInputQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}

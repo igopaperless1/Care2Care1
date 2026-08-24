@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Home,
   LayoutGrid,
+  Users,
+  Camera,
+  TrendingUp,
+  MoreHorizontal,
   Plus,
   Activity,
   User,
-  Camera,
   Bot,
   Sparkles,
   Mic,
@@ -14,7 +16,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 
-export type NavTab = "home" | "track" | "plan" | "care" | "more" | "services";
+export type NavTab = "services" | "community" | "camera" | "insight" | "more" | "home" | "track" | "plan" | "care" | "library";
 
 interface BottomNavigationProps {
   activeTab: NavTab;
@@ -77,7 +79,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   return (
     <>
       {/* FLOATING STACK ON BOTTOM RIGHT (AI VOICE & SCANNER TOOLS) */}
-      <div ref={navToolsRef} className="fixed bottom-20 right-4 sm:right-8 z-40">
+      <div ref={navToolsRef} className="fixed bottom-20 sm:bottom-22 right-4 sm:right-6 z-40">
         {!isExpanded ? (
           /* Collapsed Compact Floating Trigger Pill */
           <button
@@ -157,29 +159,15 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
         )}
       </div>
 
-      {/* BOTTOM NAVIGATION BAR (MATCHING SCREENSHOT WITH 5 UNIFIED BUTTONS) */}
+      {/* BOTTOM NAVIGATION BAR */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 py-2 px-4 shadow-xl">
         <div className="max-w-md mx-auto flex items-center justify-between relative px-2">
-          {/* 1. HOME */}
-          <button
-            type="button"
-            onClick={() => setActiveTab("home")}
-            className={`flex flex-col items-center gap-0.5 transition-all cursor-pointer ${
-              activeTab === "home"
-                ? "text-[#FF6A45] font-black scale-105"
-                : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-            }`}
-          >
-            <Home className="w-5 h-5" />
-            <span className="text-[10px] tracking-tight">{t("nav.home", "Home")}</span>
-          </button>
-
-          {/* 2. SERVICES */}
+          {/* 1. SERVICES (HOME) */}
           <button
             type="button"
             onClick={() => setActiveTab("services")}
             className={`flex flex-col items-center gap-0.5 transition-all cursor-pointer ${
-              activeTab === "services" || activeTab === "care"
+              activeTab === "services" || activeTab === "home" || activeTab === "care" || activeTab === "library"
                 ? "text-[#FF6A45] font-black scale-105"
                 : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
             }`}
@@ -188,51 +176,59 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
             <span className="text-[10px] tracking-tight">{t("nav.services", "Services")}</span>
           </button>
 
-          {/* 3. CENTRAL ORANGE (+) ACTION BUTTON (MATCHING SCREENSHOT) */}
+          {/* 2. COMMUNITY / FEED / MESSAGES */}
           <button
             type="button"
-            onClick={onOpenQuickMenu}
-            className="flex flex-col items-center -mt-5 transition-all cursor-pointer group"
-            title="Quick Action Menu"
-          >
-            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#FF6A45] to-[#FB923C] text-white flex items-center justify-center shadow-lg shadow-orange-500/30 ring-4 ring-white dark:ring-slate-900 group-hover:scale-110 active:scale-95 transition-transform">
-              <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-200" />
-            </div>
-            <span className="text-[9px] font-bold text-slate-400 group-hover:text-[#FF6A45] mt-0.5">Quick</span>
-          </button>
-
-          {/* 4. PROGRESS / TRACK */}
-          <button
-            type="button"
-            onClick={() => setActiveTab("track")}
+            onClick={() => setActiveTab("community")}
             className={`flex flex-col items-center gap-0.5 transition-all cursor-pointer ${
-              activeTab === "track"
+              activeTab === "community"
                 ? "text-[#FF6A45] font-black scale-105"
                 : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
             }`}
           >
-            <Activity className="w-5 h-5" />
-            <span className="text-[10px] tracking-tight">{t("nav.progress", "Progress")}</span>
+            <Users className="w-5 h-5" />
+            <span className="text-[10px] tracking-tight">Community</span>
           </button>
 
-          {/* 5. PROFILE */}
+          {/* 3. CENTRAL CAMERA SCANNER (IN PLACE OF + QUICK ADD) */}
           <button
             type="button"
-            onClick={() => {
-              if (onOpenProfile) {
-                onOpenProfile();
-              } else {
-                setActiveTab("more");
-              }
-            }}
+            onClick={onOpenCamera}
+            className="flex flex-col items-center -mt-5 transition-all cursor-pointer group"
+            title="Camera & OCR Scanner"
+          >
+            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#FF6A45] to-[#FB923C] text-white flex items-center justify-center shadow-lg shadow-orange-500/30 ring-4 ring-white dark:ring-slate-900 group-hover:scale-110 active:scale-95 transition-transform">
+              <Camera className="w-6 h-6 group-hover:scale-105 transition-transform duration-200" />
+            </div>
+            <span className="text-[9px] font-bold text-slate-400 group-hover:text-[#FF6A45] mt-0.5">Camera</span>
+          </button>
+
+          {/* 4. INSIGHT */}
+          <button
+            type="button"
+            onClick={() => setActiveTab("insight")}
+            className={`flex flex-col items-center gap-0.5 transition-all cursor-pointer ${
+              activeTab === "insight" || activeTab === "track"
+                ? "text-[#FF6A45] font-black scale-105"
+                : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+            }`}
+          >
+            <TrendingUp className="w-5 h-5" />
+            <span className="text-[10px] tracking-tight">Insight</span>
+          </button>
+
+          {/* 5. MORE */}
+          <button
+            type="button"
+            onClick={() => setActiveTab("more")}
             className={`flex flex-col items-center gap-0.5 transition-all cursor-pointer ${
               activeTab === "more"
                 ? "text-[#FF6A45] font-black scale-105"
                 : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
             }`}
           >
-            <User className="w-5 h-5" />
-            <span className="text-[10px] tracking-tight">{t("nav.profile", "Profile")}</span>
+            <MoreHorizontal className="w-5 h-5" />
+            <span className="text-[10px] tracking-tight">{t("nav.more", "More")}</span>
           </button>
         </div>
       </nav>

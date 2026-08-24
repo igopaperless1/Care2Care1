@@ -900,9 +900,9 @@ export const ChallengeGrid: React.FC<ChallengeGridProps> = ({
       </div>
 
       {/* ========================================================================= */}
-      {/* FLOATING CIRCULAR HAMBURGER MANAGEMENT BUTTON (BOTTOM RIGHT) */}
+      {/* FLOATING CIRCULAR HAMBURGER MANAGEMENT BUTTON (BOTTOM RIGHT - JUST ABOVE AI TOOLS) */}
       {/* ========================================================================= */}
-      <div className="fixed bottom-20 sm:bottom-6 right-6 z-40">
+      <div className="fixed bottom-36 sm:bottom-38 right-4 sm:right-6 z-40">
         <motion.button
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.95 }}

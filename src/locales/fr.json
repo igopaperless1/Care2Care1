@@ -1,8 +1,8 @@
 {
-  "app.title": "Blessikaa",
-  "app.subtitle": "Build Blessed Life – Plateforme de Santé Familiale et de Gestion Numérique",
+  "app.title": "Blessika",
+  "app.subtitle": "Build a Blessed Life...! – Plateforme de Santé Familiale et de Gestion Numérique",
   "app.welcome_back": "Bon retour, {{username}} !",
-  "app.tagline": "Build Blessed Life",
+  "app.tagline": "Build a Blessed Life...!",
 
   "buttons.save": "Enregistrer les modifications",
   "buttons.cancel": "Annuler",
@@ -69,6 +69,6 @@
   "notifications.preference_saved": "Préférence de langue enregistrée avec succès",
   "notifications.error": "Une erreur est survenue",
   "notifications.success": "Action terminée avec succès",
-  "notifications.push_title": "Rappel Quotidien Blessikaa",
+  "notifications.push_title": "Rappel Quotidien Care2Care",
   "notifications.push_body": "Il est temps de prendre vos médicaments programmés et de vérifier votre hydratation."
 }

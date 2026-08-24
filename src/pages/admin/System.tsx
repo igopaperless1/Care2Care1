@@ -184,7 +184,7 @@ export const SystemPage: React.FC<SystemPageProps> = ({
   const handleSendBroadcast = (e: React.FormEvent) => {
     e.preventDefault();
     if (!broadcastMessage.trim()) return;
-    onSendGlobalBroadcast(broadcastTitle || "Blessikaa Global Broadcast", broadcastMessage);
+    onSendGlobalBroadcast(broadcastTitle || "Care2Care Global Broadcast", broadcastMessage);
     showToast("Broadcast message transmitted to all active users!");
     setBroadcastTitle("");
     setBroadcastMessage("");

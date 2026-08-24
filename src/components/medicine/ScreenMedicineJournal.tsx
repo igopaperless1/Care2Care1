@@ -1,23 +1,22 @@
 import React, { useState } from "react";
 import {
   BookOpen,
+  Plus,
   Smile,
   Meh,
   Frown,
-  Heart,
-  Sparkles,
-  Plus,
-  Check,
+  Activity,
   Calendar,
-  Zap,
-  Activity
+  Sparkles,
+  Check,
+  ChevronRight
 } from "lucide-react";
 import { JournalEntryModel, MedicineTab } from "./types";
 
 interface ScreenMedicineJournalProps {
   entries: JournalEntryModel[];
   onAddEntry: (entry: Partial<JournalEntryModel>) => void;
-  onNavigate: (tab: MedicineTab) => void;
+  onNavigate: (tab: MedicineTab, params?: any) => void;
 }
 
 export const ScreenMedicineJournal: React.FC<ScreenMedicineJournalProps> = ({
@@ -25,217 +24,216 @@ export const ScreenMedicineJournal: React.FC<ScreenMedicineJournalProps> = ({
   onAddEntry,
   onNavigate
 }) => {
-  const [selectedMood, setSelectedMood] = useState<"Very Good" | "Good" | "Okay" | "Bad">("Good");
+  const [isAdding, setIsAdding] = useState<boolean>(false);
+  const [mood, setMood] = useState<"Very Good" | "Good" | "Okay" | "Bad" | "Very Bad">("Good");
   const [energyLevel, setEnergyLevel] = useState<number>(8);
-  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>(["Mild Nausea"]);
+  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
   const [notes, setNotes] = useState<string>("");
-  const [isSaved, setIsSaved] = useState<boolean>(false);
 
-  const symptomOptions = [
-    "Mild Nausea",
-    "Headache",
+  const commonSymptoms = [
+    "No Side Effects",
+    "Mild Headache",
+    "Nausea",
     "Dizziness",
-    "Stomach Pain",
-    "Drowsiness / Fatigue",
     "Dry Mouth",
-    "Heartburn",
-    "Skin Rash",
-    "Loss of Appetite",
-    "Muscle Aches"
+    "Fatigue",
+    "Stomach Upset",
+    "Insomnia"
   ];
 
-  const toggleSymptom = (sym: string) => {
-    if (selectedSymptoms.includes(sym)) {
-      setSelectedSymptoms((prev) => prev.filter((s) => s !== sym));
+  const handleToggleSymptom = (s: string) => {
+    if (selectedSymptoms.includes(s)) {
+      setSelectedSymptoms(selectedSymptoms.filter((item) => item !== s));
     } else {
-      setSelectedSymptoms((prev) => [...prev, sym]);
+      setSelectedSymptoms([...selectedSymptoms, s]);
     }
   };
 
-  const handleSave = () => {
-    const newEntry: Partial<JournalEntryModel> = {
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    onAddEntry({
       date: new Date().toISOString().split("T")[0],
-      mood: selectedMood,
+      mood,
       energyLevel,
-      symptoms: selectedSymptoms,
-      notes: notes.trim() || undefined
-    };
-
-    onAddEntry(newEntry);
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 2000);
+      symptoms: selectedSymptoms.length > 0 ? selectedSymptoms : ["No Symptoms"],
+      notes
+    });
+    setIsAdding(false);
+    setSelectedSymptoms([]);
     setNotes("");
   };
 
   return (
-    <div className="max-w-xl mx-auto space-y-4">
-      {/* 1. Daily Check-in Form */}
-      <div className="bg-white rounded-3xl p-4 sm:p-6 border border-orange-100/90 shadow-2xs space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-orange-50 text-[#FF5A36] flex items-center justify-center">
-              <BookOpen className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-sm sm:text-base font-bold text-slate-900">How do you feel today?</h3>
-              <p className="text-[11px] text-slate-500">Track medication tolerance & side effects</p>
-            </div>
+    <div className="space-y-4 pb-20">
+      {/* 1. Header Card */}
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#D1D5DB]/80 shadow-[0px_2px_8px_rgba(108,60,225,0.06)] flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-[#F3F0FF] text-[#6C3CE1] flex items-center justify-center font-black">
+            <BookOpen className="w-5 h-5" />
           </div>
-          <span className="text-xs font-bold text-[#FF5A36] bg-orange-50 px-2.5 py-1 rounded-full">
-            Today
-          </span>
-        </div>
-
-        {/* Mood Selection Row */}
-        <div className="space-y-1.5">
-          <label className="block text-xs font-bold text-slate-700">Overall Mood & Wellbeing</label>
-          <div className="grid grid-cols-4 gap-2">
-            {[
-              { label: "Very Good", emoji: "😃", color: "border-emerald-400 bg-emerald-50 text-emerald-900" },
-              { label: "Good", emoji: "😊", color: "border-orange-400 bg-orange-50 text-orange-950" },
-              { label: "Okay", emoji: "😐", color: "border-amber-400 bg-amber-50 text-amber-950" },
-              { label: "Bad", emoji: "😟", color: "border-red-400 bg-red-50 text-red-950" }
-            ].map((m) => (
-              <button
-                key={m.label}
-                type="button"
-                onClick={() => setSelectedMood(m.label as any)}
-                className={`py-3 rounded-2xl flex flex-col items-center justify-center border-2 transition-all cursor-pointer ${
-                  selectedMood === m.label
-                    ? `${m.color} ring-2 ring-[#FF5A36]/30 scale-105 shadow-2xs font-black`
-                    : "bg-slate-50/70 border-slate-200/80 text-slate-600 hover:bg-orange-50/50"
-                }`}
-              >
-                <span className="text-2xl mb-1">{m.emoji}</span>
-                <span className="text-[11px] font-bold">{m.label}</span>
-              </button>
-            ))}
+          <div>
+            <h3 className="text-base font-black text-[#1A1A1A]">
+              Medicine & Symptom Journal
+            </h3>
+            <p className="text-xs text-[#4A4A4A]">
+              Track side effects, mood & daily health
+            </p>
           </div>
-        </div>
-
-        {/* Energy Level Slider */}
-        <div className="space-y-1.5 pt-1">
-          <div className="flex items-center justify-between text-xs font-bold">
-            <span className="text-slate-700 flex items-center gap-1">
-              <Zap className="w-3.5 h-3.5 text-amber-500" /> Energy Level
-            </span>
-            <span className="text-[#FF5A36] font-black">{energyLevel} / 10</span>
-          </div>
-          <input
-            type="range"
-            min={1}
-            max={10}
-            value={energyLevel}
-            onChange={(e) => setEnergyLevel(Number(e.target.value))}
-            className="w-full accent-[#FF5A36] cursor-pointer"
-          />
-          <div className="flex justify-between text-[10px] text-slate-400 font-bold px-1">
-            <span>Low (1)</span>
-            <span>Moderate (5)</span>
-            <span>High Vitality (10)</span>
-          </div>
-        </div>
-
-        {/* Symptoms Checklist */}
-        <div className="space-y-1.5 pt-1">
-          <label className="block text-xs font-bold text-slate-700">
-            Observed Symptoms / Side Effects
-          </label>
-          <div className="flex flex-wrap gap-1.5">
-            {symptomOptions.map((sym) => {
-              const active = selectedSymptoms.includes(sym);
-              return (
-                <button
-                  key={sym}
-                  type="button"
-                  onClick={() => toggleSymptom(sym)}
-                  className={`text-xs px-3 py-1.5 rounded-xl font-semibold border transition-all cursor-pointer ${
-                    active
-                      ? "bg-[#FF5A36] text-white border-[#FF5A36] shadow-2xs"
-                      : "bg-white text-slate-700 border-orange-100 hover:bg-orange-50"
-                  }`}
-                >
-                  {sym} {active && "✓"}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Personal Note */}
-        <div className="space-y-1 pt-1">
-          <label className="block text-xs font-bold text-slate-700">Personal Health Notes</label>
-          <textarea
-            rows={3}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Write how you felt after your doses, sleep quality, meal effects..."
-            className="w-full px-3.5 py-2.5 bg-orange-50/40 border border-orange-200/80 rounded-2xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5A36]/40"
-          />
         </div>
 
         <button
           type="button"
-          onClick={handleSave}
-          className="w-full py-3 bg-[#FF5A36] hover:bg-[#E04826] text-white font-bold text-xs rounded-2xl shadow-sm shadow-orange-500/25 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+          onClick={() => setIsAdding(!isAdding)}
+          className="px-4 py-2 bg-[#6C3CE1] hover:bg-[#4A1FAD] active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer"
         >
-          {isSaved ? (
-            <>
-              <Check className="w-4 h-4 text-white" />
-              <span>Journal Entry Saved!</span>
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-4 h-4" />
-              <span>Save Daily Health Check-in</span>
-            </>
-          )}
+          <Plus className="w-4 h-4" />
+          <span>{isAdding ? "Cancel" : "Log Today"}</span>
         </button>
       </div>
 
-      {/* 2. Past Log Entries History */}
-      <div className="space-y-2.5">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 px-1">
-          Past Journal Entries
+      {/* 2. Add Entry Form */}
+      {isAdding && (
+        <form
+          onSubmit={handleSave}
+          className="bg-white rounded-2xl p-5 border-2 border-[#6C3CE1]/30 shadow-[0px_2px_8px_rgba(108,60,225,0.08)] space-y-4"
+        >
+          <h4 className="text-sm font-black text-[#6C3CE1] uppercase tracking-wider">
+            Log Today's Well-being
+          </h4>
+
+          {/* Mood Selector */}
+          <div>
+            <label className="block text-xs font-black text-[#6C3CE1] uppercase tracking-wider mb-2">
+              Overall Mood
+            </label>
+            <div className="grid grid-cols-5 gap-2">
+              {(
+                [
+                  { label: "Very Bad", icon: "😫" },
+                  { label: "Bad", icon: "🙁" },
+                  { label: "Okay", icon: "😐" },
+                  { label: "Good", icon: "😊" },
+                  { label: "Very Good", icon: "🤩" }
+                ] as const
+              ).map((m) => (
+                <button
+                  key={m.label}
+                  type="button"
+                  onClick={() => setMood(m.label)}
+                  className={`p-2.5 rounded-xl text-center flex flex-col items-center gap-1 transition-all cursor-pointer ${
+                    mood === m.label
+                      ? "bg-[#6C3CE1] text-white shadow-xs scale-105"
+                      : "bg-[#F5F5F5] hover:bg-[#F3F0FF] text-[#1A1A1A]"
+                  }`}
+                >
+                  <span className="text-xl">{m.icon}</span>
+                  <span className="text-[10px] font-bold">{m.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Energy Slider */}
+          <div>
+            <div className="flex items-center justify-between text-xs font-black text-[#6C3CE1] uppercase mb-1">
+              <span>Energy Level</span>
+              <span className="text-base text-[#1A1A1A]">{energyLevel} / 10</span>
+            </div>
+            <input
+              type="range"
+              min={1}
+              max={10}
+              value={energyLevel}
+              onChange={(e) => setEnergyLevel(Number(e.target.value))}
+              className="w-full accent-[#6C3CE1] cursor-pointer"
+            />
+          </div>
+
+          {/* Symptoms Chips */}
+          <div>
+            <label className="block text-xs font-black text-[#6C3CE1] uppercase tracking-wider mb-2">
+              Reported Symptoms or Side Effects
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {commonSymptoms.map((s) => {
+                const isSelected = selectedSymptoms.includes(s);
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => handleToggleSymptom(s)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-[#6C3CE1] text-white shadow-xs"
+                        : "bg-[#F5F5F5] hover:bg-[#F3F0FF] text-[#4A4A4A]"
+                    }`}
+                  >
+                    {s}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="block text-xs font-black text-[#6C3CE1] uppercase tracking-wider mb-1">
+              Personal Notes / Side Effect Observations
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              placeholder="Felt great after morning dose, mild tiredness around 3 PM..."
+              className="w-full p-3 bg-white border border-[#D1D5DB] rounded-xl text-xs sm:text-sm font-medium text-[#1A1A1A] focus:border-[#6C3CE1] focus:ring-2 focus:ring-[#6C3CE1]/20 outline-none"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full py-3 bg-[#6C3CE1] hover:bg-[#4A1FAD] active:scale-95 text-white font-black text-xs sm:text-sm rounded-xl shadow-xs transition-all cursor-pointer"
+          >
+            Save Journal Log
+          </button>
+        </form>
+      )}
+
+      {/* 3. History List */}
+      <div className="space-y-3">
+        <h4 className="text-xs font-black uppercase tracking-wider text-[#4A4A4A] px-1">
+          Recent Journal Entries ({entries.length})
         </h4>
 
-        {entries.map((item) => (
+        {entries.map((entry) => (
           <div
-            key={item.id}
-            className="bg-white rounded-3xl p-4 border border-orange-100 shadow-2xs space-y-2"
+            key={entry.id}
+            className="bg-white rounded-2xl p-4 sm:p-5 border border-[#D1D5DB]/80 shadow-[0px_2px_8px_rgba(108,60,225,0.06)] space-y-2.5"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-slate-900">
-                  {new Date(item.date).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric"
-                  })}
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 text-[10px] font-bold">
-                  Mood: {item.mood}
-                </span>
-              </div>
-              <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
-                <Zap className="w-3 h-3 text-amber-500" /> Energy: {item.energyLevel}/10
+              <span className="text-xs font-black text-[#6C3CE1] flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5" /> {entry.date}
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full bg-[#F3F0FF] text-[#6C3CE1] text-xs font-extrabold">
+                Mood: {entry.mood}
               </span>
             </div>
 
-            {item.symptoms && item.symptoms.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {item.symptoms.map((s) => (
-                  <span
-                    key={s}
-                    className="text-[10px] px-2 py-0.5 rounded-md bg-red-50 text-red-700 font-semibold border border-red-100"
-                  >
-                    {s}
-                  </span>
-                ))}
-              </div>
-            )}
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {entry.symptoms.map((s, idx) => (
+                <span
+                  key={idx}
+                  className="px-2 py-0.5 rounded-md bg-[#F5F5F5] text-[#1A1A1A] text-[11px] font-semibold"
+                >
+                  {s}
+                </span>
+              ))}
+            </div>
 
-            {item.notes && <p className="text-xs text-slate-600 italic">"{item.notes}"</p>}
+            {entry.notes && (
+              <p className="text-xs text-[#4A4A4A] bg-[#F5F5F5] p-2.5 rounded-xl mt-2 font-medium">
+                "{entry.notes}"
+              </p>
+            )}
           </div>
         ))}
       </div>

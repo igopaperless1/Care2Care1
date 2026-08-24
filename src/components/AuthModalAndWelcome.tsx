@@ -323,18 +323,18 @@ export const AuthModalAndWelcome: React.FC<AuthModalAndWelcomeProps> = ({
           </button>
 
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white flex items-center justify-center font-black shadow-md shrink-0">
-              <HeartPulse className="w-6 h-6" />
-            </div>
+            <img
+              src="/app-icon.jpg"
+              alt="Blessika"
+              className="w-11 h-11 rounded-2xl object-cover shrink-0"
+              referrerPolicy="no-referrer"
+            />
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-black tracking-tight text-white">Care2Care Portal</h2>
-                <span className="text-[9px] bg-emerald-500/20 text-emerald-300 font-extrabold px-1.5 py-0.5 rounded-full border border-emerald-400/30">
-                  v2.5
-                </span>
+                <h2 className="text-base font-black tracking-tight text-white">Blessika</h2>
               </div>
-              <p className="text-[11px] text-teal-200/90 font-medium">
-                Sign in to manage health, vitals & care plans
+              <p className="text-[11px] text-orange-200/90 font-medium">
+                Build a Blessed Life...!
               </p>
             </div>
           </div>

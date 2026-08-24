@@ -1,8 +1,8 @@
 {
-  "app.title": "Blessikaa",
-  "app.subtitle": "Build Blessed Life – परिवार स्वास्थ्य र डिजिटल व्यवस्थापन प्लेटफर्म",
+  "app.title": "Blessika",
+  "app.subtitle": "Build a Blessed Life...! – परिवार स्वास्थ्य र डिजिटल व्यवस्थापन प्लेटफर्म",
   "app.welcome_back": "पुनः स्वागत छ, {{username}}!",
-  "app.tagline": "Build Blessed Life",
+  "app.tagline": "Build a Blessed Life...!",
 
   "buttons.save": "सेभ गर्नुहोस्",
   "buttons.cancel": "रद्द गर्नुहोस्",
@@ -69,6 +69,6 @@
   "notifications.preference_saved": "भाषा प्राथमिकता सेभ भयो",
   "notifications.error": "त्रुटि भयो",
   "notifications.success": "कार्य सम्पन्न भयो",
-  "notifications.push_title": "Blessikaa दैनिक स्मरण",
+  "notifications.push_title": "Care2Care दैनिक स्मरण",
   "notifications.push_body": "औषधि खाने र पानी पिउने समय भयो।"
 }

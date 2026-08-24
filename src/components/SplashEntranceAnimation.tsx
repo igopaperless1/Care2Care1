@@ -97,20 +97,23 @@ export const SplashEntranceAnimation: React.FC<SplashEntranceAnimationProps> = (
       <div className="w-full max-w-md mx-auto flex items-center justify-between pt-1 pb-3">
         {/* BRAND LOGO */}
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl overflow-hidden shadow-md border border-orange-200 dark:border-orange-500/30 flex items-center justify-center bg-gradient-to-tr from-[#FF6A45] via-[#FB923C] to-[#F59E0B]">
-            <img
-              src="/app-icon.jpg"
-              alt="Blessikaa"
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-              onError={(e) => {
-                (e.target as HTMLElement).style.display = "none";
-              }}
-            />
+          <img
+            src="/app-icon.jpg"
+            alt="Blessika"
+            className="w-10 h-10 rounded-2xl object-cover"
+            referrerPolicy="no-referrer"
+            onError={(e) => {
+              (e.target as HTMLElement).style.display = "none";
+            }}
+          />
+          <div>
+            <span className="font-black text-lg text-slate-900 dark:text-white tracking-tight flex items-center gap-1">
+              Blessika
+            </span>
+            <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 -mt-0.5">
+              Build a Blessed Life...!
+            </p>
           </div>
-          <span className="font-black text-lg text-slate-900 dark:text-white tracking-tight flex items-center gap-1">
-            Blessikaa
-          </span>
         </div>
 
         {/* TOP RIGHT CONTROLS: LANGUAGE PICKER & SKIP BUTTON */}
@@ -268,7 +271,7 @@ export const SplashEntranceAnimation: React.FC<SplashEntranceAnimationProps> = (
                   <div className="w-7 h-7 rounded-xl bg-teal-500 text-white flex items-center justify-center">
                     <Sparkles className="w-4 h-4" />
                   </div>
-                  <span className="text-[9px] font-black text-slate-800 dark:text-slate-200 leading-tight">Blessikaa AI</span>
+                  <span className="text-[9px] font-black text-slate-800 dark:text-slate-200 leading-tight">Care2Care AI</span>
                 </div>
               </div>
 
